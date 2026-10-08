@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도전! 골든벨 - 자료와 정보 (완성 예시)</title>
+<style>
+  :root { --navy:#1B2A4A; --gold:#F2B705; --ok:#1E9E5A; --no:#D64545; --bg:#F4F6FB; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:"Malgun Gothic","맑은 고딕",sans-serif; background:var(--bg); color:var(--navy); min-height:100vh; display:flex; flex-direction:column; }
+  header { background:var(--navy); color:#fff; padding:18px 32px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  header h1 { font-size:clamp(22px,4vw,30px); letter-spacing:1px; } header h1 span { color:var(--gold); }
+  #progress { font-size:clamp(16px,3vw,22px); font-weight:bold; }
+  main { flex:1; display:flex; align-items:center; justify-content:center; padding:28px 16px; }
+  .card { background:#fff; border-radius:24px; box-shadow:0 12px 40px rgba(27,42,74,.12); width:min(1100px,100%); padding:clamp(24px,4vw,40px) clamp(20px,4vw,48px); }
+  .qnum { display:inline-block; background:var(--gold); color:var(--navy); font-weight:bold; font-size:20px; padding:6px 18px; border-radius:999px; margin-bottom:18px; }
+  .question { font-size:clamp(24px,4.5vw,40px); font-weight:bold; line-height:1.35; margin-bottom:30px; word-break:keep-all; }
+  .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .choice { font-size:clamp(20px,3vw,28px); padding:20px 22px; border:3px solid #D5DBE8; border-radius:16px; background:#fff; color:var(--navy); cursor:pointer; text-align:left; font-family:inherit; }
+  .choice:hover { border-color:var(--navy); }
+  .choice.correct { background:var(--ok); border-color:var(--ok); color:#fff; }
+  .choice.wrong { background:var(--no); border-color:var(--no); color:#fff; }
+  .feedback { margin-top:24px; font-size:clamp(20px,3vw,30px); font-weight:bold; min-height:40px; }
+  .next { margin-top:10px; font-size:clamp(18px,2.6vw,26px); padding:14px 34px; border:none; border-radius:14px; background:var(--navy); color:#fff; cursor:pointer; font-family:inherit; display:none; }
+  .result { text-align:center; } .score { font-size:clamp(60px,12vw,96px); font-weight:bold; color:var(--gold); margin:10px 0; }
+  .cheer { font-size:clamp(22px,4vw,34px); margin-bottom:26px; word-break:keep-all; }
+</style>
+</head>
+<body>
+<header><h1>도전! <span>골든벨</span> · 자료와 정보</h1><div id="progress"></div></header>
+<main><div class="card" id="card"></div></main>
+<script>
+const quiz = [
+  { q: "컴퓨터가 정보를 표현하는 가장 작은 단위는?", c: ["바이트(Byte)", "비트(Bit)", "킬로바이트(KB)", "픽셀(Pixel)"], a: 1 },
+  { q: "1바이트(Byte)는 몇 비트(bit)일까요?", c: ["2비트", "4비트", "8비트", "16비트"], a: 2 },
+  { q: "십진수 5를 2진수로 바르게 나타낸 것은?", c: ["101", "110", "011", "111"], a: 0 },
+  { q: "소리를 디지털로 바꿀 때 일정한 간격으로 값을 뽑는 과정은?", c: ["부호화", "양자화", "표본화", "압축"], a: 2 },
+  { q: "이미지를 작은 점(픽셀)의 집합으로 표현하는 방식은?", c: ["벡터 방식", "비트맵 방식", "아날로그 방식", "텍스트 방식"], a: 1 }
+];
+let idx = 0, score = 0;
+const card = document.getElementById("card"), progress = document.getElementById("progress");
+function show() {
+  const item = quiz[idx];
+  progress.textContent = `${idx + 1} / ${quiz.length}   ·   점수 ${score}`;
+  card.innerHTML = `<div class="qnum">문제 ${idx + 1}</div><div class="question">${item.q}</div>
+    <div class="choices">${item.c.map((t, i) => `<button class="choice" data-i="${i}">${i + 1}. ${t}</button>`).join("")}</div>
+    <div class="feedback" id="fb"></div><button class="next" id="next">다음 문제 ▶</button>`;
+  card.querySelectorAll(".choice").forEach(b => b.onclick = () => pick(+b.dataset.i));
+}
+function pick(i) {
+  const item = quiz[idx], btns = card.querySelectorAll(".choice"), fb = document.getElementById("fb");
+  btns.forEach(b => b.disabled = true);
+  btns[item.a].classList.add("correct");
+  if (i === item.a) { score++; fb.textContent = "⭕ 정답입니다!"; fb.style.color = "var(--ok)"; }
+  else { btns[i].classList.add("wrong"); fb.textContent = `❌ 아쉬워요! 정답은 ${item.a + 1}번`; fb.style.color = "var(--no)"; }
+  progress.textContent = `${idx + 1} / ${quiz.length}   ·   점수 ${score}`;
+  const next = document.getElementById("next");
+  next.style.display = "inline-block";
+  next.textContent = idx === quiz.length - 1 ? "결과 보기 ▶" : "다음 문제 ▶";
+  next.onclick = () => { idx++; idx < quiz.length ? show() : result(); };
+}
+function result() {
+  progress.textContent = "완료!";
+  const cheer = score === quiz.length ? "완벽해요! 오늘의 골든벨 주인공 🏆" : score >= 3 ? "잘했어요! 조금만 더 하면 만점! 💪" : "괜찮아요, 다시 도전해 봐요! 🌱";
+  card.innerHTML = `<div class="result"><div class="qnum">최종 결과</div><div class="score">${score} / ${quiz.length}</div>
+    <div class="cheer">${cheer}</div><button class="next" style="display:inline-block" onclick="idx=0;score=0;show()">다시 풀기 ↺</button></div>`;
+}
+show();
+</script>
+</body>
+</html>

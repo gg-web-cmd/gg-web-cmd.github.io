@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>나만의 앱 만들기 (vibe coding) · 교사 바이브 코딩 연수</title>
+<meta name="description" content="Claude Code로 윈도우 앱 3개를 만들고, 웹앱 하나를 GitHub에 공개하는 교사 대상 바이브 코딩 연수(2차시) 실습 안내서. 프롬프트 복사·진행 체크를 지원합니다.">
+<meta property="og:title" content="나만의 앱 만들기 (vibe coding)">
+<meta property="og:description" content="교사 대상 바이브 코딩 연수 · 2차시 실습 안내서 — 윈도우 앱 3개 → 설치 파일 → 웹앱 → GitHub 공개">
+<meta property="og:image" content="img/quiz_answer.webp">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231C2340'/><text x='32' y='43' font-size='30' text-anchor='middle' fill='%23D97757' font-family='Arial' font-weight='700'>&lt;/&gt;</text></svg>">
+<style>
+:root{
+  --navy:#1C2340; --navy-2:#273058; --ink:#2B3245; --gray:#6B7280; --gray-2:#9AA1AE; --line:#E3E6EC; --bg:#F6F7F9; --card:#FFFFFF;
+  --coral:#D97757; --coral-d:#B4532F; --coral-l:#FCEFE8; --coral-b:#EFC2AC;
+  --teal:#1F7A74; --teal-l:#E6F3F1; --teal-b:#A9D3CE; --blue-l:#EDF1F8; --green:#1E9E5A; --red:#E03131; --gold:#F2B98F;
+  --radius:16px; --shadow:0 10px 30px rgba(28,35,64,.08);
+  --font:"Pretendard Variable",Pretendard,"Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);line-height:1.7;word-break:keep-all;-webkit-font-smoothing:antialiased}
+a{color:var(--teal);text-underline-offset:3px}
+img{max-width:100%;display:block}
+code,kbd{font-family:Consolas,"D2Coding",monospace;font-size:.92em;background:#EEF0F4;border-radius:6px;padding:.1em .4em}
+kbd{border:1px solid #D5D9E0;border-bottom-width:2px;background:#fff}
+
+/* 상단바 */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(28,35,64,.97);backdrop-filter:saturate(1.2) blur(6px);color:#fff}
+.topbar .in{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em;color:#fff;text-decoration:none}
+.brand .logo{width:30px;height:30px;border-radius:8px;background:var(--coral);display:grid;place-items:center;font:700 13px Consolas,monospace;color:#fff}
+.brand small{font-weight:500;color:#AEB6C8;margin-left:4px}
+.topbar .sp{flex:1}
+.topbar .mini{display:flex;align-items:center;gap:10px;font-size:13px;color:#C9CFDB}
+.topbar .mini .bar{width:120px;height:6px;border-radius:9px;background:#3A4470;overflow:hidden}
+.topbar .mini .bar i{display:block;height:100%;width:0;background:var(--coral);transition:width .3s}
+.topbar a.home{color:#C9CFDB;font-size:13px;text-decoration:none;border:1px solid #3A4470;border-radius:999px;padding:4px 12px}
+.topbar a.home:hover{color:#fff;border-color:#6A75A6}
+
+/* 히어로 */
+.hero-wrap{max-width:1240px;margin:22px auto 0;padding:0 20px}
+.hero{background:radial-gradient(1200px 400px at 85% -10%,#34407a 0%,transparent 60%),var(--navy);color:#fff;border-radius:26px;padding:48px 48px 44px;display:grid;grid-template-columns:1.25fr .9fr;gap:40px;position:relative;overflow:hidden}
+.hero .kicker{color:var(--coral);font-weight:700;font-size:15px;display:flex;align-items:center;gap:10px}
+.hero .kicker:before{content:"";width:26px;height:2px;background:var(--coral)}
+.hero h1{font-size:clamp(34px,5vw,54px);line-height:1.15;margin:14px 0 18px;letter-spacing:-.02em}
+.hero h1 span{color:var(--gold)}
+.hero p.lead{color:#C9CFDB;font-size:18px;margin:0 0 22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+.chip{background:#2E3960;color:#fff;border-radius:999px;padding:6px 14px;font-size:14px;font-weight:600}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:12px 20px;font-weight:700;font-size:15px;text-decoration:none;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.btn.primary{background:var(--coral);color:#fff}
+.btn.primary:hover{background:#c86847}
+.btn.ghost{border-color:#56608A;color:#fff;background:transparent}
+.btn.ghost:hover{border-color:#8E97BF}
+.addr{margin-top:20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:#AEB6C8}
+.addr code{background:#2A3459;color:#fff;padding:5px 10px}
+.addr button{font:inherit;font-size:12px;border:1px solid #56608A;background:transparent;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer}
+.route{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:22px 22px 16px;align-self:center}
+.route .rh{display:flex;justify-content:space-between;font-size:12px;letter-spacing:.12em;color:#AEB6C8;font-weight:700;margin-bottom:6px}
+.route .rh b{color:var(--gold);letter-spacing:.05em}
+.route a{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:8px;padding:13px 4px;border-top:1px solid rgba(255,255,255,.10);text-decoration:none;color:#fff}
+.route a:first-of-type{border-top:0}
+.route a .n{color:var(--gold);font-weight:800;font-size:14px}
+.route a .t{font-weight:700}
+.route a .t small{display:block;color:#AEB6C8;font-weight:500;font-size:12.5px;line-height:1.3}
+.route a .ar{color:#8E97BF}
+.route a:hover .ar{color:#fff}
+.route .prog{margin-top:12px;border-top:1px solid rgba(255,255,255,.10);padding-top:14px;font-size:13px;color:#C9CFDB}
+.route .prog .bar{height:8px;border-radius:9px;background:#3A4470;overflow:hidden;margin-top:8px}
+.route .prog .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--coral),var(--gold));transition:width .3s}
+
+/* 본문 레이아웃 */
+.layout{max-width:1240px;margin:0 auto;padding:34px 20px 80px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:44px}
+.toc{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 100px);overflow:auto;font-size:14px;padding-right:6px}
+.toc .th{display:flex;justify-content:space-between;font-weight:800;color:var(--navy);margin-bottom:10px}
+.toc .th small{color:var(--gray-2);font-weight:700;font-size:11px;letter-spacing:.1em}
+.toc .grp{font-size:11.5px;font-weight:800;letter-spacing:.06em;color:var(--coral-d);margin:16px 0 4px 12px}
+.toc .grp.t2{color:var(--teal)}
+.toc a{display:block;padding:5px 12px;border-left:2px solid var(--line);color:var(--gray);text-decoration:none;line-height:1.45}
+.toc a:hover{color:var(--navy)}
+.toc a.on{color:var(--navy);font-weight:700;border-left-color:var(--coral)}
+.mnav{display:none}
+main{min-width:0;max-width:860px}
+
+section{margin-bottom:64px}
+.part{display:flex;align-items:center;gap:14px;background:var(--navy);color:#fff;border-radius:18px;padding:22px 26px;margin:6px 0 34px}
+.part .tag{background:var(--coral);border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px}
+.part.p2 .tag{background:var(--teal)}
+.part h2{margin:0;font-size:24px;border:0;padding:0}
+.part p{margin:2px 0 0;color:#C9CFDB;font-size:14px}
+h2{font-size:28px;letter-spacing:-.02em;color:var(--navy);margin:0 0 6px;padding-bottom:12px;border-bottom:2px solid var(--navy);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 .no{color:var(--coral)}
+.p2s h2 .no{color:var(--teal)}
+h2 .time{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--gray);background:#ECEEF2;border-radius:999px;padding:3px 12px}
+h3{font-size:20px;color:var(--navy);margin:34px 0 10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h3 .time{margin-left:auto;font-size:12px;font-weight:700;color:var(--gray-2)}
+p{margin:10px 0}
+.sub{color:var(--gray)}
+ul.dots{padding-left:20px} ul.dots li{margin:4px 0}
+
+/* 카드·그리드 */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.card h4{margin:0 0 4px;color:var(--navy);font-size:17px}
+.card p{margin:4px 0;font-size:14.5px;color:var(--ink)}
+.card .k{font-size:12.5px;font-weight:800;color:var(--coral-d)}
+.card.teal .k{color:var(--teal)}
+.app{padding:0;overflow:hidden}
+.app .shot{background:#F0F2F6;height:150px;display:grid;place-items:center;padding:10px}
+.app .shot img{max-height:130px;width:auto;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.app .body{padding:14px 16px 16px}
+.badge{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;background:var(--coral);color:#fff;margin-bottom:6px}
+.badge.teal{background:var(--teal)}
+
+/* 일정표 */
+.agenda{display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.agenda .ses{border-radius:14px;color:#fff;display:grid;place-items:center;text-align:center;font-weight:800;font-size:20px;line-height:1.3;padding:12px}
+.agenda .ses small{display:block;font-weight:600;font-size:13px;opacity:.9}
+.agenda .ses.s1{background:var(--coral)} .agenda .ses.s2{background:var(--teal)}
+.agenda .it{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.agenda .it b{display:block;color:var(--navy);font-size:15.5px}
+.agenda .it .m{font-size:12.5px;font-weight:800;color:var(--coral-d)}
+.agenda .it.t2 .m{color:var(--teal)}
+.agenda .it span{font-size:13px;color:var(--gray)}
+
+/* 프롬프트 카드 */
+.prompt{background:var(--coral-l);border:1px solid var(--coral-b);border-radius:var(--radius);margin:16px 0;overflow:hidden}
+.p2s .prompt{background:var(--teal-l);border-color:var(--teal-b)}
+.prompt .ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px 0}
+.pill{background:var(--coral);color:#fff;border-radius:999px;padding:4px 14px;font-weight:800;font-size:14px}
+.p2s .pill{background:var(--teal)}
+.prompt .hint{font-size:13px;color:var(--gray)}
+.prompt .sp{flex:1}
+.done{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--gray);cursor:pointer;user-select:none}
+.done input{width:17px;height:17px;accent-color:var(--green)}
+.copy{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:10px;padding:6px 14px;cursor:pointer}
+.copy:hover{background:var(--navy-2)}
+.copy.ok{background:var(--green);border-color:var(--green)}
+.prompt pre{margin:0;padding:12px 18px 16px;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font-family:var(--font);font-size:18px;line-height:1.75;color:var(--navy);font-weight:600}
+.prompt pre mark{background:#FFE08A;color:var(--navy);border-radius:4px;padding:0 3px}
+.prompt pre .filled{background:#D7F0E3;border-radius:4px;padding:0 3px}
+.prompt .res{background:var(--blue-l);margin:0;padding:12px 18px;font-size:14.5px;border-top:1px solid rgba(28,35,64,.06)}
+.prompt .res b{color:var(--navy)}
+.prompt.is-done{opacity:.86}
+.prompt.is-done .pill:after{content:" ✓"}
+
+/* 콜아웃 */
+.note{border-radius:14px;padding:14px 18px;margin:16px 0;background:var(--blue-l);font-size:15px}
+.note b.t{display:block;color:var(--navy);margin-bottom:2px}
+.note.warn{background:#FFF4E5} .note.warn b.t{color:#B25E00}
+.note.coral{background:var(--coral-l)} .note.coral b.t{color:var(--coral-d)}
+.note.teal{background:var(--teal-l)} .note.teal b.t{color:var(--teal)}
+
+/* 그림 */
+figure{margin:16px 0}
+figure img{border:1px solid var(--line);border-radius:12px;background:#fff;cursor:zoom-in;box-shadow:0 6px 18px rgba(28,35,64,.06)}
+figcaption{font-size:13px;color:var(--gray);margin-top:6px}
+figcaption .re{color:var(--gray-2)}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.pair figure{margin:0}
+
+/* 단계 목록 */
+ol.steps{list-style:none;padding:0;margin:14px 0;counter-reset:s}
+ol.steps li{counter-increment:s;position:relative;padding:2px 0 12px 46px}
+ol.steps li:before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+ol.steps.o li:before{background:var(--coral)}
+ol.steps.t li:before{background:var(--teal)}
+ol.steps li b{color:var(--navy)}
+ol.steps li span{display:block;color:var(--gray);font-size:14px}
+
+/* 표 */
+.tbl{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:15px}
+.tbl th{background:var(--navy);color:#fff;padding:10px 14px;text-align:left}
+.tbl th:first-child{border-radius:10px 0 0 10px} .tbl th:last-child{border-radius:0 10px 10px 0}
+.tbl td{background:#fff;padding:10px 14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tbl td:first-child{border-left:1px solid var(--line);border-radius:10px 0 0 10px;font-weight:700;color:var(--navy)}
+.tbl td:last-child{border-right:1px solid var(--line);border-radius:0 10px 10px 0}
+.tbl td.w{background:var(--teal-l);color:var(--teal);font-weight:700}
+.tbl td.n{background:var(--coral-l);color:var(--coral-d);font-weight:700}
+.rule{background:var(--navy);color:#fff;border-radius:14px;padding:14px 18px;font-weight:600}
+.rule b{color:var(--gold)} .rule i{font-style:normal;color:#8FD3CB;font-weight:800}
+
+/* 모드 표 */
+.modes .row{display:grid;grid-template-columns:150px 110px 1fr 110px;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:6px 0;font-size:14.5px}
+.modes .row b{color:var(--navy)} .modes .row small{color:var(--gray-2)}
+.modes .row .w{text-align:right;font-weight:700;color:var(--navy)}
+.modes .row.rec{background:var(--coral-l);border-color:var(--coral-b)}
+.modes .row.rec b,.modes .row.rec .w{color:var(--coral-d)}
+
+/* 체크리스트 */
+.checks{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.chk{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;user-select:none}
+.chk input{width:22px;height:22px;margin-top:2px;accent-color:var(--green);flex:none}
+.chk b{display:block;color:var(--navy);font-size:15.5px;line-height:1.45}
+.chk small{color:var(--gray);font-size:13px}
+.chk.on{background:#EEF9F2;border-color:#BFE6CF}
+.saved{font-size:13px;color:var(--gray-2);margin-top:10px}
+
+/* 복구 4문장 */
+.rescue .r{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0}
+.rescue .tag{border-radius:999px;color:#fff;font-weight:800;text-align:center;padding:5px 0;font-size:14px;background:var(--navy)}
+.rescue .r:nth-child(even) .tag{background:var(--coral)}
+.rescue .q{font-weight:700;color:var(--navy);font-size:16px}
+.rescue .q small{display:block;color:var(--gray);font-weight:500;font-size:12.5px}
+
+/* 내 정보 */
+.me{background:#fff;border:2px dashed var(--teal-b);border-radius:18px;padding:18px 20px;margin:18px 0}
+.me h4{margin:0 0 4px;color:var(--teal);font-size:17px}
+.me .f{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.me label{font-size:13px;color:var(--gray);font-weight:700}
+.me input{width:100%;font:inherit;font-size:15px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:4px;background:#FBFCFD}
+.me input:focus{outline:2px solid var(--teal-b);border-color:var(--teal)}
+.me .out{display:flex;gap:16px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.me .url{font-family:Consolas,monospace;font-size:15px;background:var(--navy);color:#fff;border-radius:10px;padding:8px 12px;word-break:break-all}
+.me .url b{color:var(--gold)}
+#qr{width:120px;height:120px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;font-size:12px;color:var(--gray-2);background:#fff;padding:6px;text-align:center}
+#qr img{width:100%;height:auto;border:0;box-shadow:none;cursor:default}
+
+/* 6칸 */
+.six{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.six span{background:var(--coral);color:#fff;border-radius:999px;padding:5px 16px;font-weight:800}
+
+/* 라이트박스 */
+.lb{position:fixed;inset:0;background:rgba(10,14,30,.88);display:none;align-items:center;justify-content:center;z-index:100;padding:24px;cursor:zoom-out}
+.lb.on{display:flex}
+.lb img{max-width:min(1400px,96vw);max-height:92vh;border-radius:10px;background:#fff}
+
+footer{border-top:1px solid var(--line);padding:26px 20px 40px;color:var(--gray);font-size:13.5px}
+footer .in{max-width:1240px;margin:0 auto}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:120;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* 반응형 */
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr;gap:0;padding-top:0}
+  .toc{display:none}
+  .mnav{display:flex;position:sticky;top:55px;z-index:40;gap:6px;overflow-x:auto;background:var(--bg);padding:10px 2px;margin:0 -20px 18px;padding-left:20px;padding-right:20px;scrollbar-width:none}
+  .mnav::-webkit-scrollbar{display:none}
+  .mnav a{flex:none;font-size:13px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;text-decoration:none}
+  .mnav a.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .hero{grid-template-columns:1fr;padding:34px 26px}
+  main{max-width:none}
+  html{scroll-padding-top:120px}
+}
+@media (max-width:720px){
+  .g3,.g4,.g2,.checks,.pair,.me .f{grid-template-columns:1fr}
+  .agenda{grid-template-columns:1fr 1fr}
+  .agenda .ses{grid-column:1/-1}
+  .modes .row{grid-template-columns:1fr;gap:2px}
+  .modes .row .w{text-align:left}
+  .rescue .r{grid-template-columns:1fr}
+  .prompt pre{font-size:16.5px}
+  .topbar .mini,.brand small{display:none}
+  .topbar .in{padding:10px 16px}
+  .brand{font-size:15px;white-space:nowrap}
+  .topbar a.home{white-space:nowrap;font-size:12px;padding:3px 10px}
+  .mnav{top:50px}
+  html{scroll-padding-top:112px}
+  .hero-wrap{padding:0 12px}
+  .layout{padding-left:16px;padding-right:16px}
+  .mnav{margin:0 -16px 18px;padding-left:16px;padding-right:16px}
+  .prompt .ph{gap:8px}
+  .prompt .hint{display:none}
+  .tbl{font-size:13.5px}
+  h2{font-size:24px}
+}
+@media print{
+  .topbar,.toc,.mnav,.copy,.done,.btns,.addr,.lb,.toast{display:none!important}
+  .layout{display:block}
+  .hero{background:#fff;color:#000;border:1px solid #ccc}
+  section{break-inside:avoid-page}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar"><div class="in">
+  <a class="brand" href="#top"><span class="logo">&lt;/&gt;</span>바이브 코딩 교사 연수 <small>2차시 실습 안내서</small></a>
+  <span class="sp"></span>
+  <span class="mini">진행 <b id="miniCount">0 / 0</b><span class="bar"><i id="miniBar"></i></span></span>
+  <a class="home" href="https://gg-web-cmd.github.io/">전체 앱 목록</a>
+</div></header>
+
+<div class="hero-wrap" id="top">
+  <div class="hero">
+    <div>
+      <div class="kicker">교사 대상 바이브 코딩 연수 · 2차시 실습</div>
+      <h1>나만의 앱 만들기<br><span>(vibe coding)</span></h1>
+      <p class="lead">Claude Code로 윈도우 앱 3개를 만들고,<br>웹앱 하나를 GitHub에 공개합니다.</p>
+      <div class="chips"><span class="chip">윈도우 앱 ×3</span><span class="chip">설치 파일</span><span class="chip">웹앱</span><span class="chip">GitHub 공개</span></div>
+      <div class="btns">
+        <a class="btn primary" href="#prep">실습 시작하기 ↗</a>
+        <a class="btn ghost" href="downloads/prompts.txt" download>프롬프트 모음 받기 (.txt)</a>
+      </div>
+      <div class="addr">이 페이지 주소 <code id="pageUrl">https://gg-web-cmd.github.io/vibe-coding/</code><button type="button" id="copyUrl">주소 복사</button></div>
+    </div>
+    <nav class="route" aria-label="오늘의 경로">
+      <div class="rh">TODAY'S ROUTE <b>01 — 04</b></div>
+      <a href="#app1"><span class="n">01</span><span class="t">윈도우 앱 3개<small>상장 생성기 · 사진 정리 · 알림 타이머</small></span><span class="ar">↗</span></a>
+      <a href="#installer"><span class="n">02</span><span class="t">설치 파일 만들기<small>app.py → exe → setup.exe</small></span><span class="ar">↗</span></a>
+      <a href="#quiz"><span class="n">03</span><span class="t">웹앱 골든벨 퀴즈<small>index.html 파일 하나로</small></span><span class="ar">↗</span></a>
+      <a href="#github"><span class="n">04</span><span class="t">GitHub에 공개<small>저장소 → push → Pages → QR</small></span><span class="ar">↗</span></a>
+      <div class="prog">오늘 진행률 <b id="progCount">0 / 0</b> 완료<div class="bar"><i id="progBar"></i></div></div>
+    </nav>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="toc" aria-label="목차">
+    <div class="th">목차 <small>ON THIS PAGE</small></div>
+    <a href="#today">오늘의 여정</a>
+    <a href="#prep">시작 전 점검</a>
+    <a href="#concept">바이브 코딩 · 3원칙</a>
+    <a href="#rescue">막히면 이 4문장</a>
+    <a href="#setup">Claude Code 준비</a>
+    <div class="grp">1차시 · 윈도우 앱</div>
+    <a href="#compare">웹앱 vs 윈도우 앱</a>
+    <a href="#rules">공통 규칙 CLAUDE.md</a>
+    <a href="#app1">앱① 상장 생성기</a>
+    <a href="#app2">앱② 사진 정리</a>
+    <a href="#app3">앱③ 알림 타이머</a>
+    <a href="#check1">1차시 완주 체크</a>
+    <div class="grp t2">2차시 · 나눠 주기</div>
+    <a href="#installer">배포① 설치 파일</a>
+    <a href="#quiz">웹앱 골든벨 퀴즈</a>
+    <a href="#github">배포② GitHub 공개</a>
+    <a href="#check2">2차시 완주 체크</a>
+    <div class="grp">정리</div>
+    <a href="#faq">막힐 때 · 안전 수칙</a>
+    <a href="#next">다음 도전</a>
+  </aside>
+
+  <main>
+    <nav class="mnav" aria-label="빠른 이동">
+      <a href="#today">여정</a><a href="#prep">점검</a><a href="#concept">개념</a><a href="#setup">준비</a><a href="#rules">규칙</a><a href="#app1">앱①</a><a href="#app2">앱②</a><a href="#app3">앱③</a><a href="#installer">설치 파일</a><a href="#quiz">퀴즈</a><a href="#github">GitHub</a><a href="#faq">막힐 때</a>
+    </nav>
+
+    <!-- 오늘의 여정 -->
+    <section id="today">
+      <h2>오늘의 여정 <span class="time">100분</span></h2>
+      <p>1차시엔 <b>윈도우 앱</b>, 2차시엔 <b>배포와 웹앱</b>. 코드를 직접 쓰지 않고 '말로' 만듭니다.</p>
+      <div class="agenda">
+        <div class="ses s1">1차시<small>50분</small></div>
+        <div class="it"><span class="m">15분</span><b>도입 · 준비</b><span>Claude Code 열기 · 규칙 만들기</span></div>
+        <div class="it"><span class="m">20분</span><b>앱① 상장 생성기</b><span>엑셀 명단 → 상장 30장</span></div>
+        <div class="it"><span class="m">10분</span><b>앱② 사진 정리</b><span>이름 바꾸고 크기 줄이기</span></div>
+        <div class="it"><span class="m">5분</span><b>앱③ 알림 타이머</b><span>트레이 상주 알림 (도전)</span></div>
+        <div class="ses s2">2차시<small>50분</small></div>
+        <div class="it t2"><span class="m">12분</span><b>설치 파일</b><span>exe → setup.exe</span></div>
+        <div class="it t2"><span class="m">8분</span><b>웹앱 퀴즈</b><span>index.html 하나로</span></div>
+        <div class="it t2"><span class="m">20분</span><b>GitHub 공개</b><span>저장소 → push → Pages</span></div>
+        <div class="it t2"><span class="m">10분</span><b>정리 · Q&amp;A</b><span>막힐 때 · 안전 수칙</span></div>
+      </div>
+      <h3>오늘 만들 앱 4개 — 모두 '말'로 만듭니다</h3>
+      <div class="grid g4">
+        <div class="card app"><div class="shot"><img src="img/cert.webp" alt="상장 생성기로 만든 상장" loading="lazy"></div><div class="body"><span class="badge">윈도우 앱</span><h4>상장·수료증 일괄 생성기</h4><p class="sub">엑셀 명단을 읽어 상장 30장을 PNG·PDF로</p></div></div>
+        <div class="card app"><div class="shot"><img src="img/photo_app.webp" alt="사진 일괄 정리 도구 화면" loading="lazy"></div><div class="body"><span class="badge">윈도우 앱</span><h4>사진 일괄 정리 도구</h4><p class="sub">날짜_행사명_번호로 이름 바꾸고 크기 줄이기</p></div></div>
+        <div class="card app"><div class="shot"><img src="img/timer_alert.webp" alt="쉬는 시간 알림창" loading="lazy"></div><div class="body"><span class="badge">윈도우 앱</span><h4>쉬는 시간 알림 타이머</h4><p class="sub">트레이에 숨어 있다가 정해진 시각에 알림</p></div></div>
+        <div class="card app"><div class="shot"><img src="img/quiz_answer.webp" alt="골든벨 퀴즈 화면" loading="lazy"></div><div class="body"><span class="badge teal">웹앱 · GitHub 공개</span><h4>골든벨 퀴즈</h4><p class="sub">링크·QR 하나로 학생 누구나 접속</p></div></div>
+      </div>
+      <p class="sub">강사가 실제로 Claude Code로 만든 결과입니다. 같은 프롬프트라도 여러분 화면은 조금씩 다르게 나와도 정상이에요.</p>
+    </section>
+
+    <!-- 시작 전 점검 -->
+    <section id="prep">
+      <h2><span class="no">0</span> 시작 전 1분 점검 <span class="time">1차시 02–03분</span></h2>
+      <p>사전 설치 안내문의 6가지가 모두 되어 있는지 확인합니다. 하나라도 안 되어 있으면 손을 들어 주세요.</p>
+      <div class="checks">
+        <label class="chk"><input type="checkbox" data-check="pre-claude"><span><b>Claude Desktop</b><small>로그인까지 완료 (Pro 이상) · AI와 대화하며 앱 만들기</small></span></label>
+        <label class="chk"><input type="checkbox" data-check="pre-github"><span><b>GitHub 계정</b><small>Google 계정으로 가입 · 웹앱 저장·공개</small></span></label>
+        <label class="chk"><input type="checkbox" data-check="pre-node"><span><b>Node.js</b><small>LTS 버전 · 웹 프로젝트 실행 환경</small></span></label>
+        <label class="chk"><input type="checkbox" data-check="pre-git"><span><b>Git</b><small>기본값으로 설치 · 변경 기록 · GitHub 올리기</small></span></label>
+        <label class="chk"><input type="checkbox" data-check="pre-thonny"><span><b>Thonny</b><small>Python이 함께 설치됨 · 윈도우 앱 실행(▶)</small></span></label>
+        <label class="chk"><input type="checkbox" data-check="pre-inno"><span><b>Inno Setup</b><small>설치 마법사 기본값 · 설치 파일(setup.exe) 만들기</small></span></label>
+      </div>
+      <div class="note"><b class="t">Code 탭을 쓰려면</b>Claude는 유료 요금제(Pro 이상) 계정으로 로그인되어 있어야 합니다.</div>
+    </section>
+
+    <!-- 개념 -->
+    <section id="concept">
+      <h2>바이브 코딩 = 내가 말하고, AI가 만들고, 내가 확인한다 <span class="time">1차시 03–06분</span></h2>
+      <div class="grid g2">
+        <div class="card" style="background:var(--coral-l);border-color:var(--coral-b)"><span class="k">사람 = 기획자 · 검증자</span><ul class="dots"><li>무엇을 만들지 정하고 말로 설명한다</li><li>실행해 보고 맞는지 눈으로 확인한다</li><li>고칠 점을 다시 말한다</li></ul></div>
+        <div class="card" style="background:var(--blue-l);border-color:#D6DEEC"><span class="k" style="color:var(--navy)">AI(Claude Code) = 구현자</span><ul class="dots"><li>요청을 코드로 바꾸고 파일을 만든다</li><li>필요한 라이브러리를 설치하고 실행한다</li><li>오류를 찾아 고친다</li></ul></div>
+      </div>
+      <p><b>① 말하기</b> → <b>② 만들기</b> → <b>③ 확인하기</b> → <b>④ 고치기</b> — 이 4단계 루프가 오늘 100분 내내 반복됩니다.</p>
+      <h3>좋은 프롬프트 3원칙</h3>
+      <div class="grid g3">
+        <div class="card"><span class="k">1</span><h4>구체적으로</h4><p>'예쁘게' 대신 '글자 크게, 4명씩 카드로'처럼 무엇을·어떻게를 딱 집어 말하기</p></div>
+        <div class="card"><span class="k">2</span><h4>한 번에 한 가지씩</h4><p>기능 1개 = 프롬프트 1개. 잘 붙은 걸 확인한 뒤 다음 기능 요청하기</p></div>
+        <div class="card"><span class="k">3</span><h4>결과 보고 고치기</h4><p>실행 화면을 보고 다시 요청. 스크린샷을 붙여 넣으면 더 정확해요</p></div>
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="note" style="background:#FDECEC;margin:0"><b class="t" style="color:var(--red)">✗ 이렇게 말하면</b>"상장 만드는 프로그램 예쁘게 만들어 줘"</div>
+        <div class="note" style="background:#E7F6EE;margin:0"><b class="t" style="color:var(--green)">✓ 이렇게 말하면</b>"엑셀 명단을 표로 보여 주는 창을 먼저 만들어 줘. 글자는 크게."</div>
+      </div>
+    </section>
+
+    <section id="rescue">
+      <h2>막히면 이 4문장이면 됩니다 <span class="time">1차시 06–07분</span></h2>
+      <p class="sub">휴대폰으로 찍어 두거나, 오른쪽 [복사]를 눌러 바로 붙여 넣으세요.</p>
+      <div class="rescue">
+        <div class="r"><span class="tag">오류</span><span class="q" data-copytext="아래 오류의 원인을 찾아서 고쳐 줘. 다른 기능은 바꾸지 마.">"아래 오류의 원인을 찾아서 고쳐 줘. 다른 기능은 바꾸지 마."<small>오류 메시지를 붙여 넣고 →</small></span><button class="copy" data-from="prev">복사</button></div>
+        <div class="r"><span class="tag">화면</span><span class="q" data-copytext="이 스크린샷에서 문제가 보이는 부분만 고쳐 줘.">"이 스크린샷에서 문제가 보이는 부분만 고쳐 줘."<small>화면 캡처(<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>)를 붙여 넣고 →</small></span><button class="copy" data-from="prev">복사</button></div>
+        <div class="r"><span class="tag">범위</span><span class="q" data-copytext="다른 기능은 바꾸지 말고 이것만 추가해 줘.">"다른 기능은 바꾸지 말고 이것만 추가해 줘."<small>기능을 더할 때 →</small></span><button class="copy" data-from="prev">복사</button></div>
+        <div class="r"><span class="tag">되돌리기</span><span class="q" data-copytext="방금 고친 것을 취소하고 수정 전 상태로 되돌려 줘.">"방금 고친 것을 취소하고 수정 전 상태로 되돌려 줘."<small>마음에 안 들면 →</small></span><button class="copy" data-from="prev">복사</button></div>
+      </div>
+      <div class="note coral"><b class="t">기억하기</b>AI의 답을 '믿는' 것이 아니라, 실행 결과를 '확인'하는 것이 교사의 역할입니다.</div>
+    </section>
+
+    <!-- Claude Code 준비 -->
+    <section id="setup">
+      <h2>Claude Code 준비 <span class="time">1차시 07–12분</span></h2>
+      <h3>① Claude 앱에서 [Code] 탭을 엽니다</h3>
+      <div class="pair">
+        <figure><img src="img/claude_nav.webp" alt="Claude 앱 왼쪽 위 Code 탭과 새로 생성 버튼" loading="lazy"><figcaption>빨간 네모: Code 탭(&lt;/&gt;) · [새로 생성]</figcaption></figure>
+        <ol class="steps"><li><b>왼쪽 위 &lt;/&gt; 버튼 클릭 → Code 탭</b><span>말풍선 모양은 일반 채팅, &lt;/&gt; 모양이 Claude Code</span></li><li><b>[새로 생성] 클릭 (<kbd>Ctrl</kbd>+<kbd>N</kbd>)</b><span>새 대화(세션)가 열립니다</span></li><li><b>앱이 바뀔 때마다 새로 생성</b><span>상장 → 사진 → 타이머 → 퀴즈, 대화를 나눠 쓰면 헷갈리지 않아요</span></li></ol>
+      </div>
+      <div class="note"><b class="t">Code 탭이 안 보이면?</b>Claude 앱을 최신 버전으로 업데이트하고, 유료 요금제(Pro 이상) 계정으로 로그인했는지 확인하세요.</div>
+
+      <h3>② 작업 폴더 <code>C:\vibe</code> 를 만들고 연결합니다</h3>
+      <ol class="steps o"><li><b>파일 탐색기 → C 드라이브 → 새 폴더 'vibe'</b><span>최종 경로: C:\vibe</span></li><li><b>Claude Code [새로 생성] 화면에서 폴더 선택</b><span>입력창 근처의 폴더(📁) 버튼 → C:\vibe 선택</span></li><li><b>위쪽에 폴더 이름이 보이면 성공</b><span>아래 그림처럼 상단에 작업 폴더가 표시됩니다</span></li><li><b>'이 폴더를 신뢰할까요?' 창이 뜨면 → 신뢰</b><span>Claude가 이 폴더 안에서 파일을 만들고 고칩니다</span></li></ol>
+      <figure><img src="img/claude_top.webp" alt="상단에 표시된 현재 작업 폴더" loading="lazy" style="max-width:520px"><figcaption>▲ 현재 작업 폴더 표시 (예: teacher lesson → 여러분은 vibe)</figcaption></figure>
+      <div class="card" style="font-family:Consolas,monospace;font-size:14.5px;line-height:1.8"><b>C:\vibe\</b><br>&nbsp;├ CLAUDE.md &nbsp;← 공통 규칙<br>&nbsp;├ award &nbsp;&nbsp;&nbsp;&nbsp;← 앱① 상장<br>&nbsp;├ photo &nbsp;&nbsp;&nbsp;&nbsp;← 앱② 사진<br>&nbsp;├ timer &nbsp;&nbsp;&nbsp;&nbsp;← 앱③ 타이머<br>&nbsp;└ quiz &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 웹앱 퀴즈</div>
+
+      <h3>③ 입력창 한 줄에 필요한 버튼이 다 있습니다</h3>
+      <figure><img src="img/claude_input.webp" alt="Claude Code 입력창" loading="lazy"></figure>
+      <div class="pair">
+        <figure><img src="img/claude_left.webp" alt="입력창 왼쪽 아래: 첨부와 권한 모드" loading="lazy"><figcaption>왼쪽 아래 확대: + 첨부 · 권한 모드</figcaption></figure>
+        <figure><img src="img/claude_right.webp" alt="입력창 오른쪽 아래: 모델 선택" loading="lazy"><figcaption>오른쪽 아래 확대: 모델 선택</figcaption></figure>
+      </div>
+      <div class="grid g4">
+        <div class="card"><span class="k">1 입력창</span><p>문장을 쓰고 <kbd>Enter</kbd> · 줄바꿈은 <kbd>Shift</kbd>+<kbd>Enter</kbd></p></div>
+        <div class="card"><span class="k">2 + 첨부</span><p>파일·이미지 첨부 · 스크린샷은 <kbd>Ctrl</kbd>+<kbd>V</kbd></p></div>
+        <div class="card"><span class="k">3 권한 모드</span><p>수정·실행 전에 물어볼지 정하기</p></div>
+        <div class="card"><span class="k">4 모델 선택</span><p>기본값 그대로 두면 됩니다</p></div>
+      </div>
+
+      <h3>④ 권한 모드: 얼마나 알아서 하게 할까?</h3>
+      <p>입력창 왼쪽 아래 <b style="color:var(--red)">현재 모드 이름</b>(예: 자동)을 누르면 아래 모드 중 하나를 고를 수 있습니다. <span class="sub">※ 메뉴 이름은 앱 버전에 따라 조금 다를 수 있어요.</span></p>
+      <div class="modes">
+        <div class="row"><b>권한 요청</b><small>Ask</small><span>파일을 고치거나 명령을 실행할 때마다 물어봄</span><span class="w">처음 배울 때</span></div>
+        <div class="row rec"><b>편집 자동 수락</b><small>Accept edits</small><span>파일 수정은 바로, 설치·실행 명령은 물어봄</span><span class="w">오늘 추천 ★</span></div>
+        <div class="row"><b>플랜 모드</b><small>Plan</small><span>코드는 안 만들고 계획만 먼저 보여 줌</span><span class="w">큰 앱 시작 전</span></div>
+        <div class="row"><b>자동</b><small>Auto</small><span>안전 점검을 하며 알아서 진행 (요금제에 따라 표시)</span><span class="w">익숙해진 뒤</span></div>
+      </div>
+      <div class="note"><b class="t">승인 창이 뜨면</b>무엇을 하려는지 한 줄 읽고 [허용]. 같은 종류를 계속 허용하려면 '항상 허용'. 모르는 삭제·외부 전송이면 거부하고 강사에게!</div>
+    </section>
+
+    <!-- PART 1 -->
+    <div class="part"><span class="tag">PART 1 · 1차시</span><div><h2>윈도우 앱 3개, 말로 만들기</h2><p>앱① 상장·수료증 일괄 생성기 · 앱② 사진 일괄 정리 도구 · 앱③ 쉬는 시간 알림 타이머</p></div></div>
+
+    <section id="compare">
+      <h2>웹앱 vs 윈도우 앱, 무엇이 다를까? <span class="time">1차시 12–14분</span></h2>
+      <p class="sub">색이 칠해진 칸이 더 유리한 쪽입니다.</p>
+      <table class="tbl">
+        <thead><tr><th></th><th>웹앱 <small>(예: 골든벨 퀴즈 · 2차시)</small></th><th>윈도우 앱 <small>(예: 상장 · 사진 · 타이머 · 1차시)</small></th></tr></thead>
+        <tbody>
+          <tr><td>학생이 쓰는 기기</td><td class="w">● PC · 태블릿 · 휴대폰 · 크롬북</td><td>Windows PC에서만</td></tr>
+          <tr><td>인터넷</td><td>공개 주소로 쓰려면 필요</td><td class="n">● 없어도 실행</td></tr>
+          <tr><td>내 컴퓨터 파일</td><td>고른 파일만 · 폴더 일괄 처리 어려움</td><td class="n">● 폴더·엑셀·사진을 한꺼번에 처리</td></tr>
+          <tr><td>학생 개인정보</td><td>공개 주소에 올리면 안 됨</td><td class="n">● 내 PC 안에서만 처리</td></tr>
+          <tr><td>나눠 주기</td><td class="w">● 링크 · QR 하나로 끝</td><td>exe · 설치 파일 전달</td></tr>
+          <tr><td>고친 뒤</td><td class="w">● 다시 올리면 모두에게 바로 반영</td><td>새 설치 파일을 다시 나눠 줘야 함</td></tr>
+          <tr><td>설치 · 보안 경고</td><td class="w">● 설치 없음</td><td>백신·SmartScreen 경고가 뜰 수 있음</td></tr>
+        </tbody>
+      </table>
+      <p class="rule"><b>판단 한 줄</b> &nbsp; 내 컴퓨터의 파일·개인정보를 다루면 → <b>윈도우 앱</b> &nbsp;|&nbsp; 여러 사람이 링크로 함께 쓰면 → <i>웹앱</i></p>
+    </section>
+
+    <section id="rules">
+      <h2>먼저 규칙부터: CLAUDE.md <span class="time">1차시 14–17분</span></h2>
+      <p>CLAUDE.md는 '프로젝트 규칙 메모장'입니다. 한 번 적어 두면 새 대화를 열어도 Claude가 매번 읽고 지킵니다. <b>C:\vibe 폴더를 연결한 상태</b>에서 입력하세요.</p>
+      <div class="prompt" data-id="p0"><div class="ph"><span class="pill">프롬프트 0</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p0">했어요</label><button class="copy">복사</button></div>
+<pre>C:\vibe 안에 award, photo, timer, quiz 폴더 4개를 만들어 줘. 그리고 C:\vibe에 CLAUDE.md 파일을 만들어서 아래 규칙을 적어 줘.
+1. 파이썬은 Thonny에 들어 있는 python.exe를 찾아서 쓰고, 필요한 라이브러리도 그 파이썬에 설치할 것
+2. 한글은 맑은 고딕(malgun.ttf)으로 써서 깨지지 않게 할 것
+3. 결과물은 각 앱 폴더 안의 output 폴더에만 저장할 것
+4. 엑셀·사진 같은 원본 파일은 절대 수정하지 말 것
+5. 만든 뒤에는 직접 실행해서 오류가 없는지 확인할 것</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;C:\vibe에 CLAUDE.md와 폴더 4개가 생깁니다. 이후 모든 대화에서 Claude가 이 규칙을 먼저 읽고 따릅니다.</p></div>
+      <div class="note warn"><b class="t">1번 규칙이 특히 중요해요</b>연수 PC에는 Thonny에 들어 있는 파이썬만 있습니다. 이 규칙이 없으면 파이썬을 못 찾거나 Microsoft Store가 열릴 수 있어요(강사 리허설에서 확인한 함정).</div>
+    </section>
+
+    <!-- 앱① -->
+    <section id="app1">
+      <h2><span class="no">①</span> 상장·수료증 일괄 생성기 <span class="time">1차시 17–35분</span></h2>
+      <p>엑셀 명단 → 상장 30장, <b>4번의 대화</b>로 완성합니다. 요령은 <b>1명 미리보기 → 확인 → 전체 생성</b>.</p>
+      <div class="pair">
+        <figure><img src="img/award_app.webp" alt="상장 만들기 앱 화면" loading="lazy"><figcaption>완성 화면 (빨간 네모: 엑셀 명단 선택 · 미리보기 · 전체 일괄 생성)</figcaption></figure>
+        <figure><img src="img/award_preview.webp" alt="상장 미리보기 창" loading="lazy" style="max-height:420px;width:auto"><figcaption>1명 미리보기 창</figcaption></figure>
+      </div>
+
+      <h3>프롬프트 1/4 · 연습용 자료부터 AI에게 <span class="time">18–21분</span></h3>
+      <p class="sub">실제 학생 명단은 쓰지 않습니다. 실습은 항상 가상 데이터로!</p>
+      <div class="prompt" data-id="p1"><div class="ph"><span class="pill">프롬프트 1</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p1">했어요</label><button class="copy">복사</button></div>
+<pre>award 폴더에 상장 실습용 자료를 만들어 줘. 가상 학생 30명(이름, 학년, 반, 상 이름)이 들어 있는 students.xlsx 파일과, A4 세로 크기의 상장 배경 이미지 template.png(금색 테두리, 가운데는 비워 두기)를 만들어 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;award 폴더에 students.xlsx(가상 명단)와 template.png(상장 배경)가 생깁니다. 탐색기에서 열어 확인!</p></div>
+
+      <h3>프롬프트 2/4 · 앱의 뼈대: 엑셀 명단을 표로 <span class="time">21–25분</span></h3>
+      <div class="prompt" data-id="p2"><div class="ph"><span class="pill">프롬프트 2</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p2">했어요</label><button class="copy">복사</button></div>
+<pre>award 폴더에 파이썬 tkinter로 '상장 만들기' 데스크톱 앱(app.py)을 만들어 줘. '엑셀 명단 선택' 버튼을 누르면 파일 선택 창이 열리고, 고른 엑셀의 명단(이름, 학년, 반, 상 이름)이 창 아래쪽에 표로 보이게 해 줘. 글자는 크게 해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;app.py가 생기고, Claude가 직접 실행해 확인합니다. 창이 뜨면 students.xlsx를 골라 명단 30명이 보이는지 확인!</p></div>
+
+      <h3>프롬프트 3/4 · 핵심 기능: 먼저 1명만 미리보기 <span class="time">25–28분</span></h3>
+      <div class="prompt" data-id="p3"><div class="ph"><span class="pill">프롬프트 3</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p3">했어요</label><button class="copy">복사</button></div>
+<pre>template.png 위에 학생 이름과 '위 학생은 2026학년도 교내 정보 경진대회에서 우수한 성적을 거두었기에 이 상장을 수여함' 문구를 얹어 상장을 만드는 기능을 추가해 줘. 먼저 '미리보기' 버튼을 누르면 표에서 고른 학생 1명의 상장만 창으로 보여 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;표에서 학생을 고르고 [미리보기]를 누르면 상장 1장이 창에 뜹니다. 한글·위치를 확인하세요.</p></div>
+
+      <h3>프롬프트 4/4 · 확인했으면 30명 전원을 한 번에 <span class="time">28–30분</span></h3>
+      <div class="prompt" data-id="p4"><div class="ph"><span class="pill">프롬프트 4</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p4">했어요</label><button class="copy">복사</button></div>
+<pre>미리보기 확인했어. '전체 일괄 생성' 버튼을 추가해서 명단 30명 전원의 상장을 PNG와 PDF로 award\output 폴더에 만들어 줘. 파일 이름은 '상장_이름.png'처럼 해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;award\output 폴더에 상장 30장(PNG)과 PDF가 생깁니다. 원본 엑셀·배경은 그대로!</p></div>
+
+      <h3>Thonny에서 app.py를 열고 ▶ 실행 <span class="time">30–32분</span></h3>
+      <figure><img src="img/thonny_run.webp" alt="Thonny 초록 실행 버튼" loading="lazy"><figcaption>빨간 네모: 초록 ▶ 실행 버튼 (<kbd>F5</kbd>)</figcaption></figure>
+      <ol class="steps"><li><b>Thonny 실행</b><span>시작 메뉴에서 Thonny 검색</span></li><li><b>파일 &gt; 열기</b><span>C:\vibe\award\app.py 선택</span></li><li><b>초록 ▶ 버튼 (F5)</b><span>잠시 뒤 '상장 만들기' 창이 뜹니다</span></li><li><b>또는 Claude에게</b><span>"app.py 실행해 줘"라고 말하기</span></li></ol>
+
+      <h3>output 폴더에 상장이 만들어졌나요? <span class="time">32–33분</span></h3>
+      <div class="pair">
+        <figure><img src="img/explorer_award.webp" alt="award 폴더 구조" loading="lazy"><figcaption>award 폴더 — CLAUDE.md 규칙대로 결과는 output 안에만</figcaption></figure>
+        <div class="card"><span class="k">✔ 확인</span><ul class="dots"><li>output에 30장</li><li>PDF 1개</li><li>원본 엑셀·배경 그대로</li></ul></div>
+      </div>
+
+      <h3>마음에 안 들면 스크린샷을 붙여 넣고 말하세요 <span class="time">33–34분</span></h3>
+      <div class="prompt" data-id="shot"><div class="ph"><span class="pill">스크린샷 수정</span><span class="hint">캡처 붙여넣기 → 문장 입력</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="shot">했어요</label><button class="copy">복사</button></div>
+<pre>(Win + Shift + S로 상장 부분을 캡처 → 입력창에 Ctrl + V)
+이 상장에서 이름이 너무 작고 왼쪽으로 치우쳐 있어. 이름 글자를 1.5배 키우고 가로 가운데에 오게 해 줘. 다른 부분은 그대로 둬.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;Claude가 그림을 보고 위치·크기를 고칩니다. 다시 [미리보기]로 확인 → 괜찮으면 [전체 일괄 생성].</p></div>
+
+      <h3>오류가 나면? 읽지 말고 복사해서 붙여 넣기 <span class="time">34–35분</span></h3>
+      <div class="prompt" data-id="err"><div class="ph"><span class="pill">오류 붙여넣기</span><span class="hint">오류 메시지 전체와 함께</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="err">했어요</label><button class="copy">복사</button></div>
+<pre>app.py를 실행했더니 아래 오류가 났어. 원인을 찾아서 고쳐 줘. 다른 기능은 바꾸지 마.
+(오류 메시지 전체를 복사해서 붙여 넣기)</pre></div>
+      <div class="note warn"><b class="t">Thonny에서만 'ModuleNotFoundError'가 나면</b>Thonny는 자기 전용 파이썬을 씁니다. 둘 중 하나로 해결!<br>① Claude에게: "Thonny 파이썬에 openpyxl, pillow를 설치해 줘"<br>② Thonny <b>도구 &gt; 패키지 관리</b> → 이름 입력 → PyPI로 찾기 → 설치</div>
+      <div class="pair">
+        <figure><img src="img/thonny_menu.webp" alt="Thonny 도구 메뉴의 패키지 관리" loading="lazy"><figcaption>Thonny: 도구 &gt; 패키지 관리...</figcaption></figure>
+        <figure><img src="img/thonny_pkg.webp" alt="Thonny 패키지 관리 창" loading="lazy"><figcaption>이름 입력 → PyPI로 찾기</figcaption></figure>
+      </div>
+    </section>
+
+    <!-- 앱② -->
+    <section id="app2">
+      <h2><span class="no">②</span> 사진 일괄 정리 도구 <span class="time">1차시 35–44분</span></h2>
+      <p>행사 사진을 '날짜_행사명_번호'로 이름 바꾸고 크기를 줄입니다. <b>[새로 생성]</b>으로 새 대화를 열고 시작하세요(폴더는 C:\vibe 그대로).</p>
+      <div class="note teal"><b class="t">개인정보 원칙</b>학생 사진은 웹에 올리지 않고 내 컴퓨터 안에서만 처리 — 그래서 윈도우 앱!</div>
+
+      <h3>프롬프트 5 · 연습용 사진도 AI가 만들어 줍니다 <span class="time">36–38분</span></h3>
+      <div class="prompt" data-id="p5"><div class="ph"><span class="pill">프롬프트 5</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p5">했어요</label><button class="copy">복사</button></div>
+<pre>photo 폴더 안의 sample_photos 폴더에 연습용 가상 사진 30장을 만들어 줘. 사람 얼굴 없이 풍경·도형 그림으로, 크기는 제각각(가로 1600~2600픽셀)으로 해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;photo\sample_photos 폴더에 IMG_xxxx.jpg 같은 이름의 사진 30장이 생깁니다.</p></div>
+
+      <h3>프롬프트 6 · 사진 정리 도구 만들기 <span class="time">38–42분</span></h3>
+      <div class="prompt" data-id="p6"><div class="ph"><span class="pill">프롬프트 6</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p6">했어요</label><button class="copy">복사</button></div>
+<pre>photo 폴더에 tkinter로 '사진 일괄 정리 도구'를 만들어 줘. 날짜와 행사명을 입력하고 폴더를 고르면, 그 안의 사진을 '날짜_행사명_번호.jpg'(예: 20260710_체육대회_001.jpg)로 이름을 바꾸고 가로 1280픽셀로 줄여서 output 폴더에 저장해 줘. 원본 사진은 절대 건드리지 마.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;창에 날짜·행사명을 넣고 sample_photos 폴더를 고르면 output에 새 이름의 사진 30장이 생깁니다.</p></div>
+      <figure><img src="img/photo_app.webp" alt="사진 일괄 정리 도구 실행 결과" loading="lazy"><figcaption>① 날짜·행사명 입력 &nbsp;② 폴더 선택 후 정리 시작 — 원본은 그대로, 결과는 output에</figcaption></figure>
+
+      <h3>프롬프트 7 · (도전) 미리보기 안전장치 <span class="time">42–44분</span></h3>
+      <div class="prompt" data-id="p7"><div class="ph"><span class="pill">프롬프트 7 · 도전</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p7">했어요</label><button class="copy">복사</button></div>
+<pre>실제로 바꾸기 전에 '원래 파일명 → 새 파일명' 목록을 먼저 보여 주고, 내가 [실행] 버튼을 눌러야 변환되도록 미리보기 기능을 추가해 줘.</pre>
+        <p class="res"><b>왜 미리보기?</b> &nbsp;파일 이름을 한꺼번에 바꾸는 앱은 실수하면 되돌리기 어렵습니다. 확인 후 실행!</p></div>
+    </section>
+
+    <!-- 앱③ -->
+    <section id="app3">
+      <h2><span class="no">③</span> 쉬는 시간 알림 타이머 · 도전 <span class="time">1차시 44–48분</span></h2>
+      <p>트레이에 숨어 있다가 딱 맞춰 알려 주는 앱. <b>새 대화</b>에서 시작하고, 시간 여유가 있는 분만 도전합니다.</p>
+      <div class="prompt" data-id="p8"><div class="ph"><span class="pill">프롬프트 8</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p8">했어요</label><button class="copy">복사</button></div>
+<pre>timer 폴더에 '쉬는 시간 알림' 앱을 만들어 줘. 평소에는 창 없이 작업 표시줄 트레이 아이콘으로 숨어 있다가, 정해 둔 시각(예: 매시 50분)이 되면 '쉬는 시간입니다!' 알림창을 맨 앞에 띄우고 알림음을 울려 줘. 트레이 아이콘을 우클릭하면 시각 설정, 지금 알림 테스트, 종료를 할 수 있게 해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;실행해도 창이 안 뜨는 게 정상! 작업 표시줄 오른쪽 ^ 안의 트레이 아이콘을 우클릭해 보세요.</p></div>
+      <h3>테스트: 다음 정각까지 기다리지 말고 1~2분 뒤로</h3>
+      <div class="pair">
+        <figure><img src="img/timer_settings.webp" alt="알림 시각 설정 창" loading="lazy"><figcaption>빨간 네모: 알림 시각(분) · [저장]</figcaption></figure>
+        <div>
+          <figure style="margin-top:0"><img src="img/timer_alert.webp" alt="쉬는 시간 알림창" loading="lazy"></figure>
+          <ol class="steps"><li><b>트레이 아이콘 우클릭 → 알림 시각 설정</b></li><li><b>지금 +1~2분으로 설정 → 저장</b></li><li><b>알림창·소리 확인 → 종료는 트레이 우클릭</b><span>응답이 없으면 작업 관리자에서 끝내기</span></li></ol>
+          <div class="note coral"><b class="t">💡 더 해 보기</b>"5분 전에 예고 알림도 띄워 줘" · "알림 문구를 바꿀 수 있게 해 줘"</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="check1">
+      <h2>1차시 완주 체크 <span class="time">1차시 48–50분</span></h2>
+      <div class="checks">
+        <label class="chk"><input type="checkbox" data-check="c1-1"><span><b>C:\vibe 폴더를 연결하고 CLAUDE.md 규칙을 만들었다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c1-2"><span><b>앱① 상장 30장이 output 폴더에 생겼다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c1-3"><span><b>Thonny ▶로 내가 직접 앱을 실행해 봤다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c1-4"><span><b>스크린샷이나 오류를 붙여 넣어 한 번 이상 고쳐 봤다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c1-5"><span><b>앱② 사진 정리 도구가 원본은 두고 output에 결과를 만들었다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c1-6"><span><b>(도전) 앱③ 타이머 알림창을 띄워 봤다</b></span></label>
+      </div>
+      <p class="saved">체크 상태는 이 브라우저에만 저장됩니다.</p>
+    </section>
+
+    <!-- PART 2 -->
+    <div class="part p2"><span class="tag">PART 2 · 2차시</span><div><h2>만든 앱을 나눠 주기</h2><p>배포① 윈도우 앱 → 설치 파일 · 웹앱 골든벨 퀴즈 · 배포② GitHub에 올리고 주소로 공개</p></div></div>
+
+    <section id="installer" class="p2s">
+      <h2><span class="no">배포①</span> app.py → exe → setup.exe <span class="time">2차시 00–12분</span></h2>
+      <div class="grid g3">
+        <div class="card"><span class="k" style="color:var(--navy)">파이썬 코드</span><h4>app.py</h4><p>Thonny ▶ 로 실행<br>파이썬이 있어야 함</p></div>
+        <div class="card teal" style="background:var(--teal-l);border-color:var(--teal-b)"><span class="k">PyInstaller</span><h4>상장만들기.exe</h4><p>더블클릭으로 실행<br>파이썬 없어도 OK</p></div>
+        <div class="card teal" style="background:var(--teal);border-color:var(--teal)"><span class="k" style="color:#CDEBE8">Inno Setup</span><h4 style="color:#fff">setup.exe</h4><p style="color:#fff">설치·바로가기·제거<br>동료에게 전달</p></div>
+      </div>
+      <div class="note"><b class="t">빌드는 몇 분 걸립니다</b>프롬프트를 먼저 보내 두고 기다리는 동안 설명을 듣습니다. 빌드 중 PermissionError가 나면 실행 중인 앱 창을 닫고 "다시 빌드해 줘".</div>
+
+      <h3>프롬프트 9 · exe 파일 만들기 (PyInstaller) <span class="time">02–06분</span></h3>
+      <div class="prompt" data-id="p9"><div class="ph"><span class="pill">프롬프트 9</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p9">했어요</label><button class="copy">복사</button></div>
+<pre>award의 상장 만들기 앱을 PyInstaller로 exe 파일 하나로 만들어 줘. 콘솔 창은 뜨지 않게 하고, template.png도 exe 안에 넣어 줘. 결과물은 exe 옆 output 폴더에 저장되게 하고, 빌드한 exe를 직접 실행해서 확인해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;award 안의 dist(또는 output) 폴더에 상장만들기.exe가 생깁니다. 더블클릭으로 실행!</p></div>
+
+      <h3>프롬프트 10 · 설치 파일 만들기 (Inno Setup) <span class="time">06–10분</span></h3>
+      <div class="prompt" data-id="p10"><div class="ph"><span class="pill">프롬프트 10</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p10">했어요</label><button class="copy">복사</button></div>
+<pre>이 exe로 Inno Setup 설치 파일(setup.exe)도 만들어 줘. 한국어 설치 화면, 관리자 권한 없이 설치, 바탕화면·시작 메뉴 바로가기, 제어판에서 제거 가능하게 해 줘. Inno Setup(ISCC.exe)은 %LOCALAPPDATA%\Programs\Inno Setup 6 또는 C:\Program Files (x86)\Inno Setup 6에 있어. 확인 없이 끝까지 진행해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;'상장만들기_설치.exe' 같은 설치 파일이 생깁니다. USB·메신저로 동료에게 전달할 수 있어요.</p></div>
+
+      <h3>설치 파일을 실행하면 이렇게 보입니다 <span class="time">10–12분</span></h3>
+      <div class="pair">
+        <figure><img src="img/inno_mode.webp" alt="설치 모드 설정 선택 창" loading="lazy"><figcaption>빨간 네모: [현재 사용자용으로 설치 (권장)]</figcaption></figure>
+        <div>
+          <ol class="steps"><li><b>설치 파일 더블클릭</b></li><li><b>[현재 사용자용으로 설치 (권장)]</b><span>관리자 권한이 없어도 설치됩니다</span></li><li><b>다음 → 설치 → 마침</b><span>바탕화면에 '상장 만들기' 아이콘 생성</span></li></ol>
+          <div class="note warn"><b class="t">'Windows의 PC 보호' 파란 창이 뜨면</b>서명 없는 새 프로그램이라 생기는 정상 경고입니다. [추가 정보] → [실행]을 누르면 설치됩니다. 학교 백신 정책은 담당자와 먼저 확인하세요.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 웹앱 -->
+    <section id="quiz" class="p2s">
+      <h2><span class="no">웹앱</span> 골든벨 퀴즈 <span class="time">2차시 12–20분</span></h2>
+      <p>이번엔 <b>링크 하나로 나눠 주는</b> 웹앱입니다. index.html 파일 하나로 만들면 더블클릭 실행 · 복사·공유 · GitHub 공개가 모두 쉬워집니다.</p>
+      <div class="pair">
+        <figure><img src="img/quiz_q1.webp" alt="골든벨 퀴즈 문제 화면" loading="lazy"><figcaption>문제가 한 개씩 크게</figcaption></figure>
+        <figure><img src="img/quiz_answer.webp" alt="정답과 오답 표시" loading="lazy"><figcaption>고르면 정답은 초록 · 오답은 빨강</figcaption></figure>
+      </div>
+      <p><a class="btn primary" href="demo/quiz/" target="_blank" rel="noopener">완성 예시 직접 풀어 보기 ↗</a></p>
+
+      <div class="me" id="me">
+        <h4>✍ 내 정보 입력 — 아래 프롬프트의 [ ] 칸이 자동으로 바뀝니다</h4>
+        <p class="sub" style="margin:0">입력한 내용은 이 브라우저에만 저장되고, 어디에도 전송되지 않습니다.</p>
+        <div class="f">
+          <label>GitHub 아이디<input id="meId" placeholder="예: vibe-teacher" autocomplete="off" spellcheck="false"></label>
+          <label>과목·단원 (프롬프트 12)<input id="meSubject" placeholder="예: 중학교 과학 '물질의 상태 변화'" autocomplete="off"></label>
+          <label>이름 (git 사용자 이름)<input id="meName" placeholder="예: 홍길동" autocomplete="off"></label>
+          <label>GitHub 가입 이메일<input id="meEmail" placeholder="예: teacher@example.com" autocomplete="off" spellcheck="false"></label>
+        </div>
+        <div class="out">
+          <div><div class="sub" style="font-size:13px">내 퀴즈 공개 주소 (Pages를 켠 뒤)</div><div class="url" id="meUrl">https://<b>내아이디</b>.github.io/quiz/</div></div>
+          <div id="qr">GitHub 아이디를<br>입력하면 QR이<br>나타나요</div>
+        </div>
+      </div>
+
+      <h3>프롬프트 11 · 골든벨 퀴즈 웹앱 만들기 <span class="time">13–17분</span></h3>
+      <p class="sub">[새로 생성]으로 새 대화 → 아래 문장 입력</p>
+      <div class="prompt" data-id="p11"><div class="ph"><span class="pill">프롬프트 11</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p11">했어요</label><button class="copy">복사</button></div>
+<pre>quiz 폴더에 골든벨 퀴즈 웹앱을 index.html 파일 하나로 만들어 줘(CSS·JS도 그 안에). 중학교 정보 '자료와 정보' 단원 4지선다 5문제를 한 문제씩 크게 보여 주고, 답을 고르면 정답은 초록색·오답은 빨간색으로 바로 알려 줘. 마지막에는 총점과 격려 문구를 보여 줘. 교실 TV에 띄울 거라 글자를 크게 해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;quiz\index.html이 생깁니다. 탐색기에서 더블클릭하면 브라우저로 열려요.</p></div>
+
+      <h3>프롬프트 12 · 내 교과 문제로 바꿔 보기 <span class="time">17–20분</span></h3>
+      <div class="pair">
+        <figure><img src="img/quiz_result.webp" alt="퀴즈 마지막 결과 화면" loading="lazy"><figcaption>마지막 화면: 총점과 격려 문구</figcaption></figure>
+        <div>
+          <div class="prompt" data-id="p12" style="margin-top:0"><div class="ph"><span class="pill">프롬프트 12</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p12">했어요</label><button class="copy">복사</button></div>
+<pre>문제를 내 교과인 [과목·단원] 내용으로 바꿔 줘. 문제 수는 10개로 늘리고, 나머지 디자인과 기능은 그대로 둬.</pre></div>
+          <div class="note"><b class="t">수정한 뒤에는</b>브라우저에서 <kbd>F5</kbd>(새로고침)로 확인 · 더 해 보기: "정답이면 박수 소리가 나게 해 줘"</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GitHub -->
+    <section id="github" class="p2s">
+      <h2><span class="no">배포②</span> GitHub에 올리고 주소로 공개 <span class="time">2차시 20–40분</span></h2>
+      <div class="note teal"><b class="t">원리</b>push = 내 파일을 GitHub에 업로드 &nbsp;·&nbsp; Pages = 올린 파일을 웹 주소로 공개</div>
+
+      <h3>1/5 · GitHub에 빈 저장소(quiz) 만들기 <span class="time">20–23분</span></h3>
+      <div class="pair">
+        <figure><img src="img/gh_new.webp" alt="GitHub 새 저장소 만들기 화면" loading="lazy"><figcaption>빨간 네모: ＋ · Repository name · Public · Create repository <span class="re">(화면 예시 · 실제와 조금 다를 수 있음)</span></figcaption></figure>
+        <ol class="steps"><li><b>github.com 로그인</b><span>가입했던 방법(Google 등) 그대로</span></li><li><b>오른쪽 위 ＋ → New repository</b></li><li><b>Repository name: quiz</b><span>Public 선택 · README는 끄기</span></li><li><b>[Create repository] 클릭</b><span>빈 저장소가 만들어집니다</span></li></ol>
+      </div>
+
+      <h3>2/5 · 저장소 주소를 복사합니다 <span class="time">23–24분</span></h3>
+      <figure><img src="img/gh_quick.webp" alt="GitHub Quick setup의 HTTPS 주소" loading="lazy"><figcaption>HTTPS 주소 옆 복사 버튼 <span class="re">(화면 예시)</span></figcaption></figure>
+      <p>복사한 주소 형식: <code>https://github.com/<span class="ph-id">내아이디</span>/quiz.git</code> — 이 주소를 다음 프롬프트에 넣습니다(위 '내 정보'에 아이디를 넣었다면 자동으로 들어가 있어요). 화면 아래 명령어는 몰라도 됩니다 — Claude가 대신 해요!</p>
+
+      <h3>3/5 · Claude Code에게 올려 달라고 말하기 <span class="time">24–28분</span></h3>
+      <div class="prompt" data-id="p13"><div class="ph"><span class="pill">프롬프트 13</span><span class="hint">[ ] 칸은 '내 정보'에서 자동 완성</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p13">했어요</label><button class="copy">복사</button></div>
+<pre>quiz 폴더를 git 저장소로 만들고 첫 커밋을 해 줘. 그다음 https://github.com/[내 아이디]/quiz.git 에 main 브랜치로 올려(push) 줘. git 사용자 정보가 없으면 이름은 [내 이름], 이메일은 [GitHub 가입 이메일]로 설정해 줘.</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;처음 한 번은 GitHub 로그인 창이 뜹니다(아래). 끝나면 GitHub 저장소에 index.html이 보여요.</p></div>
+      <h3>처음 올릴 때 한 번, GitHub 로그인 창이 뜹니다 <span class="time">28–31분</span></h3>
+      <ol class="steps t"><li><b>'Connect to GitHub' 창 → [Sign in with your browser]</b><span>작업 표시줄에 숨어 있을 수 있어요</span></li><li><b>브라우저에서 로그인 → [Authorize git-ecosystem]</b><span>Git Credential Manager 사용 허락</span></li><li><b>'Authentication Succeeded' → 브라우저 창 닫기</b><span>Claude가 push를 이어서 끝냅니다</span></li></ol>
+      <div class="note warn"><b class="t">로그인 창이 안 뜨고 실패했다면</b>"GitHub 인증을 다시 해서 push해 줘"라고 말하거나, 브라우저에서 github.com에 먼저 로그인한 뒤 다시 요청하세요.</div>
+
+      <h3>4/5 · Pages 켜기: Settings → Pages → main → Save <span class="time">31–34분</span></h3>
+      <div class="pair">
+        <figure><img src="img/gh_pages_none.webp" alt="GitHub Pages 설정 화면" loading="lazy"><figcaption>빨간 네모: Settings · Pages · Branch [Save] <span class="re">(화면 예시)</span></figcaption></figure>
+        <ol class="steps"><li><b>위쪽 탭 Settings</b></li><li><b>왼쪽 메뉴 Pages</b></li><li><b>Branch: None → main</b><span>폴더는 / (root)</span></li><li><b>[Save] 클릭</b><span>1~2분 기다리기</span></li></ol>
+      </div>
+
+      <h3>5/5 · 주소가 생기면 휴대폰으로 접속! <span class="time">34–38분</span></h3>
+      <figure><img src="img/gh_live.webp" alt="Your site is live 표시" loading="lazy"><figcaption>'Your site is live at …'이 뜨면 성공 <span class="re">(화면 예시)</span></figcaption></figure>
+      <p>내 주소: <code>https://<span class="ph-id">내아이디</span>.github.io/quiz/</code> · 404가 나오면 1~2분 더 기다린 뒤 새로고침.</p>
+      <div class="prompt" data-id="p14"><div class="ph"><span class="pill">프롬프트 14</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p14">했어요</label><button class="copy">복사</button></div>
+<pre>내 퀴즈 주소로 접속하는 QR코드 이미지를 quiz 폴더에 qr.png로 만들어 줘.
+주소: https://[내 아이디].github.io/quiz/</pre></div>
+
+      <h3>수정 → 다시 올리기, 이것만 반복하면 됩니다 <span class="time">38–40분</span></h3>
+      <div class="grid g3">
+        <div class="card"><span class="k" style="color:var(--teal)">① 고쳐 달라고 말하기</span><p>예) 프롬프트 12 · 내 교과 문제로 바꾸기</p></div>
+        <div class="card" style="background:var(--teal);border-color:var(--teal)"><span class="k" style="color:#CDEBE8">② 다시 올려 달라고 말하기</span><p style="color:#fff">아래 프롬프트 15 · 한 문장이면 끝</p></div>
+        <div class="card"><span class="k" style="color:var(--teal)">③ 1~2분 뒤 새로고침</span><p>같은 주소 · 같은 QR · 내용만 바뀜</p></div>
+      </div>
+      <div class="prompt" data-id="p15"><div class="ph"><span class="pill">프롬프트 15</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p15">했어요</label><button class="copy">복사</button></div>
+<pre>방금 고친 내용을 커밋하고 GitHub에 다시 올려 줘.</pre></div>
+    </section>
+
+    <section id="check2" class="p2s">
+      <h2>2차시 완주 체크 — 마지막은 휴대폰으로 확인 <span class="time">2차시 40–42분</span></h2>
+      <div class="checks">
+        <label class="chk"><input type="checkbox" data-check="c2-1"><span><small>exe · 설치 파일</small><b>설치 파일(setup.exe)이 만들어졌다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c2-2"><span><small>웹앱</small><b>골든벨 퀴즈가 브라우저에서 동작한다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c2-3"><span><small>push 성공</small><b>GitHub 저장소에 index.html이 올라갔다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c2-4"><span><small>Pages 공개</small><b>휴대폰으로 github.io 주소가 열린다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c2-5"><span><small>휴대폰 검증</small><b>휴대폰에서도 글자가 읽히고 버튼이 동작한다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c2-6"><span><small>공유</small><b>QR을 옆 사람과 바꿔 서로 접속해 봤다</b></span></label>
+      </div>
+      <div class="note teal"><b class="t">이 순간</b>'내 컴퓨터 속 파일'이 '누구나 여는 웹앱'으로 바뀌었습니다.</div>
+    </section>
+
+    <!-- 막힐 때 -->
+    <section id="faq">
+      <h2>이럴 땐 이렇게 말하세요 <span class="time">2차시 42–45분</span></h2>
+      <table class="tbl">
+        <thead><tr><th>증상</th><th>이렇게 말하기</th></tr></thead>
+        <tbody>
+          <tr><td>파이썬을 못 찾음 / Store가 열림</td><td>"Thonny에 들어 있는 python.exe를 찾아서 써 줘"</td></tr>
+          <tr><td>Thonny ▶ 에서 ModuleNotFoundError</td><td>"Thonny 파이썬에 ○○ 라이브러리를 설치해 줘"</td></tr>
+          <tr><td>한글이 □□□ 로 나옴</td><td>"맑은 고딕(malgun.ttf)으로 그려 줘"</td></tr>
+          <tr><td>exe 빌드 중 PermissionError</td><td>"실행 중인 앱을 닫고 다시 빌드해 줘"</td></tr>
+          <tr><td>설치 파일 만들 때 되묻거나 멈춤</td><td>"Inno Setup 경로는 ○○야. 확인 없이 진행해"</td></tr>
+          <tr><td>push 실패 (인증·403)</td><td>"GitHub 인증을 다시 해서 push해 줘"</td></tr>
+          <tr><td>Pages 주소가 404</td><td>1~2분 뒤 새로고침 · Pages에서 main 저장 확인</td></tr>
+          <tr><td>응답이 느림 / 사용 한도</td><td>요청을 작게 쪼개기 · 한 번에 한 가지씩</td></tr>
+        </tbody>
+      </table>
+      <h3 id="safety">AI로 학교 앱을 만들 때 안전 수칙 <span class="time">2차시 45–47분</span></h3>
+      <div class="grid g2">
+        <div class="card"><span class="k">가상</span><h4>실습은 가상 데이터로</h4><p>실제 학생 명단·사진·성적은 연수 PC에 복사하지 않기</p></div>
+        <div class="card teal"><span class="k">로컬</span><h4>개인정보는 내 컴퓨터 안에서</h4><p>명단·사진 처리는 윈도우 앱으로 로컬에서 — 웹에 올리지 않기</p></div>
+        <div class="card teal"><span class="k">공개</span><h4>Public 저장소 = 전 세계 공개</h4><p>GitHub에는 학생 이름·연락처·성적이 들어간 파일 올리지 않기</p></div>
+        <div class="card"><span class="k">보호</span><h4>원본 보호 · 확인 후 실행</h4><p>결과는 output 폴더에 · 파일을 바꾸는 앱엔 미리보기 안전장치</p></div>
+      </div>
+    </section>
+
+    <section id="next">
+      <h2>나는 이제 '말로 앱을 만드는' 교사입니다</h2>
+      <div class="grid g4">
+        <div class="card"><h4>윈도우 앱 3개</h4><p class="sub">상장 · 사진 · 타이머</p></div>
+        <div class="card"><h4>설치 파일</h4><p class="sub">exe → setup.exe</p></div>
+        <div class="card"><h4>웹앱 1개</h4><p class="sub">골든벨 퀴즈</p></div>
+        <div class="card"><h4>GitHub 공개</h4><p class="sub">주소 · QR로 공유</p></div>
+      </div>
+      <h3>다음 도전 — 내 업무의 반복 작업 하나를 앱으로</h3>
+      <div class="six"><span>목적</span><span>사용자</span><span>입력</span><span>출력</span><span>제약</span><span>예시</span></div>
+      <p>기획 6칸을 문장으로 이어 붙이면 그대로 첫 프롬프트가 됩니다.</p>
+      <div class="note coral" id="downloads"><b class="t">자료 받기</b><a href="downloads/prompts.txt" download>프롬프트 모음 (prompts.txt)</a> — 오늘 쓴 프롬프트 0~15와 복구 문장 4개를 한 파일로 모았습니다.</div>
+    </section>
+  </main>
+</div>
+
+<footer><div class="in">
+  교사 대상 바이브 코딩 연수 · 2차시 실습 안내서 — 연수에서 사용한 PPT와 같은 순서·같은 프롬프트로 구성했습니다.<br>
+  체크 상태와 '내 정보'는 이 브라우저에만 저장됩니다. GitHub 화면 그림 일부는 이해를 돕기 위해 재구성한 예시입니다.
+</div></footer>
+
+<div class="lb" id="lb" role="dialog" aria-label="이미지 크게 보기"><img alt=""></div>
+<div class="toast" id="toast">복사했어요</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
+<script>
+(() => {
+  const KEY = "vibe-coding-2h";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+  const save = s => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} };
+  const state = load(); state.checks = state.checks || {}; state.me = state.me || {};
+  const toast = msg => { const t = document.getElementById("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 1400); };
+
+  // 주소
+  const url = location.href.split("#")[0];
+  if (/^https?:/.test(url)) document.getElementById("pageUrl").textContent = url;
+  document.getElementById("copyUrl").onclick = () => copyText(document.getElementById("pageUrl").textContent, "주소를 복사했어요");
+
+  async function copyText(text, msg) {
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
+    toast(msg || "복사했어요 — Claude Code 입력창에 붙여 넣으세요");
+  }
+
+  // 프롬프트 자리표시자
+  const PH = { "[내 아이디]": "id", "[내 이름]": "name", "[GitHub 가입 이메일]": "email", "[과목·단원]": "subject" };
+  const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const prompts = [...document.querySelectorAll(".prompt pre")];
+  prompts.forEach(p => p.dataset.raw = p.textContent);
+  function fill(raw, html) {
+    let out = html ? esc(raw) : raw;
+    for (const [k, f] of Object.entries(PH)) {
+      const v = (state.me[f] || "").trim();
+      const kk = html ? esc(k) : k;
+      out = out.split(kk).join(v ? (html ? `<span class="filled">${esc(v)}</span>` : v) : (html ? `<mark>${kk}</mark>` : k));
+    }
+    return out;
+  }
+  function render() {
+    prompts.forEach(p => p.innerHTML = fill(p.dataset.raw, true));
+    const id = (state.me.id || "").trim();
+    document.querySelectorAll(".ph-id").forEach(e => e.textContent = id || "내아이디");
+    const u = document.getElementById("meUrl");
+    u.innerHTML = `https://<b>${esc(id || "내아이디")}</b>.github.io/quiz/`;
+    drawQR(id ? `https://${id}.github.io/quiz/` : "");
+  }
+  function drawQR(text) {
+    const box = document.getElementById("qr");
+    if (!text) { box.innerHTML = "GitHub 아이디를<br>입력하면 QR이<br>나타나요"; return; }
+    if (!window.qrcode) { box.textContent = "QR 준비 중…"; setTimeout(() => drawQR(text), 400); return; }
+    const q = qrcode(0, "M"); q.addData(text); q.make();
+    box.innerHTML = q.createImgTag(4, 4, "내 퀴즈 주소 QR");
+  }
+  const fields = { meId: "id", meName: "name", meEmail: "email", meSubject: "subject" };
+  for (const [elId, f] of Object.entries(fields)) {
+    const el = document.getElementById(elId);
+    el.value = state.me[f] || "";
+    el.addEventListener("input", () => { state.me[f] = el.value.replace(f === "id" ? /\s/g : /$^/, ""); save(state); render(); });
+  }
+
+  // 복사 버튼
+  document.querySelectorAll(".prompt .copy").forEach(b => b.onclick = () => {
+    const pre = b.closest(".prompt").querySelector("pre");
+    copyText(fill(pre.dataset.raw, false));
+    b.classList.add("ok"); b.textContent = "복사됨"; setTimeout(() => { b.classList.remove("ok"); b.textContent = "복사"; }, 1300);
+  });
+  document.querySelectorAll(".rescue .copy").forEach(b => b.onclick = () => copyText(b.previousElementSibling.dataset.copytext));
+
+  // 체크 · 진행률
+  const boxes = [...document.querySelectorAll("input[data-check]")];
+  function progress() {
+    const n = boxes.filter(b => b.checked).length, t = boxes.length, pct = Math.round(n / t * 100) + "%";
+    document.getElementById("progCount").textContent = `${n} / ${t}`;
+    document.getElementById("miniCount").textContent = `${n} / ${t}`;
+    document.getElementById("progBar").style.width = pct; document.getElementById("miniBar").style.width = pct;
+  }
+  boxes.forEach(b => {
+    b.checked = !!state.checks[b.dataset.check];
+    const sync = () => { const c = b.closest(".chk"); if (c) c.classList.toggle("on", b.checked); const p = b.closest(".prompt"); if (p) p.classList.toggle("is-done", b.checked); };
+    sync();
+    b.addEventListener("change", () => { state.checks[b.dataset.check] = b.checked; save(state); sync(); progress(); });
+  });
+  progress();
+
+  // 이미지 크게 보기
+  const lb = document.getElementById("lb"), lbi = lb.querySelector("img");
+  document.querySelectorAll("main figure img, .app .shot img").forEach(img => img.addEventListener("click", () => { lbi.src = img.src; lbi.alt = img.alt; lb.classList.add("on"); }));
+  lb.onclick = () => lb.classList.remove("on");
+  document.addEventListener("keydown", e => { if (e.key === "Escape") lb.classList.remove("on"); });
+
+  // 목차 현재 위치
+  const links = [...document.querySelectorAll(".toc a, .mnav a")];
+  const secs = [...new Set(links.map(a => a.getAttribute("href")))].map(h => document.querySelector(h)).filter(Boolean);
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { const id = "#" + e.target.id; links.forEach(a => a.classList.toggle("on", a.getAttribute("href") === id)); const nav = document.querySelector(".mnav"), m = nav && nav.querySelector(`a[href="${id}"]`); if (m && getComputedStyle(nav).display !== "none") nav.scrollTo({ left: m.offsetLeft - nav.clientWidth / 2 + m.offsetWidth / 2, behavior: "smooth" }); } });
+  }, { rootMargin: "-30% 0px -60% 0px" });
+  secs.forEach(s => io.observe(s));
+
+  render();
+})();
+</script>
+</body>
+</html>
