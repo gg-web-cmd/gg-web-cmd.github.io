@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보 지우개</title>
+<meta name="description" content="문서 속 주민번호·전화번호·계좌번호를 검산으로 찾아내 가린 사본을 만듭니다. 파일은 브라우저 밖으로 나가지 않습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛡️</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+<script src="../common/theme.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🛡️</span>
+    <div>
+      <h1>개인정보 지우개</h1>
+      <p class="tagline">문서 속 주민번호·전화번호·계좌를 찾아내 가린 사본을 만듭니다 — 원본은 그대로</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge ok" title="파일이 이 브라우저 밖으로 나가지 않습니다">🔒 브라우저 안에서만</span>
+    <span class="badge mute" id="dirBadge">파일을 넣으세요</span>
+    <button class="icon-btn" id="btnTheme" title="밝게 / 어둡게">🌙</button>
+  </div>
+</header>
+
+<div class="layout">
+  <main class="main-col">
+
+    <section class="card">
+      <h2>📂 어느 문서를 볼까</h2>
+      <label class="field">
+        <span>폴더째 고르거나, 파일을 고르거나, 이 창에 끌어다 놓으세요</span>
+        <div class="path-row">
+          <input type="text" id="inDir" placeholder="아직 넣은 것이 없습니다" readonly>
+          <button class="btn" id="btnPick">폴더 고르기</button>
+          <button class="btn" id="btnPickFiles">파일 고르기</button>
+          <button class="btn" id="btnRescan" title="다시 훑습니다">↻</button>
+        </div>
+      </label>
+      <input type="file" id="pickDir" webkitdirectory multiple hidden>
+      <input type="file" id="pickFiles" multiple hidden accept=".hwp,.hwpx,.hwt,.doc,.docx,.docm,.rtf,.odt,.ppt,.pptx,.pptm,.odp,.xls,.xlsx,.xlsm,.ods,.csv,.pdf,.txt,.md,.log,.json,.xml,.html,.htm,.tsv">
+      <label class="check">
+        <input type="checkbox" id="ckRecursive">
+        <span>하위 폴더 안까지 함께 보기</span>
+      </label>
+      <div class="grid-2">
+        <label class="field" style="margin:0">
+          <span>이보다 큰 파일은 건너뛰기 (MB)</span>
+          <input type="number" id="inSkipBig" min="1" max="500" step="1">
+        </label>
+        <label class="field" style="margin:0">
+          <span>&nbsp;</span>
+          <label class="check" style="margin:0">
+            <input type="checkbox" id="ckMaybe">
+            <span>“의심” 도 보여 주기<small>꼴은 맞지만 검산이 안 되는 것</small></span>
+          </label>
+        </label>
+      </div>
+      <div class="bar" id="scanBar" hidden><i id="scanBarIn" style="width:0%"></i></div>
+      <p class="bar-note" id="scanNote"></p>
+      <p class="hint" id="scanInfo"></p>
+    </section>
+
+    <section class="card">
+      <h2>🔎 찾은 것</h2>
+      <div class="sum" id="sum"></div>
+      <div class="kinds" id="kinds"></div>
+      <div class="filters" id="filters"></div>
+      <div class="finds" id="finds"></div>
+      <p class="empty" id="emptyMsg">폴더를 고르면 여기에 나옵니다.</p>
+      <p class="hint" id="moreInfo"></p>
+
+      <div class="bar" id="workBar" hidden><i id="workBarIn" style="width:0%"></i></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn primary big" id="btnMask" disabled>고른 파일 가린 사본 받기</button>
+        <button class="btn" id="btnExport">점검 결과 내보내기 (CSV)</button>
+      </div>
+      <p class="note mute" style="margin-top:12px">
+        웹판은 <b>원본을 고치지 않습니다.</b> 가린 <b>사본</b>을 만들어 원래 폴더 구조 그대로 ZIP 으로 내려받습니다.
+        만든 사본은 <b>다시 열어 확인</b>하고, 깨졌거나 내용이 크게 줄었으면 넣지 않습니다.
+      </p>
+    </section>
+
+  </main>
+
+  <aside class="side-col">
+
+    <details class="card" id="dRules" open>
+      <summary>📋 무엇을 찾을까 <span class="badge ok" id="ruleBadge">0개</span></summary>
+      <div class="body">
+        <p class="hint">열세 자리 숫자를 다 주민번호라고 부르면 온통 빨간 줄이 되어 아무도 안 봅니다.
+          그래서 <b>검산을 통과한 것</b>만 “확실” 로 올립니다.</p>
+        <div class="rule-list" id="ruleList"></div>
+      </div>
+    </details>
+
+    <details class="card" id="dHelp">
+      <summary>💡 알아 두세요</summary>
+      <div class="body">
+        <p class="hint" style="margin-bottom:8px"><b>고칠 수 있는 것</b><br>
+          txt · csv · md 등 텍스트 / hwpx · docx · xlsx · pptx · odt</p>
+        <p class="hint" style="margin-bottom:8px"><b>고칠 수 없는 것</b><br>
+          .hwp (옛 한글) · .pdf · .doc · .xls · .ppt<br>
+          → 한글·워드에서 새 형식으로 저장한 뒤 다시 넣으면 고칠 수 있습니다.</p>
+        <p class="hint" style="margin-bottom:8px"><b>파일은 밖으로 나가지 않습니다</b><br>
+          웹 주소로 열었지만 찾기·가리기 모두 이 브라우저 안에서 합니다. 넣은 문서는 창을 닫으면 사라집니다.</p>
+        <p class="hint" style="margin-bottom:8px"><b>글자가 조각나 있으면 못 가립니다</b><br>
+          문서 안에서 “010-<span style="opacity:.5">1234-5678</span>” 이 서로 다른 서식으로 나뉘어 있으면
+          한 덩어리로 안 보입니다. 그럴 때는 “몇 군데 남았습니다” 라고 알려 주니 그 파일은 직접 고치세요.</p>
+        <p class="hint" style="margin-bottom:0"><b>내보낸 CSV 에도 원문은 없습니다</b><br>
+          점검 보고서가 또 하나의 유출 경로가 되지 않게, 가린 채로 적습니다.</p>
+      </div>
+    </details>
+
+  </aside>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="../common/zip.js"></script>
+<script src="js/nodelibs.js"></script>
+<script src="js/local-api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

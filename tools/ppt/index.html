@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PPT 리스타일러</title>
+<meta name="description" content="작업해 둔 .pptx 를 올리고 디자인을 누르면 그 디자인의 색·글꼴·배경으로 바꾼 새 PPTX 를 받습니다. 파일은 브라우저 밖으로 나가지 않습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎨</text></svg>">
+<link rel="stylesheet" href="style.css" />
+<script src="../common/theme.js"></script>
+<style>html.embedded .topbar { display: none; }</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◐</span>
+    <div>
+      <h1>PPT 리스타일러</h1>
+      <p>작업해둔 <b>.pptx</b>를 올리고 디자인을 누르면, 그 브랜드의 색·타이포·배경으로 바꿔 내려줍니다.</p>
+    </div>
+  </div>
+  <button id="btn-reload" class="ghost" title="디자인 목록 다시 읽기" hidden>디자인 새로고침</button>
+</header>
+
+<main>
+  <!-- 1. 업로드 -->
+  <section class="step">
+    <div class="step-head">
+      <span class="num">1</span>
+      <h2>PPT 올리기</h2>
+    </div>
+    <div id="drop" class="drop" tabindex="0" role="button" aria-label="PPTX 파일 업로드">
+      <input id="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden />
+      <div class="drop-inner">
+        <div class="drop-icon">⬆</div>
+        <p class="drop-title">여기로 .pptx 파일을 끌어다 놓거나 클릭해서 선택</p>
+        <p class="drop-sub">파일은 이 브라우저 안에서만 처리되고 어디에도 업로드되지 않습니다.</p>
+        <button id="btn-sample" class="ghost small" style="margin-top:14px">샘플 덱으로 먼저 시험해보기</button>
+      </div>
+      <div id="file-info" class="file-info" hidden>
+        <div class="file-row">
+          <span class="badge">PPTX</span>
+          <div class="file-meta">
+            <b id="file-name"></b>
+            <span id="file-sub"></span>
+          </div>
+          <button id="btn-clear" class="ghost small">변경</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. 디자인 선택 -->
+  <section class="step">
+    <div class="step-head">
+      <span class="num">2</span>
+      <h2>디자인 고르기</h2>
+      <span class="hint">카드를 누르면 바로 변환 → 다운로드</span>
+    </div>
+    <div id="cards" class="cards" aria-live="polite"></div>
+  </section>
+
+  <!-- 3. 옵션 -->
+  <section class="step">
+    <details class="options">
+      <summary>
+        <span class="num small">3</span>
+        <span>변환 옵션 <em>(기본값 그대로도 충분합니다)</em></span>
+      </summary>
+      <div class="opt-grid">
+        <label class="opt"><input type="checkbox" id="opt-recolorText" checked /> <span><b>글자 색 변경</b><i>원본의 강조/본문 위계를 유지하며 새 팔레트로 매핑</i></span></label>
+        <label class="opt"><input type="checkbox" id="opt-recolorFills" checked /> <span><b>도형·선 색 변경</b><i>면은 카드/서피스 색, 선은 헤어라인 색으로</i></span></label>
+        <label class="opt"><input type="checkbox" id="opt-forceBackground" checked /> <span><b>슬라이드 배경 교체</b><i>디자인의 캔버스 색으로 통일</i></span></label>
+        <label class="opt"><input type="checkbox" id="opt-keepBackgroundImages" checked /> <span><b>배경 이미지는 보존</b><i>사진 배경 슬라이드는 건드리지 않음</i></span></label>
+        <label class="opt"><input type="checkbox" id="opt-changeFonts" checked /> <span><b>폰트 교체</b><i>제목=디스플레이 폰트, 본문=텍스트 폰트</i></span></label>
+        <label class="opt"><input type="checkbox" id="opt-brandFontFirst" /> <span><b>브랜드 폰트 우선</b><i>FerrariSans 등 실제 브랜드 폰트가 설치돼 있을 때만 켜세요</i></span></label>
+        <label class="opt"><input type="checkbox" id="opt-signature" checked /> <span><b>디자인 시그니처 추가</b><i>슬라이드 하단에 강조 바(BMW M은 트리컬러)</i></span></label>
+        <label class="opt"><span class="sel-label"><b>제목 대문자화</b><i>영문 제목을 UPPERCASE로</i></span>
+          <select id="opt-uppercaseTitles">
+            <option value="auto" selected>디자인 기본값</option>
+            <option value="1">항상 적용</option>
+            <option value="0">적용 안 함</option>
+          </select>
+        </label>
+        <label class="opt"><span class="sel-label"><b>한글 폰트</b><i>기본은 원본 유지 — 한글이 깨지지 않게 안전한 선택</i></span>
+          <select id="opt-koreanFont">
+            <option value="" selected>원본 유지 (권장)</option>
+            <option value="맑은 고딕">맑은 고딕</option>
+            <option value="Malgun Gothic Semilight">맑은 고딕 Semilight</option>
+            <option value="나눔고딕">나눔고딕</option>
+            <option value="Pretendard">Pretendard</option>
+          </select>
+        </label>
+      </div>
+    </details>
+  </section>
+
+  <!-- 4. 결과 -->
+  <section class="step" id="result-step" hidden>
+    <div class="step-head">
+      <span class="num">4</span>
+      <h2>결과</h2>
+    </div>
+    <div id="result" class="result"></div>
+    <div id="preview-wrap" class="preview-wrap" hidden>
+      <h3>적용 미리보기 <span class="hint">— 업로드한 덱의 텍스트를 선택한 디자인 토큰으로 렌더한 것</span></h3>
+      <div id="preview" class="preview"></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+
+<div id="modal" class="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button id="modal-close" class="modal-close" aria-label="닫기">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script src="js/nodelibs.js"></script>
+<script src="js/local-server.js"></script>
+<script src="js/app.js" type="module"></script>
+</body>
+</html>

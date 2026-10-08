@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상장 만들기</title>
+<meta name="description" content="엑셀 학생 명단으로 상장을 한꺼번에 만듭니다. 배경 이미지 위에 상 이름·이름·학년반·수여 문구를 얹어 PNG(ZIP)나 인쇄용 PDF 로 받습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🏅</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap">
+<link rel="stylesheet" href="../common/app.css">
+<link rel="stylesheet" href="css/award.css">
+<script src="../common/theme.js"></script>
+</head>
+<body class="light">
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🏅</span>
+    <div>
+      <h1>상장 만들기</h1>
+      <p class="tagline">엑셀 명단으로 상장을 한꺼번에 — 배경 위에 이름과 수여 문구를 얹습니다</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button id="btnTheme" class="ghost" type="button" title="밝게 / 어둡게">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="split">
+    <div class="left">
+
+      <section class="card">
+        <h2><span class="step">1</span> 명단과 배경</h2>
+        <div class="row">
+          <label class="lbl">명단</label>
+          <button id="btnExcel" class="primary" type="button">엑셀·CSV 고르기…</button>
+          <button id="btnSample" class="ghost small" type="button">예시 명단</button>
+          <input id="pickExcel" type="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" hidden>
+        </div>
+        <p id="excelInfo" class="hint">이름 · 학년 · 반 · 상 이름 칸이 있는 표를 넣으세요. 칸 이름이 조금 달라도(성명·학급·수상명…) 찾아 읽습니다.</p>
+        <details class="paste">
+          <summary>붙여 넣어 쓰기</summary>
+          <textarea id="taPaste" rows="5" placeholder="엑셀에서 복사해 붙여 넣으세요&#10;이름	학년	반	상 이름&#10;강가온	1	3	우수상"></textarea>
+          <button id="btnPaste" class="ghost small" type="button">이 명단 쓰기</button>
+        </details>
+        <div class="row" style="margin-top:12px">
+          <label class="lbl">배경</label>
+          <button id="btnBg" class="ghost" type="button">배경 이미지 올리기…</button>
+          <button id="btnBgReset" class="ghost small" type="button">기본 배경으로</button>
+          <input id="pickBg" type="file" accept="image/*" hidden>
+        </div>
+        <p id="bgInfo" class="hint"></p>
+      </section>
+
+      <section class="card">
+        <h2><span class="step">2</span> 상장 내용</h2>
+        <label class="lbl-block" for="body">수여 문구</label>
+        <textarea id="body" rows="3"></textarea>
+        <p class="hint">쓸 수 있는 말: <code>{이름}</code> <code>{학년}</code> <code>{반}</code> <code>{상}</code> — 예: {이름} 학생은 …</p>
+        <div class="checks">
+          <label class="check"><input id="showAward" type="checkbox" checked><span>상 이름 표시</span></label>
+          <label class="check"><input id="showClass" type="checkbox" checked><span>학년·반 표시</span></label>
+        </div>
+        <div class="sliders">
+          <label>이름 위치 <b id="nameYv"></b><input id="nameY" type="range" min="0.05" max="0.95" step="0.01"></label>
+          <label>문구 위치 <b id="bodyYv"></b><input id="bodyY" type="range" min="0.05" max="0.95" step="0.01"></label>
+          <label>글자 크기 <b id="scalev"></b><input id="scale" type="range" min="0.4" max="2.5" step="0.05"></label>
+        </div>
+        <p class="hint">위치·크기는 배경 이미지 높이에 대한 비율입니다. 오른쪽 미리보기가 바로 바뀝니다.</p>
+      </section>
+
+      <section class="card">
+        <h2><span class="step">3</span> 학생 <span id="count" class="muted"></span></h2>
+        <div class="tablewrap">
+          <table class="tbl">
+            <thead><tr><th><input id="ckAll" type="checkbox" checked title="모두 고르기"></th><th>이름</th><th>학년</th><th>반</th><th>상 이름</th></tr></thead>
+            <tbody id="rows"><tr><td colspan="5" class="empty">명단을 넣으면 여기에 나옵니다.</td></tr></tbody>
+          </table>
+        </div>
+        <p class="hint">줄을 누르면 그 학생으로 미리 봅니다.</p>
+        <div class="run" style="margin-top:12px">
+          <div class="run-left">
+            <button id="btnPng" class="primary" type="button" disabled>고른 학생 PNG (ZIP)</button>
+            <button id="btnPdf" class="primary" type="button" disabled>고른 학생 PDF (인쇄용)</button>
+          </div>
+          <div class="run-right">
+            <div id="progWrap" class="prog" hidden>
+              <div class="prog-bar"><div id="progFill" class="prog-fill"></div></div>
+              <div id="progText" class="prog-text"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <div class="right">
+      <section class="card sticky">
+        <h2>미리보기 <span id="pvName" class="muted"></span></h2>
+        <canvas id="preview"></canvas>
+        <p id="fontNote" class="hint"></p>
+      </section>
+    </div>
+  </div>
+
+  <p class="footnote">명단과 이미지는 이 브라우저 안에서만 쓰고 어디로도 올리지 않습니다(명단은 저장하지도 않습니다).
+    윈도우 설치판 「상장만들기」 와 같은 배치 규칙으로 그립니다.</p>
+</main>
+
+<canvas id="work" hidden></canvas>
+<script src="../roster/js/nodelibs.js"></script>
+<script src="../common/pdf-lib/pdf-lib.min.js"></script>
+<script src="../common/zip.js"></script>
+<script src="js/award.js"></script>
+</body>
+</html>

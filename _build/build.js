@@ -38,14 +38,50 @@ const TARGETS = [
       merge: path.join(VIBE, '명단합치기', 'lib', 'merge.js'),
     },
   },
+  {
+    out: path.join(TOOLS, 'privacy', 'js', 'nodelibs.js'),
+    global: 'NodeLibs',
+    modules: {
+      detect: path.join(VIBE, '개인정보지우개', 'lib', 'detect.js'),
+      peek: path.join(VIBE, '개인정보지우개', 'lib', 'peek.js'),
+      zipedit: path.join(VIBE, '개인정보지우개', 'lib', 'zipedit.js'),
+      scrub: path.join(VIBE, '개인정보지우개', 'lib', 'scrub.js'),
+    },
+  },
+  {
+    /* PPT 리스타일러는 ESM 이다 — import 로 묶는다 */
+    out: path.join(TOOLS, 'ppt', 'js', 'nodelibs.js'),
+    global: 'NodeLibs',
+    esm: true,
+    modules: {
+      restyle: path.join(VIBE, 'ppt', 'lib', 'restyle.js'),
+      sample: path.join(VIBE, 'ppt', 'tools', 'make-sample-pptx.js'),
+      /* restyle.js 가 쓰는 것과 같은 JSZip (브라우저판) — 화면 쪽에서 PPTX 를 열어 볼 때 쓴다 */
+      jszip: path.join(VIBE, 'ppt', 'node_modules', 'jszip', 'dist', 'jszip.min.js'),
+    },
+  },
 ];
+
+/* PPT 리스타일러의 디자인 목록은 DESIGN-*.md 를 읽어 만든다 — 웹판에서는 빌드할 때 한 번 JSON 으로 굳힌다 */
+async function buildPptDesigns() {
+  const { pathToFileURL } = require('url');
+  const designs = await import(pathToFileURL(path.join(VIBE, 'ppt', 'lib', 'designs.js')).href);
+  const dir = path.join(VIBE, 'ppt');
+  const full = designs.loadDesigns(dir, { force: true });
+  const out = path.join(TOOLS, 'ppt', 'designs.json');
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, JSON.stringify({ summaries: designs.designSummaries(dir), full }));
+  console.log('디자인 →', path.relative(path.resolve(__dirname, '..'), out), full.length + '개');
+}
 
 async function main() {
   for (const t of TARGETS) {
     const lines = ["import { vfs } from 'fs';", "import { Buffer } from 'buffer';", 'export { vfs, Buffer };'];
     for (const [name, file] of Object.entries(t.modules)) {
       if (!fs.existsSync(file)) throw new Error('원본이 없습니다: ' + file);
-      lines.push(`export const ${name} = require(${JSON.stringify(file.replace(/\\/g, '/'))});`);
+      const spec = JSON.stringify(file.replace(/\\/g, '/'));
+      if (t.esm) lines.push(`import * as _${name} from ${spec};`, `export const ${name} = _${name};`);
+      else lines.push(`export const ${name} = require(${spec});`);
     }
     fs.mkdirSync(path.dirname(t.out), { recursive: true });
     await esbuild.build({
@@ -56,9 +92,16 @@ async function main() {
       platform: 'browser',
       target: ['chrome100', 'firefox100', 'safari15'],
       outfile: t.out,
-      alias: { fs: SHIM('fs.js'), zlib: SHIM('zlib.js'), path: SHIM('path.js'), os: SHIM('os.js') },
+      alias: {
+        fs: SHIM('fs.js'), zlib: SHIM('zlib.js'), path: SHIM('path.js'), os: SHIM('os.js'), crypto: SHIM('crypto.js'),
+        'node:fs': SHIM('fs.js'), 'node:path': SHIM('path.js'),
+      },
       inject: [SHIM('buffer-global.js')],
-      define: { 'process.env': '{}', 'process.platform': '"browser"' },
+      /* import.meta.url · process.argv 는 "직접 실행했나" 확인에만 쓰인다 — 웹판에서는 늘 "아니다" 가 되게 */
+      define: {
+        'process.env': '{}', 'process.platform': '"browser"',
+        'import.meta.url': '"web:module"', 'process.argv': '["web","web"]',
+      },
       banner: { js: '/* 자동 생성 파일 — 고치지 마세요. _build/build.js 가 설치판 lib 를 묶어 만듭니다. */' },
       legalComments: 'none',
       logLevel: 'warning',
@@ -67,4 +110,4 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().then(buildPptDesigns).catch((e) => { console.error(e); process.exit(1); });

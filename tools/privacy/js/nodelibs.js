@@ -1948,6 +1948,389 @@ var NodeLibs = (() => {
     }
   });
 
+  // ../../개인정보지우개/lib/detect.js
+  var require_detect = __commonJS({
+    "../../\uAC1C\uC778\uC815\uBCF4\uC9C0\uC6B0\uAC1C/lib/detect.js"(exports, module) {
+      "use strict";
+      init_define_process_argv();
+      init_define_process_env();
+      init_buffer_global();
+      var RRN_WEIGHTS = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5];
+      function rrnChecksum(digits) {
+        let sum = 0;
+        for (let i = 0; i < 12; i++) sum += Number(digits[i]) * RRN_WEIGHTS[i];
+        return (11 - sum % 11) % 10;
+      }
+      function rrnDateOk(digits) {
+        const mm = Number(digits.slice(2, 4));
+        const dd = Number(digits.slice(4, 6));
+        return mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31;
+      }
+      function rrnGrade(digits) {
+        if (digits.length !== 13) return null;
+        if (!rrnDateOk(digits)) return null;
+        const g = Number(digits[6]);
+        if (!(g >= 0 && g <= 9)) return null;
+        if (digits === "0".repeat(13) || /^(\d)\1{12}$/.test(digits)) return null;
+        return rrnChecksum(digits) === Number(digits[12]) ? "sure" : "maybe";
+      }
+      function isForeigner(digits) {
+        const g = Number(digits[6]);
+        return g >= 5 && g <= 8;
+      }
+      function luhnOk(digits) {
+        let sum = 0;
+        let dbl = false;
+        for (let i = digits.length - 1; i >= 0; i--) {
+          let d = Number(digits[i]);
+          if (dbl) {
+            d *= 2;
+            if (d > 9) d -= 9;
+          }
+          sum += d;
+          dbl = !dbl;
+        }
+        return digits.length >= 13 && digits.length <= 19 && sum % 10 === 0;
+      }
+      var BANKS = [
+        "\uAD6D\uBBFC",
+        "KB",
+        "\uC2E0\uD55C",
+        "\uC6B0\uB9AC",
+        "\uD558\uB098",
+        "\uB18D\uD611",
+        "NH",
+        "\uAE30\uC5C5",
+        "IBK",
+        "\uC218\uD611",
+        "\uC0B0\uC5C5",
+        "\uC528\uD2F0",
+        "SC",
+        "\uC81C\uC77C",
+        "\uB300\uAD6C",
+        "\uBD80\uC0B0",
+        "\uACBD\uB0A8",
+        "\uAD11\uC8FC",
+        "\uC804\uBD81",
+        "\uC81C\uC8FC",
+        "\uC6B0\uCCB4\uAD6D",
+        "\uC0C8\uB9C8\uC744",
+        "\uC2E0\uD611",
+        "\uCE74\uCE74\uC624\uBC45\uD06C",
+        "\uCF00\uC774\uBC45\uD06C",
+        "\uD1A0\uC2A4\uBC45\uD06C",
+        "\uD1A0\uC2A4",
+        "\uCE74\uCE74\uC624",
+        "\uACC4\uC88C",
+        "\uC785\uAE08",
+        "\uC1A1\uAE08",
+        "\uD1B5\uC7A5",
+        "\uC608\uAE08\uC8FC",
+        "\uC740\uD589"
+      ];
+      var RULES = [
+        {
+          id: "rrn",
+          name: "\uC8FC\uBBFC\uB4F1\uB85D\uBC88\uD638",
+          level: "high",
+          ascii: true,
+          on: true,
+          hint: "\uB4B7\uC790\uB9AC \uAC80\uC0B0\uACFC \uC0DD\uB144\uC6D4\uC77C\uAE4C\uC9C0 \uB9DE\uB294 \uAC83\uB9CC \u201C\uD655\uC2E4\u201D \uB85C \uBD05\uB2C8\uB2E4",
+          re: new RegExp("(?<![0-9])(\\d{6})\\s*[-\u2013\u2014]\\s*(\\d{7})(?![0-9])", "g"),
+          judge(m) {
+            const digits = m[1] + m[2];
+            const grade = rrnGrade(digits);
+            if (!grade) return null;
+            return { grade, label: isForeigner(digits) ? "\uC678\uAD6D\uC778\uB4F1\uB85D\uBC88\uD638" : "\uC8FC\uBBFC\uB4F1\uB85D\uBC88\uD638" };
+          },
+          mask(m) {
+            return m[1] + "-" + "*".repeat(7);
+          }
+        },
+        {
+          id: "rrn-tight",
+          name: "\uC8FC\uBBFC\uB4F1\uB85D\uBC88\uD638 (\uBD99\uC5EC \uC4F4 13\uC790\uB9AC)",
+          level: "high",
+          ascii: true,
+          on: true,
+          hint: "9001011234567 \uCC98\uB7FC \uBD99\uC5EC \uC4F4 \uAC83. \uAC80\uC0B0\uC744 \uD1B5\uACFC\uD55C \uAC83\uB9CC \uC7A1\uC2B5\uB2C8\uB2E4",
+          re: new RegExp("(?<![0-9])(\\d{13})(?![0-9])", "g"),
+          judge(m) {
+            const grade = rrnGrade(m[1]);
+            if (grade !== "sure") return null;
+            return { grade: "sure", label: isForeigner(m[1]) ? "\uC678\uAD6D\uC778\uB4F1\uB85D\uBC88\uD638" : "\uC8FC\uBBFC\uB4F1\uB85D\uBC88\uD638" };
+          },
+          mask(m) {
+            return m[1].slice(0, 6) + "*".repeat(7);
+          }
+        },
+        {
+          id: "phone-mobile",
+          name: "\uD734\uB300\uC804\uD654",
+          level: "mid",
+          ascii: true,
+          on: true,
+          re: new RegExp("(?<![0-9])(01[016789])[-.\\s]?(\\d{3,4})[-.\\s]?(\\d{4})(?![0-9])", "g"),
+          judge() {
+            return { grade: "sure", label: "\uD734\uB300\uC804\uD654" };
+          },
+          mask(m) {
+            return m[1] + "-****-" + m[3];
+          }
+        },
+        {
+          id: "phone-land",
+          name: "\uC77C\uBC18 \uC804\uD654",
+          level: "mid",
+          ascii: true,
+          on: true,
+          hint: "\uD559\uAD50 \uB300\uD45C\uBC88\uD638\uB3C4 \uAC78\uB9BD\uB2C8\uB2E4. \uD544\uC694 \uC5C6\uC73C\uBA74 \uB044\uC138\uC694",
+          re: new RegExp("(?<![0-9])(0(?:2|[3-6][1-5]|70|50\\d?))[-.\\s](\\d{3,4})[-.\\s](\\d{4})(?![0-9])", "g"),
+          judge() {
+            return { grade: "sure", label: "\uC77C\uBC18 \uC804\uD654" };
+          },
+          mask(m) {
+            return m[1] + "-****-" + m[3];
+          }
+        },
+        {
+          id: "email",
+          name: "\uC774\uBA54\uC77C",
+          level: "mid",
+          ascii: true,
+          on: true,
+          re: new RegExp("(?<![A-Za-z0-9._%+-])([A-Za-z0-9._%+-]{2,64})@([A-Za-z0-9.-]{2,60}\\.[A-Za-z]{2,12})(?![A-Za-z0-9.-])", "g"),
+          judge(m) {
+            if (/\.(png|jpg|jpeg|gif|hwp|hwpx|docx?|xlsx?|pptx?|pdf|zip)$/i.test(m[2])) return null;
+            return { grade: "sure", label: "\uC774\uBA54\uC77C" };
+          },
+          mask(m) {
+            return m[1][0] + "*".repeat(Math.max(2, m[1].length - 1)) + "@" + m[2];
+          }
+        },
+        {
+          id: "card",
+          name: "\uCE74\uB4DC\uBC88\uD638",
+          level: "high",
+          ascii: true,
+          on: true,
+          hint: "\uB8EC \uAC80\uC0B0\uC744 \uD1B5\uACFC\uD55C \uAC83\uB9CC \uC7A1\uC2B5\uB2C8\uB2E4",
+          re: new RegExp("(?<![0-9])(\\d{4})[-.\\s]?(\\d{4})[-.\\s]?(\\d{4})[-.\\s]?(\\d{4})(?![0-9])", "g"),
+          judge(m) {
+            const digits = m[1] + m[2] + m[3] + m[4];
+            if (rrnGrade(digits.slice(0, 13)) === "sure" && digits.length === 16) {
+            }
+            return luhnOk(digits) ? { grade: "sure", label: "\uCE74\uB4DC\uBC88\uD638" } : null;
+          },
+          mask(m) {
+            return m[1] + "-****-****-" + m[4];
+          }
+        },
+        {
+          id: "account",
+          name: "\uACC4\uC88C\uBC88\uD638",
+          level: "high",
+          ascii: false,
+          on: true,
+          hint: "\uAC00\uAE4C\uC774(\uC55E\uB4A4 40\uC790) \uC740\uD589 \uC774\uB984\uC774\uB098 \u201C\uACC4\uC88C\xB7\uC785\uAE08\u201D \uAC19\uC740 \uB9D0\uC774 \uC788\uC744 \uB54C\uB9CC \uC7A1\uC2B5\uB2C8\uB2E4",
+          re: new RegExp("(?<![0-9])(\\d{2,6})-(\\d{2,6})-(\\d{2,8})(?![0-9-])", "g"),
+          judge(m, text, at) {
+            const near = text.slice(Math.max(0, at - 40), at + m[0].length + 40);
+            if (!BANKS.some((b) => near.includes(b))) return null;
+            if (/^0\d/.test(m[1])) return null;
+            return { grade: "sure", label: "\uACC4\uC88C\uBC88\uD638" };
+          },
+          mask(m) {
+            return m[1] + "-" + "*".repeat(m[2].length) + "-" + "*".repeat(m[3].length);
+          }
+        },
+        {
+          id: "passport",
+          name: "\uC5EC\uAD8C\uBC88\uD638",
+          level: "high",
+          ascii: true,
+          on: false,
+          hint: "\uBB38\uC11C \uBC88\uD638\uC640 \uD5F7\uAC08\uB9B4 \uC218 \uC788\uC5B4 \uAE30\uBCF8\uC73C\uB85C \uAEBC \uB461\uB2C8\uB2E4",
+          re: new RegExp("(?<![A-Za-z0-9])([MSRODmsrod])(\\d{8})(?![0-9])", "g"),
+          judge() {
+            return { grade: "maybe", label: "\uC5EC\uAD8C\uBC88\uD638" };
+          },
+          mask(m) {
+            return m[1].toUpperCase() + "*".repeat(8);
+          }
+        },
+        {
+          id: "plate",
+          name: "\uCC28\uB7C9\uBC88\uD638",
+          level: "low",
+          ascii: false,
+          on: false,
+          hint: "12\uAC003456 \xB7 \uC11C\uC6B812\uAC003456 \uAF34",
+          re: new RegExp("(?<![0-9])(\\d{2,3})\\s?([\uAC00-\uD7A3])\\s?(\\d{4})(?![0-9])", "g"),
+          judge() {
+            return { grade: "maybe", label: "\uCC28\uB7C9\uBC88\uD638" };
+          },
+          mask(m) {
+            return m[1] + m[2] + "*".repeat(4);
+          }
+        },
+        {
+          id: "address",
+          name: "\uC9D1 \uC8FC\uC18C",
+          level: "high",
+          ascii: false,
+          on: false,
+          hint: "\uB3D9\xB7\uB85C\xB7\uAE38 + \uBC88\uC9C0\uAE4C\uC9C0 \uC788\uB294 \uAC83\uB9CC. \uD559\uAD50 \uC8FC\uC18C\uB3C4 \uAC78\uB9AC\uB2C8 \uD655\uC778\uD558\uACE0 \uC4F0\uC138\uC694",
+          re: /((?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[^\n]{0,20}?(?:시|군|구)\s*[^\n]{0,24}?(?:동|로|길)\s*\d{1,4}(?:-\d{1,4})?(?:\s*[,·]?\s*\d{1,4}동)?(?:\s*\d{1,5}호)?)/g,
+          judge() {
+            return { grade: "maybe", label: "\uC9D1 \uC8FC\uC18C" };
+          },
+          mask(m) {
+            return m[1].replace(/\d/g, "*");
+          }
+        },
+        {
+          id: "birth",
+          name: "\uC0DD\uB144\uC6D4\uC77C",
+          level: "low",
+          ascii: false,
+          on: false,
+          hint: "2010\uB144 3\uC6D4 5\uC77C\uC0DD / 2010-03-05 \uAF34. \uB0A0\uC9DC\uAC00 \uB9CE\uC740 \uBB38\uC11C\uC5D0\uC11C\uB294 \uC2DC\uB044\uB7FD\uC2B5\uB2C8\uB2E4",
+          re: /((?:19|20)\d{2})\s*[-.년]\s*(0?[1-9]|1[0-2])\s*[-.월]\s*(0?[1-9]|[12]\d|3[01])\s*[일생]?/g,
+          judge() {
+            return { grade: "maybe", label: "\uC0DD\uB144\uC6D4\uC77C" };
+          },
+          mask(m) {
+            return m[1] + "-**-**";
+          }
+        }
+      ];
+      var RULE_BY_ID = new Map(RULES.map((r) => [r.id, r]));
+      var LEVEL_ORDER = { high: 0, mid: 1, low: 2 };
+      function findInText(text, onIds, opts = {}) {
+        const src = String(text || "");
+        if (!src) return [];
+        const want = onIds && onIds.length ? new Set(onIds) : new Set(RULES.filter((r) => r.on).map((r) => r.id));
+        const maxPer = opts.maxPerFile || 400;
+        const hits = [];
+        const taken = [];
+        for (const rule of RULES) {
+          if (!want.has(rule.id)) continue;
+          rule.re.lastIndex = 0;
+          let m;
+          while ((m = rule.re.exec(src)) !== null) {
+            if (m[0].length === 0) {
+              rule.re.lastIndex += 1;
+              continue;
+            }
+            const at = m.index;
+            const len = m[0].length;
+            const verdict = rule.judge(m, src, at);
+            if (!verdict) continue;
+            if (!opts.wantMaybe && verdict.grade === "maybe") {
+            }
+            if (taken.some(([a, b]) => at < b && a < at + len)) continue;
+            taken.push([at, at + len]);
+            hits.push({
+              ruleId: rule.id,
+              label: verdict.label,
+              level: rule.level,
+              grade: verdict.grade,
+              text: m[0],
+              at,
+              len,
+              masked: rule.mask(m),
+              context: contextOf(src, at, len)
+            });
+            if (hits.length >= maxPer) return sortHits(hits);
+          }
+        }
+        return sortHits(hits);
+      }
+      function sortHits(hits) {
+        return hits.sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level] || (a.grade === b.grade ? 0 : a.grade === "sure" ? -1 : 1) || a.at - b.at);
+      }
+      function scrubForDisplay(s) {
+        return String(s == null ? "" : s).replace(/[A-Za-z0-9._%+-]{2,}@[A-Za-z0-9.-]{2,}/g, (m) => m[0] + "***@***").replace(/\d{3,}/g, (m) => "*".repeat(Math.min(m.length, 7)));
+      }
+      function contextOf(src, at, len) {
+        const from = Math.max(0, at - 26);
+        const to = Math.min(src.length, at + len + 26);
+        const head = (from > 0 ? "\u2026" : "") + src.slice(from, at);
+        const tail = src.slice(at + len, to) + (to < src.length ? "\u2026" : "");
+        return {
+          before: scrubForDisplay(head.replace(/\s+/g, " ")),
+          after: scrubForDisplay(tail.replace(/\s+/g, " "))
+        };
+      }
+      function maskText(text, onIds, opts = {}) {
+        const src = String(text || "");
+        const want = onIds && onIds.length ? new Set(onIds) : new Set(RULES.filter((r) => r.on).map((r) => r.id));
+        const spans = [];
+        const taken = [];
+        for (const rule of RULES) {
+          if (!want.has(rule.id)) continue;
+          if (opts.asciiOnly && !rule.ascii) continue;
+          rule.re.lastIndex = 0;
+          let m;
+          while ((m = rule.re.exec(src)) !== null) {
+            if (m[0].length === 0) {
+              rule.re.lastIndex += 1;
+              continue;
+            }
+            const at = m.index;
+            const len = m[0].length;
+            if (!rule.judge(m, src, at)) continue;
+            if (taken.some(([a, b]) => at < b && a < at + len)) continue;
+            taken.push([at, at + len]);
+            spans.push({ at, len, to: rule.mask(m), ruleId: rule.id });
+          }
+        }
+        if (!spans.length) return { text: src, changed: 0, byRule: {} };
+        spans.sort((a, b) => a.at - b.at);
+        let out = "";
+        let cursor = 0;
+        const byRule = {};
+        for (const s of spans) {
+          if (s.at < cursor) continue;
+          out += src.slice(cursor, s.at) + s.to;
+          cursor = s.at + s.len;
+          byRule[s.ruleId] = (byRule[s.ruleId] || 0) + 1;
+        }
+        out += src.slice(cursor);
+        return { text: out, changed: spans.length, byRule };
+      }
+      function ruleList() {
+        return RULES.map((r) => ({
+          id: r.id,
+          name: r.name,
+          level: r.level,
+          on: r.on,
+          hint: r.hint || "",
+          ascii: r.ascii
+        }));
+      }
+      function defaultOn() {
+        return RULES.filter((r) => r.on).map((r) => r.id);
+      }
+      module.exports = {
+        RULES,
+        RULE_BY_ID,
+        BANKS,
+        rrnChecksum,
+        rrnGrade,
+        isForeigner,
+        luhnOk,
+        findInText,
+        maskText,
+        ruleList,
+        defaultOn,
+        contextOf,
+        scrubForDisplay
+      };
+    }
+  });
+
   // node_modules/fflate/esm/browser.js
   function deflateSync(data, opts) {
     return dopt(data, opts || {}, 0, 0);
@@ -2723,144 +3106,73 @@ var NodeLibs = (() => {
     }
   });
 
-  // ../../증명사진만들기/lib/roster.js
-  var require_roster = __commonJS({
-    "../../\uC99D\uBA85\uC0AC\uC9C4\uB9CC\uB4E4\uAE30/lib/roster.js"(exports, module) {
+  // ../../개인정보지우개/lib/peek.js
+  var require_peek = __commonJS({
+    "../../\uAC1C\uC778\uC815\uBCF4\uC9C0\uC6B0\uAC1C/lib/peek.js"(exports, module) {
       "use strict";
       init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       var fs = (init_fs(), __toCommonJS(fs_exports));
       var zlib = (init_zlib(), __toCommonJS(zlib_exports));
-      var MAX_INFLATE = 24 * 1024 * 1024;
-      var MAX_STUDENTS = 2e3;
-      var HEADER_WORDS = [
-        "\uC774\uB984",
-        "\uC131\uBA85",
-        "\uD559\uC0DD",
-        "\uD559\uC0DD\uBA85",
-        "\uBC88\uD638",
-        "\uCD9C\uC11D\uBC88\uD638",
-        "\uBC18",
-        "\uD559\uBC18",
-        "\uD559\uAE09",
-        "\uD559\uB144",
-        "\uD559\uBC88",
-        "\uC5F0\uBC88",
-        "\uC21C\uBC88",
-        "\uBE44\uACE0",
-        "name",
-        "no",
-        "class",
-        "grade",
-        "id"
-      ];
-      var HANGUL = /[가-힣ㄱ-ㅎㅏ-ㅣ]/;
-      function safeName(s, fallback = "\uC774\uB984\uC5C6\uC74C") {
-        const clean = String(s == null ? "" : s).replace(/[\x00-\x1f]/g, "").replace(/[<>:"/\\|?*]/g, " ").replace(/\s+/g, " ").replace(/^[.\s]+|[.\s]+$/g, "").slice(0, 80);
-        if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(clean)) return clean + "_";
-        return clean || fallback;
-      }
-      function splitCells(line) {
-        if (line.includes("	")) return line.split("	");
-        if (line.includes(",")) return line.split(",");
-        return line.split(/\s{1,}/);
-      }
-      var NUM_TOKEN = /^(\d{1,6})\s*(학년|반|번호|번)?$/;
-      var KIND = { \uD559\uB144: "grade", \uBC18: "cls", \uBC88\uD638: "no", \uBC88: "no" };
-      function readCells(cells) {
-        const tokens = cells.map((c) => String(c == null ? "" : c).trim()).filter((c) => c !== "");
-        if (!tokens.length) return null;
-        const plain = [];
-        const tagged = {};
-        const words = [];
-        for (const t of tokens) {
-          const m = NUM_TOKEN.exec(t);
-          if (m) {
-            if (m[2]) tagged[KIND[m[2]]] = m[1];
-            else plain.push(m[1]);
-          } else words.push(t);
-        }
-        const hangulPure = words.filter((w) => HANGUL.test(w) && !/\d/.test(w));
-        const letterPure = words.filter((w) => /[A-Za-z]/.test(w) && !/\d/.test(w));
-        let name;
-        if (hangulPure.length) name = hangulPure[0].replace(/\s+/g, "");
-        else if (letterPure.length) name = letterPure.join(" ");
-        else name = ([...words].sort((a, b) => b.length - a.length)[0] || "").replace(/\s+/g, "");
-        if (!name) return null;
-        const lowered = tokens.map((t) => t.toLowerCase().replace(/\s/g, ""));
-        if (lowered.every((t) => HEADER_WORDS.includes(t) || /^\d+$/.test(t))) return null;
-        if (HEADER_WORDS.includes(name.toLowerCase())) return null;
-        let grade = tagged.grade || "";
-        let cls = tagged.cls || "";
-        let no = tagged.no ? Number(tagged.no) : null;
-        const usable = plain.filter((v) => v.length <= 3 && Number(v) >= 1 && Number(v) <= 200);
-        const rest = (usable.length ? usable : plain).slice();
-        if (!grade && !cls && no === null && plain.length === 1 && plain[0].length === 5) {
-          const sid5 = rest.shift();
-          grade = sid5.slice(0, 1);
-          cls = String(Number(sid5.slice(1, 3)));
-          no = Number(sid5.slice(3, 5));
-        } else {
-          const need2 = [];
-          if (!grade && rest.length >= 3) need2.push("grade");
-          if (!cls && rest.length >= 2) need2.push("cls");
-          if (no === null) need2.push("no");
-          for (const slot of need2) {
-            const v = rest.shift();
-            if (v == null) break;
-            if (slot === "grade") grade = v;
-            else if (slot === "cls") cls = String(Number(v));
-            else no = Number(v);
+      var MAX_CHARS = 2e6;
+      var MAX_FILE = 60 * 1024 * 1024;
+      var MAX_INFLATE = 64 * 1024 * 1024;
+      var eucKr = null;
+      var eucKrTried = false;
+      function decodeEucKr(buf) {
+        if (!eucKrTried) {
+          eucKrTried = true;
+          try {
+            eucKr = new TextDecoder("euc-kr");
+          } catch (_) {
+            eucKr = null;
           }
         }
-        if (no !== null && (!Number.isFinite(no) || no <= 0 || no > 200)) no = null;
-        const clsLabel = grade && cls ? `${Number(grade)}-${Number(cls)}` : cls;
-        const sid = grade && cls && no !== null ? `${Number(grade)}${String(Number(cls)).padStart(2, "0")}${String(no).padStart(2, "0")}` : "";
-        return { sid, cls: clsLabel, no, name: safeName(name) };
+        return eucKr ? eucKr.decode(buf) : "";
       }
-      function parseText(text) {
-        const lines = String(text == null ? "" : text).split(/\r?\n/);
-        return fromRows(lines.map(splitCells));
+      function decode(buf) {
+        if (!buf || !buf.length) return "";
+        if (buf.length >= 2 && buf[0] === 255 && buf[1] === 254) return buf.toString("utf16le", 2);
+        if (buf.length >= 2 && buf[0] === 254 && buf[1] === 255) {
+          const body = buf.subarray(2);
+          const even = body.length % 2 ? body.subarray(0, body.length - 1) : body;
+          const swapped = import_buffer.Buffer.from(even);
+          swapped.swap16();
+          return swapped.toString("utf16le");
+        }
+        if (buf.length >= 3 && buf[0] === 239 && buf[1] === 187 && buf[2] === 191) return buf.toString("utf8", 3);
+        const utf8 = buf.toString("utf8");
+        const bad = (utf8.match(/�/g) || []).length;
+        if (bad === 0) return utf8;
+        const legacy = decodeEucKr(buf);
+        if (!legacy) return utf8;
+        const legacyBad = (legacy.match(/�/g) || []).length;
+        return legacyBad < bad ? legacy : utf8;
       }
-      function fromRows(rows) {
-        const students = [];
-        const seen = /* @__PURE__ */ new Set();
-        const skipped = [];
-        for (const cells of rows) {
-          const raw = cells.map((c) => String(c == null ? "" : c).trim()).join(" ").trim();
-          if (!raw) continue;
-          const s = readCells(cells);
-          if (!s) {
-            skipped.push(raw.slice(0, 40));
-            continue;
-          }
-          const key = `${s.cls}|${s.no == null ? "" : s.no}|${s.name}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          students.push(s);
-          if (students.length >= MAX_STUDENTS) break;
-        }
-        const counters = /* @__PURE__ */ new Map();
-        for (const s of students) {
-          if (s.no != null) {
-            counters.set(s.cls, Math.max(counters.get(s.cls) || 0, s.no));
-          }
-        }
-        for (const s of students) {
-          if (s.no == null) {
-            const next = (counters.get(s.cls) || 0) + 1;
-            counters.set(s.cls, next);
-            s.no = next;
-            s.autoNo = true;
-          }
-        }
-        students.sort((a, b) => String(a.cls).localeCompare(String(b.cls), "ko") || a.no - b.no);
-        for (let i = 0; i < students.length; i++) students[i].id = "s" + (i + 1);
-        const classes = [...new Set(students.map((s) => s.cls))].filter((c) => c !== "");
-        return { students, classes, skipped: skipped.slice(0, 12), skippedCount: skipped.length };
+      var ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };
+      function stripXml(s) {
+        return s.replace(/<\/(?:w:p|w:tab|a:p|text:p|hp:p|hp:linebreak)>/gi, " \n").replace(/<[^>]*>/g, " ").replace(/&#x([0-9a-f]+);/gi, (_, h) => safeChar(parseInt(h, 16))).replace(/&#(\d+);/g, (_, d) => safeChar(parseInt(d, 10))).replace(/&([a-z]+);/gi, (m, n) => ENTITIES[n.toLowerCase()] || " ").replace(/[ \t\r\f\v]+/g, " ").replace(/\n{2,}/g, "\n");
       }
-      function zipEntries(file, want, maxEntries = 8) {
+      function safeChar(code) {
+        return Number.isFinite(code) && code > 0 && code <= 1114111 ? String.fromCodePoint(code) : " ";
+      }
+      function readUpTo(file, bytes) {
+        const fd2 = fs.openSync(file, "r");
+        try {
+          const size = fs.fstatSync(fd2).size;
+          const len = Math.min(size, bytes);
+          const buf = import_buffer.Buffer.alloc(len);
+          fs.readSync(fd2, buf, 0, len, 0);
+          return buf;
+        } finally {
+          try {
+            fs.closeSync(fd2);
+          } catch (_) {
+          }
+        }
+      }
+      function readZip(file, want, maxEntries = 12) {
         const out = [];
         let fd2;
         try {
@@ -2885,7 +3197,8 @@ var NodeLibs = (() => {
           const count = tail.readUInt16LE(eocd + 10);
           const cdSize = tail.readUInt32LE(eocd + 12);
           const cdOff = tail.readUInt32LE(eocd + 16);
-          if (cdOff === 4294967295 || cdSize > 8 * 1024 * 1024 || cdOff + cdSize > size) return out;
+          if (cdOff === 4294967295 || cdSize === 4294967295 || cdSize > 8 * 1024 * 1024) return out;
+          if (cdOff + cdSize > size) return out;
           const cd = import_buffer.Buffer.alloc(cdSize);
           fs.readSync(fd2, cd, 0, cdSize, cdOff);
           let p = 0;
@@ -2900,7 +3213,8 @@ var NodeLibs = (() => {
             const name = cd.toString("utf8", p + 46, p + 46 + nameLen);
             p += 46 + nameLen + extraLen + commentLen;
             if (!want(name)) continue;
-            if (compSize === 0 || compSize > MAX_INFLATE || localOff + 30 > size) continue;
+            if (compSize === 0 || compSize > MAX_INFLATE) continue;
+            if (localOff + 30 > size) continue;
             const lh = import_buffer.Buffer.alloc(30);
             fs.readSync(fd2, lh, 0, 30, localOff);
             if (lh.readUInt32LE(0) !== 67324752) continue;
@@ -2918,7 +3232,7 @@ var NodeLibs = (() => {
               }
             }
             if (!data) continue;
-            out.push({ name, text: data.toString("utf8") });
+            out.push({ name, data });
             if (out.length >= maxEntries) break;
           }
         } catch (_) {
@@ -2930,6 +3244,438 @@ var NodeLibs = (() => {
         }
         return out;
       }
+      var CFB_SIG = "d0cf11e0a1b11ae1";
+      var FREE = 4294967295;
+      var END = 4294967294;
+      function cfbStream(file, wantName) {
+        let fd2;
+        try {
+          fd2 = fs.openSync(file, "r");
+        } catch (_) {
+          return null;
+        }
+        try {
+          const size = fs.fstatSync(fd2).size;
+          if (size < 1536) return null;
+          const hdr = import_buffer.Buffer.alloc(512);
+          fs.readSync(fd2, hdr, 0, 512, 0);
+          if (hdr.toString("hex", 0, 8) !== CFB_SIG) return null;
+          const secSize = 1 << hdr.readUInt16LE(30);
+          const miniSize = 1 << hdr.readUInt16LE(32);
+          if (secSize < 128 || secSize > 65536 || miniSize < 16) return null;
+          const numFat = hdr.readUInt32LE(44);
+          const dirStart = hdr.readUInt32LE(48);
+          const cutoff = hdr.readUInt32LE(56) || 4096;
+          const miniFatStart = hdr.readUInt32LE(60);
+          let difat = hdr.readUInt32LE(68);
+          const sector = (id) => {
+            const off = (id + 1) * secSize;
+            if (id > 4294967280 || off + secSize > size) return null;
+            const b = import_buffer.Buffer.alloc(secSize);
+            fs.readSync(fd2, b, 0, secSize, off);
+            return b;
+          };
+          const fatSectors = [];
+          for (let i = 0; i < 109 && fatSectors.length < numFat; i++) {
+            const s = hdr.readUInt32LE(76 + i * 4);
+            if (s === FREE || s === END) break;
+            fatSectors.push(s);
+          }
+          let guard = 0;
+          while (difat !== FREE && difat !== END && fatSectors.length < numFat && guard++ < 512) {
+            const b = sector(difat);
+            if (!b) break;
+            const per = secSize / 4 - 1;
+            for (let i = 0; i < per && fatSectors.length < numFat; i++) {
+              const s = b.readUInt32LE(i * 4);
+              if (s !== FREE && s !== END) fatSectors.push(s);
+            }
+            difat = b.readUInt32LE(secSize - 4);
+          }
+          const fat = [];
+          for (const fsec of fatSectors) {
+            const b = sector(fsec);
+            if (!b) break;
+            for (let i = 0; i < secSize / 4; i++) fat.push(b.readUInt32LE(i * 4));
+          }
+          if (!fat.length) return null;
+          const chain = (start, max2 = 65536) => {
+            const list = [];
+            let c2 = start, g2 = 0;
+            while (c2 !== END && c2 !== FREE && c2 < fat.length && g2++ < max2) {
+              list.push(c2);
+              c2 = fat[c2];
+            }
+            return list;
+          };
+          const readChain = (start, bytes) => {
+            const parts2 = [];
+            let got2 = 0;
+            for (const s of chain(start)) {
+              const b = sector(s);
+              if (!b) break;
+              parts2.push(b);
+              got2 += secSize;
+              if (bytes && got2 >= bytes) break;
+              if (got2 > MAX_INFLATE) break;
+            }
+            const all = import_buffer.Buffer.concat(parts2);
+            return bytes && bytes < all.length ? all.subarray(0, bytes) : all;
+          };
+          const dir = readChain(dirStart);
+          let root = null, target = null;
+          for (let p = 0; p + 128 <= dir.length; p += 128) {
+            const nameLen = dir.readUInt16LE(p + 64);
+            const type = dir[p + 66];
+            if (!nameLen || nameLen > 64 || type !== 2 && type !== 5) continue;
+            const name = dir.toString("utf16le", p, p + nameLen - 2).replace(/\0+$/, "");
+            const entry = {
+              name,
+              start: dir.readUInt32LE(p + 116),
+              size: Number(dir.readBigUInt64LE(p + 120))
+            };
+            if (type === 5) root = entry;
+            else if (name === wantName) target = entry;
+          }
+          if (!target || !target.size) return null;
+          if (target.size > MAX_INFLATE) target.size = MAX_INFLATE;
+          if (target.size >= cutoff) return readChain(target.start, target.size);
+          if (!root) return null;
+          const miniStream = readChain(root.start, Math.min(root.size || MAX_INFLATE, MAX_INFLATE));
+          const miniFatBuf = readChain(miniFatStart);
+          const miniFat = [];
+          for (let i = 0; i + 4 <= miniFatBuf.length; i += 4) miniFat.push(miniFatBuf.readUInt32LE(i));
+          const parts = [];
+          let c = target.start, g = 0, got = 0;
+          while (c !== END && c !== FREE && c < miniFat.length && g++ < 2e4 && got < target.size) {
+            const off = c * miniSize;
+            if (off + miniSize > miniStream.length) break;
+            parts.push(miniStream.subarray(off, off + miniSize));
+            got += miniSize;
+            c = miniFat[c];
+          }
+          return parts.length ? import_buffer.Buffer.concat(parts).subarray(0, target.size) : null;
+        } catch (_) {
+          return null;
+        } finally {
+          try {
+            fs.closeSync(fd2);
+          } catch (_) {
+          }
+        }
+      }
+      function unescapePdf(s) {
+        return s.replace(/\\([nrtbf()\\]|[0-7]{1,3})/g, (m, g) => {
+          if (g === "n") return " ";
+          if (g === "r") return " ";
+          if (g === "t") return " ";
+          if (g === "b" || g === "f") return " ";
+          if (g === "(" || g === ")" || g === "\\") return g;
+          const code = parseInt(g, 8);
+          return code >= 32 && code < 127 ? String.fromCharCode(code) : " ";
+        });
+      }
+      function pdfOps(text) {
+        let out = "";
+        const re = /\((?:\\.|[^\\()])*\)|<[0-9a-fA-F\s]+>/g;
+        let m;
+        while ((m = re.exec(text)) !== null && out.length < MAX_CHARS * 2) {
+          const tok = m[0];
+          if (tok[0] === "(") {
+            out += unescapePdf(tok.slice(1, -1)) + " ";
+          } else {
+            const hex = tok.slice(1, -1).replace(/\s+/g, "");
+            if (hex.length < 4 || hex.length % 4 !== 0) continue;
+            const buf = import_buffer.Buffer.from(hex, "hex");
+            buf.swap16();
+            const s = buf.toString("utf16le");
+            if (/[가-힣a-zA-Z]/.test(s)) out += s + " ";
+          }
+        }
+        return out;
+      }
+      function pdfLooksReadable(s) {
+        const hangul = (s.match(/[가-힣]/g) || []).length;
+        if (hangul >= 6) return true;
+        const clean = s.replace(/\s+/g, "");
+        if (clean.length < 40) return false;
+        const plain = (clean.match(/[A-Za-z0-9.,;:'"()\-]/g) || []).length;
+        return plain / clean.length >= 0.9;
+      }
+      function pdfText(file) {
+        const buf = readUpTo(file, 6 * 1024 * 1024);
+        let out = "";
+        let i = 0;
+        const needle = import_buffer.Buffer.from("stream");
+        const endNeedle = import_buffer.Buffer.from("endstream");
+        while (out.length < MAX_CHARS) {
+          i = buf.indexOf(needle, i);
+          if (i === -1) break;
+          let s = i + needle.length;
+          if (buf[s] === 13) s++;
+          if (buf[s] === 10) s++;
+          const e = buf.indexOf(endNeedle, s);
+          i = e === -1 ? buf.length : e + endNeedle.length;
+          if (e === -1) break;
+          const chunk = buf.subarray(s, e);
+          if (chunk.length < 16 || chunk.length > 3 * 1024 * 1024) continue;
+          let data = null;
+          if (chunk[0] === 120) {
+            try {
+              data = zlib.inflateSync(chunk, { maxOutputLength: MAX_INFLATE });
+            } catch (_) {
+              data = null;
+            }
+          }
+          if (!data) {
+            const head = chunk.toString("latin1", 0, Math.min(600, chunk.length));
+            if (/\bBT\b|\bTj\b|\bTJ\b/.test(head)) data = chunk;
+          }
+          if (!data) continue;
+          const asText = data.toString("latin1");
+          if (!/\bTj\b|\bTJ\b/.test(asText)) continue;
+          out += pdfOps(asText);
+        }
+        out = out.replace(/[ \t]+/g, " ").trim();
+        return pdfLooksReadable(out) ? out : "";
+      }
+      var PLAIN = /* @__PURE__ */ new Set(["txt", "md", "csv", "tsv", "log", "json", "xml", "html", "htm", "rtf"]);
+      var ZIP_WANT = {
+        hwpx: (n) => n === "Preview/PrvText.txt" || /^Contents\/section\d*\.xml$/i.test(n),
+        docx: (n) => n === "word/document.xml" || n === "docProps/core.xml",
+        pptx: (n) => /^ppt\/slides\/slide\d+\.xml$/i.test(n) || n === "docProps/core.xml",
+        xlsx: (n) => n === "xl/sharedStrings.xml" || n === "docProps/core.xml",
+        odt: (n) => n === "content.xml" || n === "meta.xml",
+        odp: (n) => n === "content.xml" || n === "meta.xml",
+        ods: (n) => n === "content.xml" || n === "meta.xml",
+        hwt: (n) => n === "Preview/PrvText.txt" || /^Contents\/section\d*\.xml$/i.test(n)
+      };
+      function peek2(file, ext) {
+        try {
+          const st = fs.statSync(file);
+          if (!st.isFile() || st.size === 0 || st.size > MAX_FILE) return "";
+        } catch (_) {
+          return "";
+        }
+        try {
+          if (PLAIN.has(ext)) {
+            let text = decode(readUpTo(file, 256 * 1024));
+            if (ext === "rtf" || ext === "html" || ext === "htm" || ext === "xml") text = stripXml(text.replace(/\\'[0-9a-f]{2}/gi, " "));
+            return text.slice(0, MAX_CHARS);
+          }
+          if (ZIP_WANT[ext]) {
+            const parts = readZip(file, ZIP_WANT[ext], ext === "pptx" ? 11 : 6);
+            if (!parts.length) return "";
+            parts.sort((a, b) => a.name.localeCompare(b.name, "en"));
+            let text = "";
+            for (const p of parts) {
+              const raw = decode(p.data);
+              text += (p.name.endsWith(".txt") ? raw : stripXml(raw)) + "\n";
+              if (text.length > MAX_CHARS) break;
+            }
+            return text.slice(0, MAX_CHARS);
+          }
+          if (ext === "hwp") {
+            const prv = cfbStream(file, "PrvText");
+            if (prv && prv.length) {
+              const text = prv.toString("utf16le").replace(/\0/g, " ");
+              if (/[가-힣a-zA-Z0-9]/.test(text)) return text.replace(/[ \t]+/g, " ").slice(0, MAX_CHARS);
+            }
+            return "";
+          }
+          if (ext === "pdf") return pdfText(file).slice(0, MAX_CHARS);
+        } catch (_) {
+        }
+        return "";
+      }
+      function canPeek(ext) {
+        return PLAIN.has(ext) || !!ZIP_WANT[ext] || ext === "hwp" || ext === "pdf";
+      }
+      module.exports = { peek: peek2, canPeek, decode, stripXml, readZip, cfbStream, ZIP_WANT, PLAIN, get MAX_CHARS() {
+        return MAX_CHARS;
+      } };
+    }
+  });
+
+  // ../../개인정보지우개/lib/zipedit.js
+  var require_zipedit = __commonJS({
+    "../../\uAC1C\uC778\uC815\uBCF4\uC9C0\uC6B0\uAC1C/lib/zipedit.js"(exports, module) {
+      "use strict";
+      init_define_process_argv();
+      init_define_process_env();
+      init_buffer_global();
+      var fs = (init_fs(), __toCommonJS(fs_exports));
+      var zlib = (init_zlib(), __toCommonJS(zlib_exports));
+      var MAX_ZIP = 200 * 1024 * 1024;
+      var MAX_ENTRY = 64 * 1024 * 1024;
+      var CRC_TABLE = (() => {
+        const t = new Int32Array(256);
+        for (let n = 0; n < 256; n++) {
+          let c = n;
+          for (let k = 0; k < 8; k++) c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+          t[n] = c;
+        }
+        return t;
+      })();
+      function crc32(buf) {
+        let c = -1;
+        for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 255] ^ c >>> 8;
+        return ~c >>> 0;
+      }
+      function readAll(file) {
+        let buf;
+        try {
+          const st = fs.statSync(file);
+          if (st.size > MAX_ZIP) return { ok: false, reason: "\uD30C\uC77C\uC774 \uB108\uBB34 \uD07D\uB2C8\uB2E4" };
+          buf = fs.readFileSync(file);
+        } catch (e) {
+          return { ok: false, reason: "\uD30C\uC77C\uC744 \uC5F4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" };
+        }
+        if (buf.length < 22) return { ok: false, reason: "zip \uC774 \uC544\uB2D9\uB2C8\uB2E4" };
+        let eocd = -1;
+        const from = Math.max(0, buf.length - 66e3);
+        for (let i = buf.length - 22; i >= from; i--) {
+          if (buf.readUInt32LE(i) === 101010256) {
+            eocd = i;
+            break;
+          }
+        }
+        if (eocd < 0) return { ok: false, reason: "zip \uB05D \uD45C\uC2DC\uB97C \uBABB \uCC3E\uC558\uC2B5\uB2C8\uB2E4" };
+        const count = buf.readUInt16LE(eocd + 10);
+        const cdSize = buf.readUInt32LE(eocd + 12);
+        const cdOff = buf.readUInt32LE(eocd + 16);
+        if (cdOff === 4294967295 || cdSize === 4294967295 || count === 65535) {
+          return { ok: false, reason: "ZIP64 \uD615\uC2DD\uC740 \uC190\uB300\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4" };
+        }
+        if (cdOff + cdSize > buf.length) return { ok: false, reason: "zip \uBAA9\uCC28\uAC00 \uAE68\uC84C\uC2B5\uB2C8\uB2E4" };
+        const entries = [];
+        let p = cdOff;
+        for (let i = 0; i < count; i++) {
+          if (p + 46 > buf.length || buf.readUInt32LE(p) !== 33639248) return { ok: false, reason: "zip \uBAA9\uCC28\uAC00 \uAE68\uC84C\uC2B5\uB2C8\uB2E4" };
+          const flags = buf.readUInt16LE(p + 8);
+          const method = buf.readUInt16LE(p + 10);
+          const time = buf.readUInt16LE(p + 12);
+          const date = buf.readUInt16LE(p + 14);
+          const crc = buf.readUInt32LE(p + 16);
+          const compSize = buf.readUInt32LE(p + 20);
+          const size = buf.readUInt32LE(p + 24);
+          const nameLen = buf.readUInt16LE(p + 28);
+          const extraLen = buf.readUInt16LE(p + 30);
+          const commentLen = buf.readUInt16LE(p + 32);
+          const localOff = buf.readUInt32LE(p + 42);
+          const nameBuf = buf.subarray(p + 46, p + 46 + nameLen);
+          p += 46 + nameLen + extraLen + commentLen;
+          if (flags & 1) return { ok: false, reason: "\uC554\uD638\uAC00 \uAC78\uB9B0 \uD30C\uC77C\uC740 \uC190\uB300\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4" };
+          if (compSize > MAX_ENTRY || size > MAX_ENTRY) return { ok: false, reason: "\uC548\uC5D0 \uB108\uBB34 \uD070 \uD56D\uBAA9\uC774 \uC788\uC2B5\uB2C8\uB2E4" };
+          if (localOff + 30 > buf.length) return { ok: false, reason: "zip \uC774 \uAE68\uC84C\uC2B5\uB2C8\uB2E4" };
+          const lh = localOff;
+          if (buf.readUInt32LE(lh) !== 67324752) return { ok: false, reason: "zip \uC774 \uAE68\uC84C\uC2B5\uB2C8\uB2E4" };
+          const dataAt = lh + 30 + buf.readUInt16LE(lh + 26) + buf.readUInt16LE(lh + 28);
+          if (dataAt + compSize > buf.length) return { ok: false, reason: "zip \uC774 \uAE68\uC84C\uC2B5\uB2C8\uB2E4" };
+          entries.push({
+            name: nameBuf.toString("utf8"),
+            nameBuf,
+            method,
+            flags,
+            time,
+            date,
+            crc,
+            compSize,
+            size,
+            raw: buf.subarray(dataAt, dataAt + compSize)
+          });
+        }
+        return { ok: true, entries };
+      }
+      function inflateEntry(entry) {
+        if (entry.method === 0) return entry.raw;
+        if (entry.method === 8) {
+          try {
+            return zlib.inflateRawSync(entry.raw, { maxOutputLength: MAX_ENTRY });
+          } catch (_) {
+            return null;
+          }
+        }
+        return null;
+      }
+      function build(entries) {
+        const parts = [];
+        const central = [];
+        let offset = 0;
+        for (const e of entries) {
+          let method = e.method;
+          let crc = e.crc;
+          let compSize = e.compSize;
+          let size = e.size;
+          let payload = e.raw;
+          if (e.newData) {
+            size = e.newData.length;
+            crc = crc32(e.newData);
+            if (e.method === 0) {
+              method = 0;
+              payload = e.newData;
+            } else {
+              method = 8;
+              payload = zlib.deflateRawSync(e.newData, { level: 6 });
+            }
+            compSize = payload.length;
+          }
+          let flags = e.flags & ~8;
+          if (e.nameBuf.some((b) => b >= 128)) flags |= 2048;
+          const lh = import_buffer.Buffer.alloc(30);
+          lh.writeUInt32LE(67324752, 0);
+          lh.writeUInt16LE(20, 4);
+          lh.writeUInt16LE(flags, 6);
+          lh.writeUInt16LE(method, 8);
+          lh.writeUInt16LE(e.time, 10);
+          lh.writeUInt16LE(e.date, 12);
+          lh.writeUInt32LE(crc, 14);
+          lh.writeUInt32LE(compSize, 18);
+          lh.writeUInt32LE(size, 22);
+          lh.writeUInt16LE(e.nameBuf.length, 26);
+          lh.writeUInt16LE(0, 28);
+          parts.push(lh, e.nameBuf, payload);
+          const cd = import_buffer.Buffer.alloc(46);
+          cd.writeUInt32LE(33639248, 0);
+          cd.writeUInt16LE(20, 4);
+          cd.writeUInt16LE(20, 6);
+          cd.writeUInt16LE(flags, 8);
+          cd.writeUInt16LE(method, 10);
+          cd.writeUInt16LE(e.time, 12);
+          cd.writeUInt16LE(e.date, 14);
+          cd.writeUInt32LE(crc, 16);
+          cd.writeUInt32LE(compSize, 20);
+          cd.writeUInt32LE(size, 24);
+          cd.writeUInt16LE(e.nameBuf.length, 28);
+          cd.writeUInt16LE(0, 30);
+          cd.writeUInt16LE(0, 32);
+          cd.writeUInt16LE(0, 34);
+          cd.writeUInt16LE(0, 36);
+          cd.writeUInt32LE(0, 38);
+          cd.writeUInt32LE(offset, 42);
+          central.push(cd, e.nameBuf);
+          offset += lh.length + e.nameBuf.length + payload.length;
+        }
+        const cdBuf = import_buffer.Buffer.concat(central);
+        const eocd = import_buffer.Buffer.alloc(22);
+        eocd.writeUInt32LE(101010256, 0);
+        eocd.writeUInt16LE(0, 4);
+        eocd.writeUInt16LE(0, 6);
+        eocd.writeUInt16LE(entries.length, 8);
+        eocd.writeUInt16LE(entries.length, 10);
+        eocd.writeUInt32LE(cdBuf.length, 12);
+        eocd.writeUInt32LE(offset, 16);
+        eocd.writeUInt16LE(0, 20);
+        return import_buffer.Buffer.concat([...parts, cdBuf, eocd]);
+      }
+      var TEXT_TAGS = {
+        hwpx: ["hp:t"],
+        docx: ["w:t"],
+        pptx: ["a:t"],
+        xlsx: ["t"],
+        // sharedStrings.xml 의 <t>
+        odt: ["text:p", "text:span"]
+      };
       var XML_ENT = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
       function unxml(s) {
         return s.replace(/&(amp|lt|gt|quot|apos|#x?[0-9a-fA-F]+);/g, (m, e) => {
@@ -2938,130 +3684,78 @@ var NodeLibs = (() => {
           return Number.isFinite(code) ? String.fromCodePoint(code) : m;
         });
       }
-      function sharedStrings(xml) {
-        const out = [];
-        const items = xml.split(/<si\b[^>]*>/).slice(1);
-        for (const chunk of items) {
-          const body = chunk.split("</si>")[0];
-          let text = "";
-          const re = /<t\b[^>]*>([\s\S]*?)<\/t>/g;
-          let m;
-          while (m = re.exec(body)) text += unxml(m[1]);
-          out.push(text);
+      function xmlEscape(s) {
+        return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+      }
+      function editTextNodes(xml, tags, fn) {
+        let changed = 0;
+        let out = xml;
+        for (const tag of tags) {
+          const re = new RegExp(`(<${tag}(?:\\s[^>]*)?>)([\\s\\S]*?)(</${tag}>)`, "g");
+          out = out.replace(re, (all, open, inner, close) => {
+            if (inner.includes("<")) return all;
+            const plain = unxml(inner);
+            const fixed = fn(plain);
+            if (fixed === plain) return all;
+            changed += 1;
+            return open + xmlEscape(fixed) + close;
+          });
         }
-        return out;
+        return { xml: out, changed };
       }
-      function colIndex(ref) {
-        const letters = (/^([A-Z]+)/.exec(ref) || [])[1] || "A";
-        let n = 0;
-        for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
-        return n - 1;
+      function textPartsOf(ext) {
+        if (ext === "hwpx" || ext === "hwt") return { tags: TEXT_TAGS.hwpx, want: (n) => /^Contents\/section\d*\.xml$/i.test(n) || n === "Preview/PrvText.txt" };
+        if (ext === "docx" || ext === "docm") return { tags: TEXT_TAGS.docx, want: (n) => /^word\/(document|header\d*|footer\d*|footnotes|endnotes|comments)\.xml$/i.test(n) };
+        if (ext === "pptx" || ext === "pptm") return { tags: TEXT_TAGS.pptx, want: (n) => /^ppt\/(slides|notesSlides)\/[a-z]+\d+\.xml$/i.test(n) };
+        if (ext === "xlsx" || ext === "xlsm") return { tags: TEXT_TAGS.xlsx, want: (n) => n === "xl/sharedStrings.xml" || /^xl\/worksheets\/sheet\d+\.xml$/i.test(n) };
+        if (ext === "odt" || ext === "ods" || ext === "odp") return { tags: TEXT_TAGS.odt, want: (n) => n === "content.xml" };
+        return null;
       }
-      function sheetRows(xml, shared) {
-        const rows = [];
-        const rowChunks = xml.split(/<row\b[^>]*>/).slice(1);
-        for (const chunk of rowChunks) {
-          const body = chunk.split("</row>")[0];
-          const cells = [];
-          const re = /<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g;
-          let m;
-          while (m = re.exec(body)) {
-            const attrs = m[1] || "";
-            const inner = m[2] || "";
-            const ref = (/r="([A-Z]+\d+)"/.exec(attrs) || [])[1] || "";
-            const type = (/t="([^"]+)"/.exec(attrs) || [])[1] || "n";
-            let value = "";
-            if (type === "s") {
-              const idx = Number((/<v>([\s\S]*?)<\/v>/.exec(inner) || [])[1]);
-              value = shared[idx] == null ? "" : shared[idx];
-            } else if (type === "inlineStr") {
-              const parts = [];
-              const tre = /<t\b[^>]*>([\s\S]*?)<\/t>/g;
-              let t;
-              while (t = tre.exec(inner)) parts.push(unxml(t[1]));
-              value = parts.join("");
-            } else {
-              const v = (/<v>([\s\S]*?)<\/v>/.exec(inner) || [])[1];
-              value = v == null ? "" : unxml(v);
+      var EDITABLE = ["hwpx", "hwt", "docx", "docm", "pptx", "pptm", "xlsx", "xlsm", "odt", "ods", "odp"];
+      function canEdit(ext) {
+        return EDITABLE.includes(String(ext || "").toLowerCase());
+      }
+      function editDocument(file, ext, fn) {
+        const parts = textPartsOf(ext);
+        if (!parts) return { ok: false, reason: "\uC774 \uD615\uC2DD\uC740 \uACE0\uCE60 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" };
+        const read = readAll(file);
+        if (!read.ok) return { ok: false, reason: read.reason };
+        let nodes = 0;
+        for (const e of read.entries) {
+          if (!parts.want(e.name)) continue;
+          const data = inflateEntry(e);
+          if (!data) return { ok: false, reason: `\uC548\uCABD \uD56D\uBAA9\uC744 \uD480 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 (${e.name})` };
+          if (e.name.endsWith(".txt")) {
+            const text = data.toString("utf8");
+            const fixed = fn(text);
+            if (fixed !== text) {
+              e.newData = import_buffer.Buffer.from(fixed, "utf8");
+              nodes += 1;
             }
-            const at = ref ? colIndex(ref) : cells.length;
-            while (cells.length < at) cells.push("");
-            cells[at] = value;
+            continue;
           }
-          rows.push(cells);
-        }
-        return rows;
-      }
-      function readFile(file) {
-        const lower = String(file).toLowerCase();
-        if (lower.endsWith(".xlsx") || lower.endsWith(".xlsm")) {
-          const wanted = zipEntries(file, (n) => n === "xl/sharedStrings.xml" || /^xl\/worksheets\/sheet1\.xml$/.test(n));
-          const shared = sharedStrings((wanted.find((e) => e.name.endsWith("sharedStrings.xml")) || {}).text || "");
-          const sheet = wanted.find((e) => e.name.includes("worksheets/"));
-          if (!sheet) throw new Error("\uC5D1\uC140 \uC548\uC5D0\uC11C \uCCAB \uC2DC\uD2B8\uB97C \uCC3E\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
-          return fromRows(sheetRows(sheet.text, shared));
-        }
-        if (lower.endsWith(".xls")) {
-          throw new Error("\uC61B \uC5D1\uC140(.xls)\uC740 \uBABB \uC77D\uC2B5\uB2C8\uB2E4. .xlsx \uB85C \uC800\uC7A5\uD55C \uB4A4 \uB2E4\uC2DC \uB123\uC5B4 \uC8FC\uC138\uC694.");
-        }
-        let buf;
-        try {
-          buf = fs.readFileSync(file);
-        } catch (_) {
-          throw new Error("\uD30C\uC77C\uC744 \uC5F4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4");
-        }
-        if (buf.length > 8 * 1024 * 1024) throw new Error("\uBA85\uB2E8 \uD30C\uC77C\uC774 \uB108\uBB34 \uD07D\uB2C8\uB2E4 (8MB \uB118\uC74C)");
-        let text = buf.toString("utf8").replace(/^﻿/, "");
-        if (text.includes("\uFFFD")) {
-          try {
-            text = new TextDecoder("euc-kr").decode(buf);
-          } catch (_) {
+          const xml = data.toString("utf8");
+          const r = editTextNodes(xml, parts.tags, fn);
+          if (r.changed) {
+            e.newData = import_buffer.Buffer.from(r.xml, "utf8");
+            nodes += r.changed;
           }
         }
-        return parseText(text);
-      }
-      var PATTERNS = [
-        { id: "cls-no-name", label: "3\uBC18_01_\uD64D\uAE38\uB3D9", tmpl: "{\uBC18}_{\uBC88\uD638}_{\uC774\uB984}" },
-        { id: "no-name", label: "01_\uD64D\uAE38\uB3D9", tmpl: "{\uBC88\uD638}_{\uC774\uB984}" },
-        { id: "name", label: "\uD64D\uAE38\uB3D9", tmpl: "{\uC774\uB984}" },
-        { id: "sid-name", label: "10301_\uD64D\uAE38\uB3D9", tmpl: "{\uD559\uBC88}_{\uC774\uB984}" },
-        { id: "name-orig", label: "\uD64D\uAE38\uB3D9_\uC6D0\uB798\uC774\uB984", tmpl: "{\uC774\uB984}_{\uC6D0\uBCF8}" },
-        { id: "orig", label: "\uC6D0\uB798 \uC774\uB984 \uADF8\uB300\uB85C", tmpl: "{\uC6D0\uBCF8}" }
-      ];
-      function classLabel(cls) {
-        const c = String(cls == null ? "" : cls).trim();
-        if (!c) return "";
-        return c.includes("-") ? c : c + "\uBC18";
-      }
-      function studentId(s) {
-        if (s && s.sid) return String(s.sid);
-        const cls = String(s && s.cls || "").replace(/\D/g, "");
-        const no = s && s.no != null ? String(s.no).padStart(2, "0") : "";
-        if (cls && no) return cls.padStart(2, "0") + no;
-        return no;
-      }
-      function fileBase(patternId, s, originalBase) {
-        const p = PATTERNS.find((x) => x.id === patternId) || PATTERNS[0];
-        const no = s.no == null ? "" : String(s.no).padStart(2, "0");
-        const sid = studentId(s);
-        const orig = safeName(originalBase || "\uD30C\uC77C", "\uD30C\uC77C");
-        let out = p.tmpl.replace(/\{반\}/g, classLabel(s.cls)).replace(/\{번호\}/g, no).replace(/\{이름\}/g, s.name || "\uC774\uB984\uC5C6\uC74C").replace(/\{학번\}/g, sid).replace(/\{원본\}/g, orig);
-        out = out.replace(/_{2,}/g, "_").replace(/^_+|_+$/g, "");
-        return safeName(out, "\uC774\uB984\uC5C6\uC74C");
+        if (!nodes) return { ok: true, buffer: null, nodes: 0 };
+        return { ok: true, buffer: build(read.entries), nodes };
       }
       module.exports = {
-        parseText,
-        fromRows,
-        readFile,
-        readCells,
-        splitCells,
-        safeName,
-        fileBase,
-        classLabel,
-        studentId,
-        PATTERNS,
-        MAX_STUDENTS,
-        _internals: { zipEntries, sharedStrings, sheetRows, colIndex, unxml }
+        readAll,
+        inflateEntry,
+        build,
+        crc32,
+        editTextNodes,
+        editDocument,
+        textPartsOf,
+        canEdit,
+        EDITABLE,
+        unxml,
+        xmlEscape
       };
     }
   });
@@ -3113,9 +3807,25 @@ var NodeLibs = (() => {
     }
   });
 
-  // ../../증명사진만들기/lib/photos.js
-  var require_photos = __commonJS({
-    "../../\uC99D\uBA85\uC0AC\uC9C4\uB9CC\uB4E4\uAE30/lib/photos.js"(exports, module) {
+  // shims/crypto.js
+  var require_crypto = __commonJS({
+    "shims/crypto.js"(exports, module) {
+      init_define_process_argv();
+      init_define_process_env();
+      init_buffer_global();
+      module.exports = {
+        randomBytes(n) {
+          const b = new Uint8Array(n);
+          globalThis.crypto.getRandomValues(b);
+          return import_buffer.Buffer.from(b);
+        }
+      };
+    }
+  });
+
+  // ../../개인정보지우개/lib/scrub.js
+  var require_scrub = __commonJS({
+    "../../\uAC1C\uC778\uC815\uBCF4\uC9C0\uC6B0\uAC1C/lib/scrub.js"(exports, module) {
       "use strict";
       init_define_process_argv();
       init_define_process_env();
@@ -3123,80 +3833,68 @@ var NodeLibs = (() => {
       var fs = (init_fs(), __toCommonJS(fs_exports));
       var os = require_os();
       var path = require_path();
-      var APP_DIR = path.join(define_process_env_default.APPDATA || os.homedir(), "IdPhoto");
+      var crypto = require_crypto();
+      var peek2 = require_peek();
+      var detect2 = require_detect();
+      var zipedit2 = require_zipedit();
+      var APP_DIR = path.join(define_process_env_default.APPDATA || os.homedir(), "PrivacyScrub");
       var SETTINGS_FILE = path.join(APP_DIR, "settings.json");
-      var MAX_FILES = 2e3;
-      var IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "bmp", "gif"];
-      var MAYBE_EXTS = ["heic", "heif"];
-      var PRESETS = [
-        {
-          id: "neis",
-          name: "\uB098\uC774\uC2A4 \uC99D\uBA85\uC0AC\uC9C4",
-          kind: "id",
-          ratioW: 3,
-          ratioH: 4,
-          width: 640,
-          targetKB: 100,
-          hint: "\uAC00\uB85C3:\uC138\uB85C4 \xB7 \uD3ED 640 \xB7 100KB \uC774\uD558 \u2014 \uB098\uC774\uC2A4\uC5D0 \uC62C\uB9AC\uB294 \uD559\uC0DD \uC0AC\uC9C4"
-        },
-        {
-          id: "neis-small",
-          name: "\uB098\uC774\uC2A4 \uC791\uC740 \uC0AC\uC9C4",
-          kind: "id",
-          ratioW: 3,
-          ratioH: 4,
-          width: 180,
-          targetKB: 0,
-          hint: "180 \xD7 240 \u2014 \uD45C\uB098 \uBA85\uB82C\uD45C\uC5D0 \uB123\uB294 \uC791\uC740 \uC0AC\uC9C4"
-        },
-        {
-          id: "id35",
-          name: "\uC77C\uBC18 \uC99D\uBA85\uC0AC\uC9C4 (3.5\xD74.5)",
-          kind: "id",
-          ratioW: 35,
-          ratioH: 45,
-          width: 413,
-          targetKB: 0,
-          hint: "\uC5EC\uAD8C\xB7\uC774\uB825\uC11C\uC5D0 \uC4F0\uB294 \uBE44\uC728 \xB7 413 \xD7 531 (300dpi)"
-        },
-        {
-          id: "homepage",
-          name: "\uD559\uAD50 \uD648\uD398\uC774\uC9C0 \uC0AC\uC9C4",
-          kind: "fit",
-          long: 1280,
-          targetKB: 300,
-          hint: "\uAE34 \uBCC0 1280 \xB7 300KB \uC774\uD558 \u2014 \uBE44\uC728\uC740 \uADF8\uB300\uB85C \uB461\uB2C8\uB2E4"
-        },
-        {
-          id: "attach",
-          name: "\uACF5\uBB38 \uCCA8\uBD80\uC6A9",
-          kind: "fit",
-          long: 1024,
-          targetKB: 200,
-          hint: "\uAE34 \uBCC0 1024 \xB7 200KB \uC774\uD558 \u2014 \uC5C5\uBB34\uD3EC\uD138 \uC6A9\uB7C9 \uC81C\uD55C\uC5D0 \uB9DE\uCDA4"
-        },
-        {
-          id: "custom",
-          name: "\uC0AC\uC6A9\uC790 \uC9C0\uC815",
-          kind: "id",
-          ratioW: 3,
-          ratioH: 4,
-          width: 640,
-          targetKB: 0,
-          hint: "\uC544\uB798\uC5D0\uC11C \uC9C1\uC811 \uC815\uD569\uB2C8\uB2E4"
-        }
-      ];
+      var UNDO_FILE = path.join(APP_DIR, "undo.json");
+      var BACKUP_ROOT = path.join(APP_DIR, "backup");
+      var MAX_BATCHES = 30;
+      var MAX_FILES = 8e3;
+      var MAX_HITS_TOTAL = 2e4;
+      var DOC_EXTS = {
+        hwp: "\uD55C\uAE00",
+        hwpx: "\uD55C\uAE00",
+        hwt: "\uD55C\uAE00",
+        doc: "\uC6CC\uB4DC",
+        docx: "\uC6CC\uB4DC",
+        docm: "\uC6CC\uB4DC",
+        rtf: "\uC6CC\uB4DC",
+        odt: "\uC6CC\uB4DC",
+        ppt: "\uC2AC\uB77C\uC774\uB4DC",
+        pptx: "\uC2AC\uB77C\uC774\uB4DC",
+        pptm: "\uC2AC\uB77C\uC774\uB4DC",
+        odp: "\uC2AC\uB77C\uC774\uB4DC",
+        xls: "\uD45C",
+        xlsx: "\uD45C",
+        xlsm: "\uD45C",
+        ods: "\uD45C",
+        csv: "\uD45C",
+        pdf: "PDF",
+        txt: "\uD14D\uC2A4\uD2B8",
+        md: "\uD14D\uC2A4\uD2B8",
+        log: "\uD14D\uC2A4\uD2B8",
+        json: "\uD14D\uC2A4\uD2B8",
+        xml: "\uD14D\uC2A4\uD2B8",
+        html: "\uD14D\uC2A4\uD2B8",
+        htm: "\uD14D\uC2A4\uD2B8",
+        tsv: "\uD14D\uC2A4\uD2B8"
+      };
+      var PLAIN_EDIT = /* @__PURE__ */ new Set(["txt", "md", "log", "json", "xml", "html", "htm", "csv", "tsv"]);
+      var SKIP_DIRS = /* @__PURE__ */ new Set([
+        "node_modules",
+        ".git",
+        "$recycle.bin",
+        "system volume information",
+        "windows",
+        "program files",
+        "program files (x86)",
+        "appdata",
+        "__pycache__",
+        ".venv",
+        "\uAC1C\uC778\uC815\uBCF4\uACA9\uB9AC"
+      ]);
       var DEFAULT_SETTINGS = {
-        preset: "neis",
-        custom: { kind: "id", ratioW: 3, ratioH: 4, width: 640, long: 1280, targetKB: 0 },
-        headRatio: 0.7,
-        eyeLine: 0.45,
-        autoFace: true,
-        naming: "roster",
-        // roster = 학번_이름 / keep = 원래 이름 / number = 번호순
-        pairBy: "order",
-        // order = 파일 순서대로 / name = 파일 이름에서 찾기
-        outDirName: "\uC99D\uBA85\uC0AC\uC9C4",
+        rules: detect2.defaultOn(),
+        recursive: true,
+        skipBig: 40,
+        // MB — 이보다 큰 파일은 건너뛴다
+        showMaybe: true,
+        // "의심" 도 표시
+        quarantineDir: "",
+        // 비우면 훑은 폴더 아래 '개인정보격리'
         lastDir: ""
       };
       function ensureDir(d) {
@@ -3216,181 +3914,432 @@ var NodeLibs = (() => {
         fs.writeFileSync(tmp, JSON.stringify(obj, null, 2), "utf8");
         fs.renameSync(tmp, file);
       }
-      function normalizeSettings(s) {
-        const out = { ...DEFAULT_SETTINGS, ...s };
-        out.preset = PRESETS.some((p) => p.id === out.preset) ? out.preset : "neis";
-        out.custom = { ...DEFAULT_SETTINGS.custom, ...out.custom || {} };
-        out.custom.kind = out.custom.kind === "fit" ? "fit" : "id";
-        out.custom.ratioW = Math.max(1, Math.min(100, Number(out.custom.ratioW) || 3));
-        out.custom.ratioH = Math.max(1, Math.min(100, Number(out.custom.ratioH) || 4));
-        out.custom.width = Math.max(40, Math.min(6e3, Number(out.custom.width) || 640));
-        out.custom.long = Math.max(80, Math.min(8e3, Number(out.custom.long) || 1280));
-        out.custom.targetKB = Math.max(0, Math.min(2e4, Number(out.custom.targetKB) || 0));
-        out.headRatio = Math.max(0.35, Math.min(0.95, Number(out.headRatio) || 0.7));
-        out.eyeLine = Math.max(0.2, Math.min(0.7, Number(out.eyeLine) || 0.45));
-        out.autoFace = !!out.autoFace;
-        out.naming = ["roster", "keep", "number"].includes(out.naming) ? out.naming : "roster";
-        out.pairBy = out.pairBy === "name" ? "name" : "order";
-        out.outDirName = String(out.outDirName || "\uC99D\uBA85\uC0AC\uC9C4").replace(/[<>:"/\\|?*]/g, "").slice(0, 40) || "\uC99D\uBA85\uC0AC\uC9C4";
-        return out;
-      }
       function loadSettings() {
-        return normalizeSettings(readJson(SETTINGS_FILE, {}));
+        const s = { ...DEFAULT_SETTINGS, ...readJson(SETTINGS_FILE, {}) };
+        const known = new Set(detect2.RULES.map((r) => r.id));
+        s.rules = (Array.isArray(s.rules) ? s.rules : []).filter((id) => known.has(id));
+        if (!s.rules.length) s.rules = detect2.defaultOn();
+        s.recursive = !!s.recursive;
+        s.showMaybe = !!s.showMaybe;
+        s.skipBig = Math.max(1, Math.min(500, Number(s.skipBig) || 40));
+        return s;
       }
       function saveSettings(s) {
-        const out = normalizeSettings(s);
+        const out = loadSettingsFrom(s);
         writeJson(SETTINGS_FILE, out);
         return out;
       }
-      function resolvePreset(settings) {
-        const base = PRESETS.find((p) => p.id === settings.preset) || PRESETS[0];
-        if (base.id !== "custom") return { ...base };
-        return { ...base, ...settings.custom, id: "custom", name: base.name };
+      function loadSettingsFrom(s) {
+        const merged = { ...DEFAULT_SETTINGS, ...s };
+        const known = new Set(detect2.RULES.map((r) => r.id));
+        merged.rules = (Array.isArray(merged.rules) ? merged.rules : []).filter((id) => known.has(id));
+        merged.recursive = !!merged.recursive;
+        merged.showMaybe = !!merged.showMaybe;
+        merged.skipBig = Math.max(1, Math.min(500, Number(merged.skipBig) || 40));
+        return merged;
       }
       function extOf(name) {
         const m = /\.([A-Za-z0-9]{1,12})$/.exec(name);
         return m ? m[1].toLowerCase() : "";
       }
-      function naturalCompare(a, b) {
-        const ra = String(a).match(/(\d+|\D+)/g) || [];
-        const rb = String(b).match(/(\d+|\D+)/g) || [];
-        for (let i = 0; i < Math.max(ra.length, rb.length); i++) {
-          const x = ra[i];
-          const y = rb[i];
-          if (x === void 0) return -1;
-          if (y === void 0) return 1;
-          if (/^\d/.test(x) && /^\d/.test(y)) {
-            const d = Number(x) - Number(y);
-            if (d) return d;
-          } else {
-            const d = x.localeCompare(y, "ko");
-            if (d) return d;
-          }
-        }
-        return 0;
-      }
       function scan(root, settings) {
         const abs = path.resolve(root);
         const files2 = [];
         let skipped = 0;
-        const outName2 = String(settings.outDirName || "").toLowerCase();
-        let entries = [];
-        try {
-          entries = fs.readdirSync(abs, { withFileTypes: true });
-        } catch (e) {
-          throw new Error("\uD3F4\uB354\uB97C \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4: " + e.message);
-        }
-        for (const ent of entries) {
-          if (files2.length >= MAX_FILES) break;
-          if (!ent.isFile()) continue;
-          if (ent.name.startsWith(".") || ent.name.startsWith("~$")) continue;
-          const ext = extOf(ent.name);
-          const known = IMAGE_EXTS.includes(ext);
-          const maybe = MAYBE_EXTS.includes(ext);
-          if (!known && !maybe) {
-            skipped++;
-            continue;
-          }
-          const full = path.join(abs, ent.name);
-          let st;
+        let folders = 0;
+        const limit = settings.skipBig * 1024 * 1024;
+        const walk = (dir, depth) => {
+          if (files2.length >= MAX_FILES) return;
+          let entries;
           try {
-            st = fs.statSync(full);
+            entries = fs.readdirSync(dir, { withFileTypes: true });
           } catch (_) {
-            continue;
+            return;
           }
-          if (st.size === 0) {
-            skipped++;
-            continue;
+          folders++;
+          for (const ent of entries) {
+            if (files2.length >= MAX_FILES) return;
+            const full = path.join(dir, ent.name);
+            if (ent.isDirectory()) {
+              if (!settings.recursive) continue;
+              if (ent.name.startsWith(".") || SKIP_DIRS.has(ent.name.toLowerCase())) continue;
+              if (depth < 8) walk(full, depth + 1);
+              continue;
+            }
+            if (!ent.isFile() || ent.name.startsWith("~$") || ent.name.startsWith(".")) continue;
+            const ext = extOf(ent.name);
+            if (!DOC_EXTS[ext]) {
+              skipped++;
+              continue;
+            }
+            let st;
+            try {
+              st = fs.statSync(full);
+            } catch (_) {
+              continue;
+            }
+            if (st.size === 0) {
+              skipped++;
+              continue;
+            }
+            if (st.size > limit) {
+              skipped++;
+              continue;
+            }
+            files2.push({
+              path: full,
+              name: ent.name,
+              ext,
+              kind: DOC_EXTS[ext],
+              size: st.size,
+              mtime: st.mtimeMs,
+              dir,
+              rel: path.relative(abs, full)
+            });
           }
-          files2.push({
-            path: full,
-            name: ent.name,
-            ext,
-            size: st.size,
-            mtime: st.mtimeMs,
-            maybe
-            // 브라우저가 못 열 수도 있는 형식
-          });
-        }
-        files2.sort((a, b) => naturalCompare(a.name, b.name));
-        return { files: files2, skipped, capped: files2.length >= MAX_FILES, dir: abs };
+        };
+        walk(abs, 0);
+        return { files: files2, skipped, folders };
       }
-      var roster2 = require_roster();
-      function pair(files2, students, how) {
-        const out = files2.map((f) => ({ path: f.path, student: null }));
-        if (!students || !students.length) return out;
-        if (how === "name") {
-          const byName = [...students].sort((a, b) => b.name.length - a.name.length);
-          const bySid = new Map(students.filter((s) => s.sid).map((s) => [s.sid, s]));
-          files2.forEach((f, i) => {
-            const flat = f.name.replace(/\s+/g, "");
-            for (const sid of flat.match(/\d{5}/g) || []) {
-              if (bySid.has(sid)) {
-                out[i].student = bySid.get(sid);
-                return;
-              }
-            }
-            for (const s of byName) {
-              if (flat.includes(s.name.replace(/\s+/g, ""))) {
-                out[i].student = s;
-                return;
-              }
-            }
-          });
-          return out;
+      function editability(ext) {
+        if (PLAIN_EDIT.has(ext)) return { can: true, how: "plain" };
+        if (zipedit2.canEdit(ext)) return { can: true, how: "zip" };
+        if (ext === "hwp") return { can: false, why: "\uC61B \uD55C\uAE00(.hwp)\uC740 \uACE0\uCE60 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uD55C\uAE00\uC5D0\uC11C .hwpx \uB85C \uC800\uC7A5\uD55C \uB4A4 \uB2E4\uC2DC \uD6D1\uC5B4 \uC8FC\uC138\uC694" };
+        if (ext === "pdf") return { can: false, why: "PDF \uB294 \uACE0\uCE60 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uC6D0\uBCF8 \uBB38\uC11C\uB97C \uACE0\uCCD0 \uB2E4\uC2DC \uB9CC\uB4DC\uC138\uC694" };
+        if (ext === "doc" || ext === "ppt" || ext === "xls") return { can: false, why: "\uC61B \uC624\uD53C\uC2A4 \uD615\uC2DD\uC740 \uACE0\uCE60 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 docx\xB7pptx\xB7xlsx \uB85C \uC800\uC7A5\uD55C \uB4A4 \uB2E4\uC2DC \uD6D1\uC5B4 \uC8FC\uC138\uC694" };
+        return { can: false, why: "\uC774 \uD615\uC2DD\uC740 \uACE0\uCE60 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" };
+      }
+      function inspect(file, ruleIds) {
+        let text = "";
+        let error = "";
+        try {
+          text = peek2.peek(file.path, file.ext) || "";
+        } catch (e) {
+          error = e && e.message || "\uC77D\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4";
         }
-        files2.forEach((f, i) => {
-          out[i].student = students[i] || null;
-        });
+        const hits = text ? detect2.findInText(text, ruleIds, { wantMaybe: true }) : [];
+        const ed = editability(file.ext);
+        return {
+          ...file,
+          chars: text.length,
+          hits,
+          sure: hits.filter((h) => h.grade === "sure").length,
+          maybe: hits.filter((h) => h.grade === "maybe").length,
+          canMask: ed.can,
+          why: ed.why || "",
+          error: error || (!text ? "\uAE00\uC790\uB97C \uAEBC\uB0B4\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4 (\uADF8\uB9BC\uB9CC \uB4E0 \uBB38\uC11C\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4)" : "")
+        };
+      }
+      var tick = () => new Promise((r) => setImmediate(r));
+      async function inspectAll(files2, ruleIds, onProgress) {
+        const out = [];
+        let hitCount = 0;
+        for (let i = 0; i < files2.length; i++) {
+          const r = inspect(files2[i], ruleIds);
+          hitCount += r.hits.length;
+          if (hitCount > MAX_HITS_TOTAL) {
+            r.hits = r.hits.slice(0, 20);
+            r.truncated = true;
+          }
+          out.push(r);
+          if (i % 8 === 7) {
+            if (onProgress) onProgress(i + 1, files2.length, path.basename(files2[i].path));
+            await tick();
+          }
+        }
+        if (onProgress) onProgress(files2.length, files2.length, "");
         return out;
       }
-      function outName(settings, student, originalName, index) {
-        const base = originalName.replace(/\.[A-Za-z0-9]{1,12}$/, "");
-        if (settings.naming === "keep" || !student) {
-          return settings.naming === "number" && !student ? String(index + 1).padStart(3, "0") : roster2.safeName(base, "\uC0AC\uC9C4");
+      function maskPlain(file, ruleIds) {
+        const buf = fs.readFileSync(file);
+        const asUtf8 = buf.toString("utf8");
+        const broken = asUtf8.includes("\uFFFD");
+        if (!broken) {
+          const r2 = detect2.maskText(asUtf8, ruleIds, {});
+          if (!r2.changed) return { changed: 0 };
+          return { changed: r2.changed, buffer: import_buffer.Buffer.from(r2.text, "utf8") };
         }
-        if (settings.naming === "number") return String(index + 1).padStart(3, "0");
-        return roster2.fileBase("sid-name", student, base);
+        const latin = buf.toString("latin1");
+        const r = detect2.maskText(latin, ruleIds, { asciiOnly: true });
+        if (!r.changed) return { changed: 0, asciiOnly: true };
+        return { changed: r.changed, buffer: import_buffer.Buffer.from(r.text, "latin1"), asciiOnly: true };
       }
-      function allowed(list, wanted) {
-        const key = path.resolve(String(wanted || "")).toLowerCase();
-        return list.some((f) => f.path.toLowerCase() === key);
+      function maskZip(file, ext, ruleIds) {
+        let changed = 0;
+        const r = zipedit2.editDocument(file, ext, (text) => {
+          const m = detect2.maskText(text, ruleIds, {});
+          changed += m.changed;
+          return m.text;
+        });
+        if (!r.ok) return { changed: 0, error: r.reason };
+        if (!r.buffer) return { changed: 0 };
+        return { changed, buffer: r.buffer, nodes: r.nodes };
       }
-      var MIME = {
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        png: "image/png",
-        webp: "image/webp",
-        bmp: "image/bmp",
-        gif: "image/gif",
-        heic: "image/heic",
-        heif: "image/heif"
-      };
-      function mimeOf(name) {
-        return MIME[extOf(name)] || "application/octet-stream";
+      function verify(file, ext, beforeChars, ruleIds) {
+        let text = "";
+        try {
+          text = peek2.peek(file, ext) || "";
+        } catch (_) {
+          text = "";
+        }
+        if (beforeChars > 20 && text.length === 0) {
+          return { ok: false, why: "\uACE0\uCE5C \uB4A4 \uAE00\uC790\uB97C \uAEBC\uB0BC \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 (\uBB38\uC11C\uAC00 \uAE68\uC9C4 \uAC83 \uAC19\uC2B5\uB2C8\uB2E4)" };
+        }
+        if (beforeChars > 200 && text.length < beforeChars * 0.7) {
+          return { ok: false, why: `\uB0B4\uC6A9\uC774 \uD06C\uAC8C \uC904\uC5C8\uC2B5\uB2C8\uB2E4 (${beforeChars} \u2192 ${text.length}\uC790)` };
+        }
+        const left = detect2.findInText(text, ruleIds, { wantMaybe: true }).filter((h) => h.grade === "sure");
+        return { ok: true, chars: text.length, left: left.length };
+      }
+      async function maskFiles(targets, ruleIds, onProgress) {
+        const batchId = "b" + Date.now().toString(36);
+        const backupDir = path.join(BACKUP_ROOT, batchId);
+        const results = [];
+        const undoItems = [];
+        let done = 0;
+        for (let i = 0; i < targets.length; i++) {
+          const t = targets[i];
+          const ext = String(t.ext || extOf(t.path)).toLowerCase();
+          const ed = editability(ext);
+          if (!ed.can) {
+            results.push({ path: t.path, ok: false, message: ed.why });
+            continue;
+          }
+          let made;
+          try {
+            made = PLAIN_EDIT.has(ext) ? maskPlain(t.path, ruleIds) : maskZip(t.path, ext, ruleIds);
+          } catch (e) {
+            results.push({ path: t.path, ok: false, message: e && e.message || "\uACE0\uCE58\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" });
+            continue;
+          }
+          if (made.error) {
+            results.push({ path: t.path, ok: false, message: made.error });
+            continue;
+          }
+          if (!made.changed || !made.buffer) {
+            results.push({
+              path: t.path,
+              ok: false,
+              changed: 0,
+              message: made.asciiOnly ? "\uAC00\uB9B4 \uAC83\uC774 \uC5C6\uC2B5\uB2C8\uB2E4 (\uC774 \uD30C\uC77C\uC740 \uC778\uCF54\uB529 \uB54C\uBB38\uC5D0 \uD55C\uAE00\uC774 \uB4E0 \uADDC\uCE59\uC740 \uAC74\uB108\uB701\uB2C8\uB2E4)" : "\uAC00\uB9B4 \uAC83\uC774 \uC5C6\uC2B5\uB2C8\uB2E4 (\uAE00\uC790\uAC00 \uC5EC\uB7EC \uC870\uAC01\uC73C\uB85C \uB098\uB258\uC5B4 \uC788\uC744 \uC218 \uC788\uC2B5\uB2C8\uB2E4)"
+            });
+            continue;
+          }
+          ensureDir(backupDir);
+          const backup = path.join(backupDir, `${String(i).padStart(4, "0")}_${path.basename(t.path)}`);
+          try {
+            fs.copyFileSync(t.path, backup);
+          } catch (e) {
+            results.push({ path: t.path, ok: false, message: "\uC6D0\uBCF8\uC744 \uBC31\uC5C5\uD560 \uC218 \uC5C6\uC5B4 \uC190\uB300\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4" });
+            continue;
+          }
+          try {
+            fs.writeFileSync(t.path, made.buffer);
+          } catch (e) {
+            try {
+              fs.copyFileSync(backup, t.path);
+            } catch (_) {
+            }
+            results.push({ path: t.path, ok: false, message: "\uD30C\uC77C\uC744 \uC4F8 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4 (\uB2E4\uB978 \uD504\uB85C\uADF8\uB7A8\uC774 \uC5F4\uC5B4 \uB450\uC5C8\uB098\uC694?)" });
+            continue;
+          }
+          const v = verify(t.path, ext, Number(t.chars) || 0, ruleIds);
+          if (!v.ok) {
+            try {
+              fs.copyFileSync(backup, t.path);
+            } catch (_) {
+            }
+            results.push({ path: t.path, ok: false, rolledBack: true, message: v.why + " \u2014 \uC6D0\uBCF8\uC73C\uB85C \uB418\uB3CC\uB838\uC2B5\uB2C8\uB2E4" });
+            continue;
+          }
+          done += 1;
+          undoItems.push({ path: t.path, backup });
+          results.push({
+            path: t.path,
+            ok: true,
+            changed: made.changed,
+            left: v.left,
+            message: `${made.changed}\uAD70\uB370\uB97C \uAC00\uB838\uC2B5\uB2C8\uB2E4` + (v.left ? ` (${v.left}\uAD70\uB370\uB294 \uB0A8\uC558\uC2B5\uB2C8\uB2E4 \u2014 \uAE00\uC790\uAC00 \uC870\uAC01\uB098 \uC788\uC2B5\uB2C8\uB2E4)` : ""),
+            asciiOnly: !!made.asciiOnly
+          });
+          if (i % 4 === 3 && onProgress) {
+            onProgress(i + 1, targets.length);
+            await tick();
+          }
+        }
+        if (onProgress) onProgress(targets.length, targets.length);
+        const batch = undoItems.length ? recordBatch({ id: batchId, kind: "mask", dir: backupDir, items: undoItems }) : null;
+        return { ok: done > 0, done, batch, results };
+      }
+      function quarantine(targets, root, settings) {
+        const base = settings.quarantineDir || path.join(root, "\uAC1C\uC778\uC815\uBCF4\uACA9\uB9AC");
+        const batchId = "q" + Date.now().toString(36);
+        const stamp = /* @__PURE__ */ new Date();
+        const p2 = (n) => String(n).padStart(2, "0");
+        const folder = path.join(base, `${stamp.getFullYear()}-${p2(stamp.getMonth() + 1)}-${p2(stamp.getDate())} ${p2(stamp.getHours())}${p2(stamp.getMinutes())}`);
+        const items = [];
+        const results = [];
+        for (const t of targets) {
+          const rel = path.relative(root, t.path);
+          const safeRel = rel.startsWith("..") ? path.basename(t.path) : rel;
+          const dest = path.join(folder, safeRel);
+          try {
+            ensureDir(path.dirname(dest));
+            let target = dest;
+            let n = 2;
+            while (fs.existsSync(target)) {
+              const e = path.extname(dest);
+              target = dest.slice(0, dest.length - e.length) + `_${n}` + e;
+              n += 1;
+              if (n > 200) throw new Error("\uAC19\uC740 \uC774\uB984\uC774 \uB108\uBB34 \uB9CE\uC2B5\uB2C8\uB2E4");
+            }
+            fs.renameSync(t.path, target);
+            items.push({ path: t.path, movedTo: target });
+            results.push({ path: t.path, ok: true, message: "\uACA9\uB9AC\uD588\uC2B5\uB2C8\uB2E4" });
+          } catch (e) {
+            results.push({ path: t.path, ok: false, message: e && e.message || "\uC62E\uAE30\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" });
+          }
+        }
+        const batch = items.length ? recordBatch({ id: batchId, kind: "quarantine", dir: folder, items }) : null;
+        return { ok: items.length > 0, done: items.length, batch, results, folder };
+      }
+      function loadUndo() {
+        const d = readJson(UNDO_FILE, null);
+        return d && Array.isArray(d.batches) ? d : { batches: [] };
+      }
+      function recordBatch(batch) {
+        const data = loadUndo();
+        data.batches.unshift({ ...batch, at: Date.now(), count: batch.items.length });
+        const dropped = data.batches.slice(MAX_BATCHES);
+        data.batches = data.batches.slice(0, MAX_BATCHES);
+        for (const d of dropped) {
+          if (d.kind === "mask" && d.dir && d.dir.startsWith(BACKUP_ROOT)) {
+            try {
+              fs.rmSync(d.dir, { recursive: true, force: true });
+            } catch (_) {
+            }
+          }
+        }
+        writeJson(UNDO_FILE, data);
+        return { id: batch.id, kind: batch.kind, count: batch.items.length, dir: batch.dir };
+      }
+      function batchList() {
+        return loadUndo().batches.map((b) => ({
+          id: b.id,
+          kind: b.kind,
+          at: b.at,
+          count: b.count,
+          dir: b.dir,
+          sample: b.items.slice(0, 3).map((i) => path.basename(i.path)),
+          ready: b.items.some((i) => fs.existsSync(b.kind === "mask" ? i.backup : i.movedTo))
+        }));
+      }
+      function undo(batchId) {
+        const data = loadUndo();
+        const idx = data.batches.findIndex((b) => b.id === batchId);
+        if (idx < 0) return { ok: false, message: "\uADF8 \uAE30\uB85D\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4" };
+        const batch = data.batches[idx];
+        const restored = [];
+        const failed = [];
+        for (const item of batch.items) {
+          try {
+            if (batch.kind === "mask") {
+              if (!fs.existsSync(item.backup)) throw new Error("\uBC31\uC5C5\uC774 \uC5C6\uC2B5\uB2C8\uB2E4");
+              ensureDir(path.dirname(item.path));
+              fs.copyFileSync(item.backup, item.path);
+            } else {
+              if (!fs.existsSync(item.movedTo)) throw new Error("\uACA9\uB9AC\uB41C \uD30C\uC77C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4");
+              ensureDir(path.dirname(item.path));
+              if (fs.existsSync(item.path)) throw new Error("\uADF8 \uC790\uB9AC\uC5D0 \uD30C\uC77C\uC774 \uC774\uBBF8 \uC788\uC2B5\uB2C8\uB2E4");
+              fs.renameSync(item.movedTo, item.path);
+            }
+            restored.push(item.path);
+          } catch (e) {
+            failed.push({ name: path.basename(item.path), message: e && e.message || "\uB418\uB3CC\uB9AC\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" });
+          }
+        }
+        if (!failed.length) {
+          if (batch.kind === "mask" && batch.dir && batch.dir.startsWith(BACKUP_ROOT)) {
+            try {
+              fs.rmSync(batch.dir, { recursive: true, force: true });
+            } catch (_) {
+            }
+          }
+          data.batches.splice(idx, 1);
+          writeJson(UNDO_FILE, data);
+        }
+        return { ok: restored.length > 0, restored: restored.length, failed };
+      }
+      function clearUndo() {
+        const data = loadUndo();
+        for (const b of data.batches) {
+          if (b.kind === "mask" && b.dir && b.dir.startsWith(BACKUP_ROOT)) {
+            try {
+              fs.rmSync(b.dir, { recursive: true, force: true });
+            } catch (_) {
+            }
+          }
+        }
+        writeJson(UNDO_FILE, { batches: [] });
+        return { ok: true };
+      }
+      function csvCell(v) {
+        const s = String(v == null ? "" : v);
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+      function timeText(ms) {
+        if (!ms) return "";
+        const d = new Date(ms);
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+      }
+      function toCsv(results, root) {
+        const rows = [["\uD3F4\uB354", "\uD30C\uC77C", "\uC885\uB958", "\uD655\uC2E4/\uC758\uC2EC", "\uCC3E\uC740 \uAC83(\uAC00\uB9B0 \uCC44)", "\uC55E\uB4A4 \uAE00", "\uACE0\uCE60 \uC218 \uC788\uB098"]];
+        for (const r of results) {
+          for (const h of r.hits) {
+            rows.push([
+              path.relative(root, r.dir) || ".",
+              r.name,
+              h.label,
+              h.grade === "sure" ? "\uD655\uC2E4" : "\uC758\uC2EC",
+              h.masked,
+              (h.context.before + "\u3010" + h.masked + "\u3011" + h.context.after).slice(0, 120),
+              r.canMask ? "\uC608" : r.why
+            ]);
+          }
+        }
+        return "\uFEFF" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
       }
       module.exports = {
         APP_DIR,
         SETTINGS_FILE,
+        UNDO_FILE,
+        BACKUP_ROOT,
         DEFAULT_SETTINGS,
-        PRESETS,
+        DOC_EXTS,
+        PLAIN_EDIT,
         MAX_FILES,
-        IMAGE_EXTS,
-        MAYBE_EXTS,
         loadSettings,
         saveSettings,
-        normalizeSettings,
-        resolvePreset,
         readJson,
         writeJson,
         ensureDir,
         scan,
-        pair,
-        outName,
-        allowed,
-        mimeOf,
-        extOf,
-        naturalCompare
+        inspect,
+        inspectAll,
+        editability,
+        maskPlain,
+        maskZip,
+        maskFiles,
+        verify,
+        quarantine,
+        batchList,
+        undo,
+        clearUndo,
+        loadUndo,
+        toCsv,
+        timeText,
+        extOf
       };
     }
   });
@@ -3399,16 +4348,20 @@ var NodeLibs = (() => {
   var entry_exports = {};
   __export(entry_exports, {
     Buffer: () => import_buffer4.Buffer,
-    photos: () => photos,
-    roster: () => roster,
-    vfs: () => vfs
+    detect: () => detect,
+    peek: () => peek,
+    scrub: () => scrub,
+    vfs: () => vfs,
+    zipedit: () => zipedit
   });
   init_define_process_argv();
   init_define_process_env();
   init_buffer_global();
   init_fs();
   var import_buffer4 = __toESM(require_buffer());
-  var roster = require_roster();
-  var photos = require_photos();
+  var detect = require_detect();
+  var peek = require_peek();
+  var zipedit = require_zipedit();
+  var scrub = require_scrub();
   return __toCommonJS(entry_exports);
 })();

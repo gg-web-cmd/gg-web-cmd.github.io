@@ -1,0 +1,23 @@
+/* QR · 짧은 주소 — app.css 위에 더한 것 */
+.urlrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.urlrow .text { flex: 1 1 320px; min-width: 0; font-size: 15px; padding: 9px 12px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 13px; color: var(--ink-soft); }
+.opts label { display: inline-flex; align-items: center; gap: 6px; }
+.opts .sel { flex: none; }
+.opts .text { width: 150px; }
+.cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+.slist { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.slist li {
+  display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center;
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); cursor: pointer; font-size: 13.5px;
+}
+.slist li.on { border-color: var(--accent); background: var(--accent-soft); }
+.slist li.fail { cursor: default; color: var(--err); font-size: 12.5px; }
+.slist li.empty { display: block; cursor: default; color: var(--ink-faint); background: transparent; border-style: dashed; }
+.slist .svc { color: var(--ink-faint); font-size: 12px; }
+.slist .u { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slist .n { color: var(--ink-faint); font-size: 12px; }
+.qrbox { display: grid; place-items: center; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+#qr { width: 240px; height: 240px; image-rendering: pixelated; }
+.qrtext { text-align: center; font-size: 12.5px; color: var(--ink-soft); word-break: break-all; margin: 8px 0 0; min-height: 1.4em; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }

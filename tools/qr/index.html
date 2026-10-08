@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR · 짧은 주소</title>
+<meta name="description" content="인터넷 주소를 짧은 주소와 QR 코드로 한 번에. PNG 저장, 이미지 복사로 한글·PPT 에 바로 붙여 넣기.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔳</text></svg>">
+<link rel="stylesheet" href="../common/app.css">
+<link rel="stylesheet" href="css/qr.css">
+<script src="../common/theme.js"></script>
+</head>
+<body class="light">
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🔳</span>
+    <div>
+      <h1>QR · 짧은 주소</h1>
+      <p class="tagline">인터넷 주소를 짧은 주소와 QR 코드로 한 번에</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button id="btnTheme" class="ghost" type="button" title="밝게 / 어둡게">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2><span class="step">1</span> 주소</h2>
+    <div class="urlrow">
+      <input id="url" type="text" class="text" placeholder="https://… 를 붙여 넣으세요 (https:// 는 빼도 됩니다)" spellcheck="false" autocomplete="off">
+      <button id="btnShort" class="primary" type="button">짧게 + QR</button>
+      <button id="btnQrOnly" class="ghost" type="button">QR만</button>
+    </div>
+    <div class="opts">
+      <label>짧은 주소 <select id="want" class="sel"><option>1</option><option selected>2</option><option>3</option></select> 개</label>
+      <label>먼저 쓸 곳 <select id="prefer" class="sel"><option value="">자동</option><option>da.gd</option><option>is.gd</option><option>v.gd</option></select></label>
+      <label>별칭 <input id="alias" type="text" class="text" placeholder="(선택) my-link" maxlength="30" spellcheck="false"></label>
+    </div>
+    <p id="msg" class="hint"></p>
+  </section>
+
+  <div class="cols2">
+    <section class="card">
+      <h2><span class="step">2</span> 짧은 주소</h2>
+      <ul id="list" class="slist"><li class="empty">[짧게 + QR] 을 누르면 여기에 쌓입니다. 줄을 누르면 그 주소로 QR 을 다시 만듭니다.</li></ul>
+      <p class="hint">짧은 주소는 da.gd · is.gd · v.gd 가 만들고 관리합니다. 오래 남길 문서라면 원래 주소 QR 도 함께 두세요.
+        학교·기관망에서는 단축 서비스가 막혀 있을 수 있습니다.</p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span> QR 코드</h2>
+      <div class="qrbox"><canvas id="qr" width="256" height="256"></canvas></div>
+      <p id="qrText" class="qrtext"></p>
+      <div class="opts">
+        <label>QR 내용 <select id="content" class="sel"><option value="short">짧은 주소</option><option value="orig">원래 주소</option></select></label>
+        <label>크기 <select id="size" class="sel"><option>256</option><option selected>512</option><option>1024</option><option>2048</option></select> px</label>
+        <label>정정 <select id="level" class="sel" title="높을수록 더러워져도 잘 읽히지만 무늬가 촘촘해집니다">
+          <option value="L">L 낮음</option><option value="M" selected>M 보통</option><option value="Q">Q 인쇄물</option><option value="H">H 높음</option></select></label>
+      </div>
+      <div class="btns">
+        <button id="btnPng" class="primary" type="button" disabled>PNG 저장</button>
+        <button id="btnCopyImg" class="ghost" type="button" disabled>QR 이미지 복사</button>
+        <button id="btnCopyUrl" class="ghost" type="button" disabled>주소 복사</button>
+      </div>
+    </section>
+  </div>
+
+  <p class="footnote">QR 은 이 브라우저 안에서 만듭니다. 짧은 주소를 만들 때만 그 주소가 단축 서비스로 보내집니다.</p>
+</main>
+
+<script src="../common/qrcode/qrcode.js"></script>
+<script src="js/qr.js"></script>
+</body>
+</html>

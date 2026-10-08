@@ -34,6 +34,12 @@ var NodeLibs = (() => {
   ));
   var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+  // <define:process.argv>
+  var init_define_process_argv = __esm({
+    "<define:process.argv>"() {
+    }
+  });
+
   // <define:process.env>
   var init_define_process_env = __esm({
     "<define:process.env>"() {
@@ -44,6 +50,7 @@ var NodeLibs = (() => {
   var require_base64_js = __commonJS({
     "node_modules/base64-js/index.js"(exports) {
       "use strict";
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       exports.byteLength = byteLength;
@@ -146,6 +153,7 @@ var NodeLibs = (() => {
   // node_modules/ieee754/index.js
   var require_ieee754 = __commonJS({
     "node_modules/ieee754/index.js"(exports) {
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       exports.read = function(buffer, offset, isLE, mLen, nBytes) {
@@ -232,6 +240,7 @@ var NodeLibs = (() => {
   var require_buffer = __commonJS({
     "node_modules/buffer/index.js"(exports) {
       "use strict";
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       var base64 = require_base64_js();
@@ -1893,6 +1902,7 @@ var NodeLibs = (() => {
   var import_buffer2, files, fds, nextFd, vfs, writeFileSync, mkdirSync, renameSync, readdirSync, fs_default;
   var init_fs = __esm({
     "shims/fs.js"() {
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       import_buffer2 = __toESM(require_buffer());
@@ -1943,9 +1953,21 @@ var NodeLibs = (() => {
   function inflateSync(data, opts) {
     return inflt(data, { i: 2 }, opts && opts.out, opts && opts.dictionary);
   }
-  var u8, u16, i32, fleb, fdeb, clim, freb, _a, fl, revfl, _b, fd, revfd, rev, x, i, hMap, flt, i, i, i, i, fdt, i, flm, flrm, fdm, fdrm, max, bits, bits16, shft, slc, ec, err, inflt, wbits, wbits16, hTree, ln, lc, clen, wfblk, wblk, deo, et, dflt, dopt, td, tds;
+  function zlibSync(data, opts) {
+    if (!opts)
+      opts = {};
+    var a = adler();
+    a.p(data);
+    var d = dopt(data, opts, opts.dictionary ? 6 : 2, 4);
+    return zlh(d, opts), wbytes(d, d.length - 4, a.d()), d;
+  }
+  function unzlibSync(data, opts) {
+    return inflt(data.subarray(zls(data, opts && opts.dictionary), -4), { i: 2 }, opts && opts.out, opts && opts.dictionary);
+  }
+  var u8, u16, i32, fleb, fdeb, clim, freb, _a, fl, revfl, _b, fd, revfd, rev, x, i, hMap, flt, i, i, i, i, fdt, i, flm, flrm, fdm, fdrm, max, bits, bits16, shft, slc, ec, err, inflt, wbits, wbits16, hTree, ln, lc, clen, wfblk, wblk, deo, et, dflt, adler, dopt, wbytes, zlh, zls, td, tds;
   var init_browser = __esm({
     "node_modules/fflate/esm/browser.js"() {
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       u8 = Uint8Array;
@@ -2596,6 +2618,26 @@ var NodeLibs = (() => {
         }
         return slc(o, 0, pre + shft(pos) + post);
       };
+      adler = function() {
+        var a = 1, b = 0;
+        return {
+          p: function(d) {
+            var n = a, m = b;
+            var l = d.length | 0;
+            for (var i = 0; i != l; ) {
+              var e = Math.min(i + 2655, l);
+              for (; i < e; ++i)
+                m += n += d[i];
+              n = (n & 65535) + 15 * (n >> 16), m = (m & 65535) + 15 * (m >> 16);
+            }
+            a = n, b = m;
+          },
+          d: function() {
+            a %= 65521, b %= 65521;
+            return (a & 255) << 24 | (a & 65280) << 8 | (b & 255) << 8 | b >> 8;
+          }
+        };
+      };
       dopt = function(dat, opt, pre, post, st) {
         if (!st) {
           st = { l: 1 };
@@ -2609,6 +2651,27 @@ var NodeLibs = (() => {
           }
         }
         return dflt(dat, opt.level == null ? 6 : opt.level, opt.mem == null ? st.l ? Math.ceil(Math.max(8, Math.min(13, Math.log(dat.length))) * 1.5) : 20 : 12 + opt.mem, pre, post, st);
+      };
+      wbytes = function(d, b, v) {
+        for (; v; ++b)
+          d[b] = v, v >>>= 8;
+      };
+      zlh = function(c, o) {
+        var lv = o.level, fl2 = lv == 0 ? 0 : lv < 6 ? 1 : lv == 9 ? 3 : 2;
+        c[0] = 120, c[1] = fl2 << 6 | (o.dictionary && 32);
+        c[1] |= 31 - (c[0] << 8 | c[1]) % 31;
+        if (o.dictionary) {
+          var h = adler();
+          h.p(o.dictionary);
+          wbytes(c, 2, h.d());
+        }
+      };
+      zls = function(d, dict) {
+        if ((d[0] & 15) != 8 || d[0] >> 4 > 7 || (d[0] << 8 | d[1]) % 31)
+          err(6, "invalid zlib data");
+        if ((d[1] >> 5 & 1) == +!dict)
+          err(6, "invalid zlib data: " + (d[1] & 32 ? "need" : "unexpected") + " dictionary");
+        return (d[1] >> 3 & 4) + 2;
       };
       td = typeof TextDecoder != "undefined" && /* @__PURE__ */ new TextDecoder();
       tds = 0;
@@ -2625,25 +2688,36 @@ var NodeLibs = (() => {
   __export(zlib_exports, {
     default: () => zlib_default,
     deflateRawSync: () => deflateRawSync,
-    inflateRawSync: () => inflateRawSync
+    deflateSync: () => deflateSync2,
+    inflateRawSync: () => inflateRawSync,
+    inflateSync: () => inflateSync2
   });
-  function inflateRawSync(buf, opts) {
-    const out = inflateSync(new Uint8Array(buf.buffer, buf.byteOffset, buf.length));
+  function cap(out, opts) {
     if (opts && opts.maxOutputLength && out.length > opts.maxOutputLength) throw new Error("\uB108\uBB34 \uD07D\uB2C8\uB2E4");
     return import_buffer3.Buffer.from(out);
   }
-  function deflateRawSync(buf, opts) {
-    const level = opts && opts.level != null ? opts.level : 6;
-    return import_buffer3.Buffer.from(deflateSync(new Uint8Array(buf.buffer, buf.byteOffset, buf.length), { level }));
+  function inflateRawSync(buf, opts) {
+    return cap(inflateSync(u82(buf)), opts);
   }
-  var import_buffer3, zlib_default;
+  function deflateRawSync(buf, opts) {
+    return import_buffer3.Buffer.from(deflateSync(u82(buf), { level: opts && opts.level != null ? opts.level : 6 }));
+  }
+  function inflateSync2(buf, opts) {
+    return cap(unzlibSync(u82(buf)), opts);
+  }
+  function deflateSync2(buf, opts) {
+    return import_buffer3.Buffer.from(zlibSync(u82(buf), { level: opts && opts.level != null ? opts.level : 6 }));
+  }
+  var import_buffer3, u82, zlib_default;
   var init_zlib = __esm({
     "shims/zlib.js"() {
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       init_browser();
       import_buffer3 = __toESM(require_buffer());
-      zlib_default = { inflateRawSync, deflateRawSync };
+      u82 = (buf) => new Uint8Array(buf.buffer, buf.byteOffset, buf.length);
+      zlib_default = { inflateRawSync, deflateRawSync, inflateSync: inflateSync2, deflateSync: deflateSync2 };
     }
   });
 
@@ -2651,6 +2725,7 @@ var NodeLibs = (() => {
   var require_roster = __commonJS({
     "../../\uBA85\uB2E8\uD569\uCE58\uAE30/lib/roster.js"(exports, module) {
       "use strict";
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       var fs = (init_fs(), __toCommonJS(fs_exports));
@@ -2993,6 +3068,7 @@ var NodeLibs = (() => {
   var require_sheets = __commonJS({
     "../../\uBA85\uB2E8\uD569\uCE58\uAE30/lib/sheets.js"(exports, module) {
       "use strict";
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       var fs = (init_fs(), __toCommonJS(fs_exports));
@@ -3351,6 +3427,7 @@ var NodeLibs = (() => {
   var require_merge = __commonJS({
     "../../\uBA85\uB2E8\uD569\uCE58\uAE30/lib/merge.js"(exports, module) {
       "use strict";
+      init_define_process_argv();
       init_define_process_env();
       init_buffer_global();
       var roster2 = require_roster();
@@ -3562,6 +3639,7 @@ var NodeLibs = (() => {
     sheets: () => sheets,
     vfs: () => vfs
   });
+  init_define_process_argv();
   init_define_process_env();
   init_buffer_global();
   init_fs();

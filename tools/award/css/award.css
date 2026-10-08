@@ -1,0 +1,38 @@
+/* 상장 만들기 — app.css 위에 더한 것 */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: 14px; align-items: start; }
+.left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sticky { position: sticky; top: 76px; }
+html.embedded .sticky { top: 16px; }
+#preview { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+
+textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 10px; resize: vertical;
+}
+.lbl-block { display: block; color: var(--ink-soft); font-size: 13px; margin-bottom: 6px; }
+code { background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 0 4px; font-size: 12px; }
+.paste { margin-top: 6px; }
+.paste summary { cursor: pointer; font-size: 12.5px; color: var(--ink-soft); }
+.paste textarea { margin: 8px 0; }
+.checks { display: flex; gap: 18px; flex-wrap: wrap; margin: 6px 0 10px; }
+.checks .check { margin: 0; }
+.sliders { display: grid; gap: 8px; }
+.sliders label { display: grid; grid-template-columns: 64px 44px 1fr; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-soft); }
+.sliders label b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sliders input { width: 100%; accent-color: var(--accent); }
+
+.tablewrap { max-height: 330px; overflow: auto; border: 1px solid var(--line); border-radius: 9px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { position: sticky; top: 0; background: var(--card); text-align: left; font-weight: 600; color: var(--ink-soft); }
+.tbl th, .tbl td { padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tbl tbody tr { cursor: pointer; }
+.tbl tbody tr:hover { background: var(--bg); }
+.tbl tbody tr.on { background: var(--accent-soft); }
+.tbl td.empty { color: var(--ink-faint); text-align: center; padding: 22px; cursor: default; }
+
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; }
+  .right { order: -1; }
+  .sticky { position: static; }
+  #preview { max-height: 60vh; width: auto; margin: 0 auto; max-width: 100%; }
+}

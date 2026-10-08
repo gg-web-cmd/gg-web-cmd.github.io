@@ -95,7 +95,7 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
   <section id="home">
     <h1>교실 도구함</h1>
     <p>학교에서 자주 하는 파일 일을 설치 없이 브라우저에서 합니다.
-      <b>파일은 어디로도 올라가지 않습니다</b> — 모든 처리가 지금 이 브라우저 안에서 일어납니다.
+      <b>파일은 어디로도 올라가지 않습니다</b> — 모든 처리가 지금 이 브라우저 안에서 일어납니다(짧은 주소를 만들 때만 그 주소가 단축 서비스로 갑니다).
       메뉴에서 도구를 고르세요. 여러 도구를 오가도 하던 일은 그대로 남아 있습니다.</p>
     <div class="cards" id="cards"></div>
     <p class="note">윈도우에 설치해 쓰는 판(폴더 통째로 처리, 한글 문서 변환 등 더 많은 기능)은
@@ -114,11 +114,20 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
       desc: 'PDF 여러 개를 합치고, 나누고, 쪽을 돌리거나 빼고 순서를 바꿉니다. 사진도 PDF 쪽으로 넣습니다.' },
     { group: 'PDF', id: 'pdf-jpg', icon: '🖼️', name: 'PDF → 사진', short: '쪽 순서대로 JPG',
       desc: 'PDF 를 쪽 순서 그대로 JPG 로 바꿉니다. 1쪽은 001, 2쪽은 002. ZIP 으로 받거나 폴더에 바로 저장.' },
-    { group: '사진', id: 'idphoto', icon: '🪪', name: '증명사진 만들기', short: '얼굴 찾아 3:4 · 용량 맞춤',
+    { group: '문서', id: 'privacy', icon: '🛡️', name: '개인정보 지우개', short: '주민번호·전화 찾아 가리기',
+      desc: '한글(hwpx)·워드·엑셀·CSV 문서 속 주민번호·전화번호·계좌번호를 검산으로 찾아내고, 가린 사본을 ZIP 으로 받습니다.' },
+    { group: '문서', id: 'ppt', icon: '🎨', name: 'PPT 리스타일러', short: '디자인 입혀 새 PPTX',
+      desc: '작업해 둔 .pptx 를 올리고 디자인 카드를 누르면, 배치는 그대로 두고 색·글꼴·배경만 바꾼 새 PPTX 를 받습니다.' },
+    { group: '학생', id: 'idphoto', icon: '🪪', name: '증명사진 만들기', short: '얼굴 찾아 3:4 · 용량 맞춤',
       desc: '학생 사진을 얼굴 중심으로 나이스 규격(3:4 · 폭 640 · 100KB)에 맞춰 자르고, 명단으로 학번_이름을 붙입니다.' },
-    { group: '명단', id: 'roster', icon: '📋', name: '명단 합치기', short: '엑셀 여러 개 → 한 표',
+    { group: '학생', id: 'roster', icon: '📋', name: '명단 합치기', short: '엑셀 여러 개 → 한 표',
       desc: '명렬표·급식지원·방과후 신청 같은 엑셀 명단을 학생 기준으로 한 표에 모으고, 빠진 사람과 기준에 없는 사람을 찾아 줍니다.' },
-    { group: '화면', id: 'recorder', icon: '🎬', name: '화면 녹화', short: '고른 영역 + 컴퓨터 소리',
+    { group: '학생', id: 'award', icon: '🏅', name: '상장 만들기', short: '엑셀 명단 → 상장 일괄',
+      desc: '엑셀 학생 명단으로 상장을 한꺼번에 만듭니다. 배경 위에 상 이름·이름·학년반·수여 문구를 얹어 PNG(ZIP)나 인쇄용 PDF 로 받습니다.' },
+    { group: '수업', id: 'qr', icon: '🔳', name: 'QR · 짧은 주소', short: '주소 → 짧은 주소 + QR',
+      allow: 'clipboard-write *',
+      desc: '인터넷 주소를 짧은 주소와 QR 코드로 한 번에. PNG 로 저장하거나 이미지를 복사해 한글·PPT 에 바로 붙여 넣습니다.' },
+    { group: '수업', id: 'recorder', icon: '🎬', name: '화면 녹화', short: '고른 영역 + 컴퓨터 소리',
       allow: 'display-capture *; microphone *; autoplay *',
       desc: '화면에서 고른 네모만, 컴퓨터에서 나는 소리와 마이크까지 함께 녹화합니다. 크롬·엣지에서 됩니다.' },
   ];

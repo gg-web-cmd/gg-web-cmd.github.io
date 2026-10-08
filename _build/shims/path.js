@@ -13,8 +13,16 @@ function extname(p) {
   const m = /\.[^.\/]*$/.exec(basename(p));
   return m ? m[0] : '';
 }
+/** 웹판의 경로는 모두 '폴더/이름' 꼴 상대 경로다 — from 이 앞에 붙어 있으면 떼어 낸다 */
+function relative(from, to) {
+  const f = String(from || '').replace(/\\/g, '/').replace(/\/+$/, '');
+  const t = String(to || '').replace(/\\/g, '/');
+  if (!f) return t;
+  if (t === f) return '';
+  return t.startsWith(f + '/') ? t.slice(f.length + 1) : t;
+}
 function join(...a) { return a.filter((x) => x !== '' && x != null).join('/').replace(/\/+/g, '/'); }
-const path = { basename, dirname, extname, join, resolve: join, normalize: String, sep: '/' };
+const path = { basename, dirname, extname, join, resolve: join, relative, normalize: String, sep: '/' };
 path.posix = path;
 path.win32 = path;
 module.exports = path;
