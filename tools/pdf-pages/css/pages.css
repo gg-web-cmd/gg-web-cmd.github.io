@@ -1,0 +1,72 @@
+/* PDF 쪽 편집 — app.css 위에 더한 것 */
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.tsep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.empty { color: var(--ink-faint); text-align: center; padding: 30px 0 10px; margin: 0; }
+
+.pg {
+  position: relative;
+  background: var(--bg);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px 8px 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .12s, transform .12s, opacity .12s;
+}
+.pg:hover { border-color: var(--line-strong); }
+.pg.sel { border-color: var(--accent); background: var(--accent-soft); }
+.pg.dragging { opacity: .35; }
+.pg.drop-before { box-shadow: -4px 0 0 0 var(--accent); }
+.pg.drop-after { box-shadow: 4px 0 0 0 var(--accent); }
+
+.pg .frame {
+  height: 160px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.pg .frame img, .pg .frame canvas {
+  max-width: 100%;
+  max-height: 156px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+  transition: transform .18s ease;
+}
+.pg .frame .wait { color: var(--ink-faint); font-size: 12px; }
+.pg .cap {
+  display: flex; justify-content: space-between; align-items: center; gap: 4px;
+  margin-top: 6px; font-size: 11.5px; color: var(--ink-soft);
+}
+.pg .cap .no { font-weight: 700; color: var(--ink); }
+.pg .cap .src { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-faint); }
+.pg .acts {
+  position: absolute; top: 6px; right: 6px; display: flex; gap: 3px;
+  opacity: 0; transition: opacity .12s;
+}
+.pg:hover .acts, .pg:focus-within .acts { opacity: 1; }
+@media (hover: none) { .pg .acts { opacity: 1; } }
+.pg .acts button {
+  padding: 2px 6px; font-size: 12px; line-height: 1.3;
+  background: var(--card); border: 1px solid var(--line-strong); color: var(--ink-soft);
+}
+.pg .acts button:hover { color: var(--ink); border-color: var(--ink-faint); }
+.pg .acts button.x:hover { color: var(--err); border-color: var(--err); }
+.pg .badge-rot {
+  position: absolute; top: 8px; left: 8px; font-size: 10.5px; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink); border-radius: 99px; padding: 1px 6px;
+}
+
+.files .fcolor { flex: none; width: 10px; height: 10px; border-radius: 3px; }
+
+@media (max-width: 560px) {
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .seg.wide { flex-wrap: wrap; }
+}

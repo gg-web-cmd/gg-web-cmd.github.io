@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>증명사진 만들기</title>
+<meta name="description" content="학생 사진을 얼굴 중심으로 3:4 로 자르고 용량까지 맞춥니다. 얼굴 찾기까지 브라우저 안에서, 사진은 밖으로 나가지 않습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🪪</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+<script src="../common/theme.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🪪</span>
+    <div>
+      <h1>증명사진 만들기</h1>
+      <p class="tagline">얼굴을 찾아 3:4 로 자르고, 용량까지 맞춰 줍니다</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge ok" title="사진이 이 컴퓨터 밖으로 나가지 않습니다">🔒 브라우저 안에서만</span>
+    <span class="badge mute" id="dirBadge">사진을 넣으세요</span>
+    <button class="icon-btn" id="btnTheme" title="밝게 / 어둡게">🌙</button>
+  </div>
+</header>
+
+<div class="layout">
+  <main class="main-col">
+
+    <section class="card">
+      <h2>📂 학생 사진</h2>
+      <div class="path-row">
+        <input type="text" id="inDir" placeholder="폴더를 고르거나 사진을 이 창에 끌어다 놓으세요" readonly>
+        <button class="btn" id="btnPick">폴더 고르기</button>
+        <button class="btn" id="btnPickFiles">사진 고르기</button>
+      </div>
+      <input type="file" id="pickDir" webkitdirectory multiple hidden>
+      <input type="file" id="pickFiles" accept="image/*,.heic,.heif" multiple hidden>
+      <input type="file" id="pickRoster" accept=".xlsx,.xlsm,.csv,.tsv,.txt" hidden>
+      <p class="hint" id="scanInfo" style="margin:10px 0 0"></p>
+      <p class="note mute" style="margin:10px 0 0">원본 사진은 <b>읽기만</b> 합니다. 결과는
+        “<span id="outNameEcho">증명사진</span>” 이름의 ZIP 으로 받거나, 고른 폴더 안에 그 이름의 폴더를 만들어 저장합니다.</p>
+    </section>
+
+    <section class="card">
+      <h2>📐 어떤 규격으로</h2>
+      <div class="presets" id="presets"></div>
+      <div id="customBox" hidden>
+        <div class="grid-3" style="margin-top:12px">
+          <label class="field" style="margin:0">
+            <span>어떻게</span>
+            <select id="cKind">
+              <option value="id">얼굴 찾아 비율대로 자르기</option>
+              <option value="fit">비율 그대로, 긴 변만 줄이기</option>
+            </select>
+          </label>
+          <label class="field" style="margin:0" id="cRatioBox">
+            <span>비율 (가로 : 세로)</span>
+            <div class="path-row">
+              <input type="number" id="cRatioW" min="1" max="100" step="1">
+              <input type="number" id="cRatioH" min="1" max="100" step="1">
+            </div>
+          </label>
+          <label class="field" style="margin:0" id="cSizeBox">
+            <span>폭 (px)</span>
+            <input type="number" id="cWidth" min="40" max="6000" step="10">
+          </label>
+          <label class="field" style="margin:0" id="cLongBox" hidden>
+            <span>긴 변 (px)</span>
+            <input type="number" id="cLong" min="80" max="8000" step="10">
+          </label>
+          <label class="field" style="margin:0">
+            <span>목표 용량 (KB · 0이면 안 맞춤)</span>
+            <input type="number" id="cTarget" min="0" max="20000" step="10">
+          </label>
+        </div>
+      </div>
+      <p class="spec-line" id="specLine"></p>
+    </section>
+
+    <section class="card">
+      <h2>🖼️ 이렇게 나옵니다 <span class="badge mute" id="gridBadge">아직 없음</span></h2>
+      <div class="btn-row" style="margin-bottom:12px">
+        <button class="btn primary" id="btnMake">사진 만들어 보기</button>
+        <button class="btn" id="btnRedetect" disabled>얼굴 다시 찾기</button>
+        <span class="filters" id="filters" style="margin-left:auto"></span>
+      </div>
+      <div class="bar" id="workBar" hidden><i id="workBarIn" style="width:0%"></i></div>
+      <p class="bar-note" id="workNote"></p>
+
+      <div class="grid" id="grid"></div>
+      <p class="empty" id="emptyMsg">폴더를 고르고 [사진 만들어 보기] 를 누르세요.</p>
+
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn primary big" id="btnSave" disabled>모두 저장</button>
+        <button class="btn" id="btnOpenOut">폴더에 바로 저장…</button>
+      </div>
+      <p class="hint" id="saveInfo" style="margin:10px 0 0"></p>
+    </section>
+
+  </main>
+
+  <aside class="side-col">
+
+    <details class="card" id="dRoster" open>
+      <summary>👥 명단 <span class="badge mute" id="rosterBadge">없음</span></summary>
+      <div class="body">
+        <p class="hint">명단을 넣으면 사진마다 이름을 붙이고 <b>학번_이름.jpg</b> 로 저장합니다.
+          사진 파일 이름이 IMG_1234 라도 됩니다.</p>
+        <textarea id="taRoster" placeholder="1  3  강가온&#10;1  3  김나래&#10;또는&#10;10301  강가온"></textarea>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn primary sm" id="btnRosterPaste">이 명단 쓰기</button>
+          <button class="btn sm" id="btnRosterFile">파일에서…</button>
+          <button class="btn sm" id="btnRosterClear">비우기</button>
+        </div>
+        <label class="field" style="margin-top:12px">
+          <span>사진과 학생을 어떻게 짝지을까</span>
+          <select id="selPair">
+            <option value="order">파일 이름 순 ↔ 명단 순 (사진기 이름일 때)</option>
+            <option value="name">파일 이름에서 이름·학번 찾기</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>저장할 이름</span>
+          <select id="selNaming">
+            <option value="roster">학번_이름 (명단에서)</option>
+            <option value="keep">원래 이름 그대로</option>
+            <option value="number">001, 002 … 번호만</option>
+          </select>
+        </label>
+        <p class="note warn" id="pairWarn" hidden></p>
+        <p class="hint" id="rosterInfo" style="margin:10px 0 0"></p>
+      </div>
+    </details>
+
+    <details class="card" id="dFine">
+      <summary>🎚️ 자르는 자리 다듬기</summary>
+      <div class="body">
+        <label class="check">
+          <input type="checkbox" id="ckAutoFace">
+          <span>얼굴을 찾아 맞추기
+            <small>끄면 모든 사진을 가운데 기준으로 자릅니다. 얼굴이 아닌 사진일 때 쓰세요.</small></span>
+        </label>
+        <label class="field">
+          <span>머리 크기 <b id="headEcho"></b> — 클수록 얼굴이 크게 나옵니다</span>
+          <input type="range" id="rgHead" min="0.5" max="0.9" step="0.02">
+        </label>
+        <label class="field">
+          <span>위아래 자리 <b id="eyeEcho"></b> — 작을수록 얼굴이 위로 갑니다</span>
+          <input type="range" id="rgEye" min="0.3" max="0.6" step="0.02">
+        </label>
+        <label class="field">
+          <span>결과 이름 (ZIP · 폴더)</span>
+          <input type="text" id="inOutName" placeholder="증명사진" autocomplete="off">
+        </label>
+        <p class="hint" style="margin:6px 0 0">사진 하나만 어긋났다면 그 사진 아래의 ↑↓ 와 ＋－ 로 고치세요.</p>
+      </div>
+    </details>
+
+    <details class="card" id="dHelp">
+      <summary>💡 알아 두세요</summary>
+      <div class="body">
+        <p class="hint" style="margin-bottom:8px"><b>사진이 밖으로 나가지 않습니다</b><br>
+          웹 주소로 열었지만 얼굴 찾기까지 <b>이 브라우저 안에서</b> 합니다. 사진을 어디로도 올리지 않습니다.
+          명단도 이 창을 닫으면 사라집니다(저장하지 않습니다).</p>
+        <p class="hint" style="margin-bottom:8px"><b>아이폰 사진(.heic)</b><br>
+          브라우저가 HEIC 를 못 열면 “못 엶” 으로 표시됩니다(사파리는 엽니다). 목록에 “못 엶” 으로 표시됩니다.<br>
+          아이폰 → 설정 → 카메라 → 포맷 → <b>높은 호환성</b> 으로 바꿔 다시 찍거나 내보내세요.</p>
+        <p class="hint" style="margin-bottom:8px"><b>얼굴을 못 찾으면</b><br>
+          가운데를 기준으로 자르고 노랗게 표시합니다. 그 사진만 손으로 다듬으면 됩니다.</p>
+        <p class="hint" style="margin-bottom:0"><b>용량 맞추기</b><br>
+          목표 용량을 정하면 화질을 조금씩 낮춰 가며 그 아래로 맞춥니다.
+          그래도 안 되면 크기를 줄입니다. 결과에 실제 용량이 나옵니다.</p>
+      </div>
+    </details>
+
+  </aside>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="vendor/face-api.js"></script>
+<script src="../common/zip.js"></script>
+<script src="js/nodelibs.js"></script>
+<script src="js/local-api.js"></script>
+<script src="js/crop.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

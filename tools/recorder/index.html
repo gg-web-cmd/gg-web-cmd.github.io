@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>화면 녹화</title>
+<meta name="description" content="화면에서 고른 네모만, 컴퓨터 소리와 마이크까지 함께 녹화합니다. 설치 없이 크롬·엣지에서.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🎬</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+<script src="../common/theme.js"></script>
+</head>
+<body class="dark">
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎬</span>
+    <div>
+      <h1>화면 녹화</h1>
+      <p class="tagline">영상이 재생되는 곳만 네모로 골라, 소리까지 함께 고화질로 담습니다</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span id="stateBadge" class="badge">화면을 잡아 주세요</span>
+    <span id="helperBadge" class="badge" title="전역 단축키·빨간 테두리를 맡는 곁다리 도우미">도우미 확인 중…</span>
+    <button id="themeBtn" class="icon-btn" title="밝게 / 어둡게">🌓</button>
+    <button id="quitBtn" class="btn tiny danger hidden" title="웹판에는 없습니다">종료</button>
+  </div>
+</header>
+
+<div id="browserWarn" class="banner hidden">
+  <strong>이 브라우저로는 어렵습니다.</strong>
+  <span id="browserWarnText"></span>
+</div>
+
+<main class="layout">
+  <section class="main-col">
+
+    <!-- ① 화면 잡기 -->
+    <div class="card step">
+      <div class="step-head">
+        <span class="step-no">1</span>
+        <div>
+          <strong>먼저 화면을 잡습니다</strong>
+          <em>아래 단추를 누르면 <b>무엇을 공유할지</b> 묻는 창이 뜹니다.
+              <b>[전체 화면]</b> 을 고르고 <b>“시스템 오디오도 공유”</b> 를 꼭 켜 주세요 — 그래야 영상 소리가 함께 녹음됩니다.</em>
+        </div>
+      </div>
+
+      <div id="grabRow" class="grab-row">
+        <button id="grabBtn" class="btn primary huge">🖥️ 화면 잡기</button>
+        <div id="srcInfo" class="src-info muted-small">아직 잡은 화면이 없습니다.</div>
+        <div class="grow"></div>
+        <button id="regrabBtn" class="btn hidden">다시 고르기</button>
+        <button id="releaseBtn" class="btn danger hidden">놓아주기</button>
+      </div>
+    </div>
+
+    <!-- ② 영역 고르기 -->
+    <div class="card step">
+      <div class="step-head">
+        <span class="step-no">2</span>
+        <div>
+          <strong>녹화할 네모를 고릅니다</strong>
+          <em>미리 보기 위에서 끌면 영역이 정해집니다. 안쪽을 끌면 옮기고, 모서리를 끌면 크기가 바뀝니다.
+              화살표 키로 1픽셀씩(Shift 는 10픽셀씩) 밀 수 있고, 두 번 누르면 화면 전체가 됩니다.</em>
+        </div>
+      </div>
+
+      <div class="region-tools">
+        <button id="autoBtn" class="btn primary" disabled>✨ 영상 있는 곳 자동으로 찾기</button>
+        <button id="allBtn" class="btn" disabled>화면 전체</button>
+        <button id="clearRegionBtn" class="btn" disabled>지우기</button>
+        <label class="inline-field">
+          비율
+          <select id="aspectSel" class="select">
+            <option value="free">자유</option>
+            <option value="16:9">16 : 9</option>
+            <option value="4:3">4 : 3</option>
+            <option value="1:1">1 : 1</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="stage-wrap">
+        <div id="stage" class="stage">
+          <video id="preview" playsinline muted></video>
+          <canvas id="overlay" tabindex="0"></canvas>
+          <canvas id="magnifier" class="magnifier hidden"></canvas>
+          <div id="stageHint" class="stage-hint">
+            <div>
+              <div class="stage-hint-icon">🖥️</div>
+              <p>먼저 <b>화면 잡기</b> 를 눌러 주세요.</p>
+            </div>
+          </div>
+          <div id="autoBusy" class="stage-busy hidden">
+            <div>
+              <div class="spinner"></div>
+              <p>움직이는 곳을 살펴보는 중…<span id="autoPct"></span></p>
+              <em>영상을 <b>재생 중인 상태</b>로 두어야 정확합니다.</em>
+            </div>
+          </div>
+          <div id="countBig" class="count-big hidden"><span id="countNum">3</span></div>
+        </div>
+      </div>
+
+      <div class="region-numbers">
+        <label>x <input id="rx" type="number" class="num" min="0" step="2" disabled></label>
+        <label>y <input id="ry" type="number" class="num" min="0" step="2" disabled></label>
+        <label>가로 <input id="rw" type="number" class="num" min="16" step="2" disabled></label>
+        <label>세로 <input id="rh" type="number" class="num" min="16" step="2" disabled></label>
+        <span id="regionNote" class="muted-small"></span>
+      </div>
+    </div>
+
+    <!-- ③ 녹화 -->
+    <div class="card step">
+      <div class="step-head">
+        <span class="step-no">3</span>
+        <div>
+          <strong>녹화합니다</strong>
+          <em id="recHint">고른 네모만 담깁니다. 녹화 중에는 다른 프로그램을 마음껏 써도 됩니다.</em>
+        </div>
+      </div>
+
+      <div class="rec-row">
+        <button id="startBtn" class="btn primary huge" disabled>● 녹화 시작</button>
+        <button id="pauseBtn" class="btn huge hidden">⏸ 잠깐 멈춤</button>
+        <button id="stopBtn" class="btn danger huge hidden">■ 중지</button>
+
+        <div class="rec-meters">
+          <div class="rec-time" id="recTime">00:00</div>
+          <div class="muted-small" id="recSize">—</div>
+        </div>
+
+        <div class="grow"></div>
+
+        <div class="crop-peek">
+          <canvas id="cropPreview" width="192" height="108"></canvas>
+          <span class="muted-small">담기는 그림</span>
+        </div>
+      </div>
+
+      <div id="outInfo" class="out-info muted-small"></div>
+    </div>
+
+    <!-- 결과 -->
+    <div id="resultCard" class="card hidden">
+      <div class="result-head">
+        <div>
+          <strong id="resName">—</strong>
+          <div id="resMeta" class="muted-small"></div>
+        </div>
+        <div class="result-btns">
+          <button id="revealBtn" class="btn tiny">다시 내려받기</button>
+          <button id="openFileBtn" class="btn tiny hidden">기본 재생기로 열기</button>
+          <button id="againBtn" class="btn tiny primary">한 번 더 녹화</button>
+        </div>
+      </div>
+      <video id="resVideo" class="res-video" controls preload="metadata"></video>
+      <div id="resCheck" class="muted-small"></div>
+    </div>
+
+    <!-- 지난 녹화 -->
+    <div class="card">
+      <div class="list-head">
+        <strong>이번에 녹화한 것</strong>
+        <button id="openDirBtn2" class="btn tiny hidden">폴더 열기</button>
+      </div>
+      <div id="recentList" class="recent-list"></div>
+    </div>
+
+    <!-- 알림 -->
+    <details class="card log-card">
+      <summary>진행 알림</summary>
+      <div id="logList" class="log-list"></div>
+    </details>
+
+  </section>
+
+  <!-- 설정 -->
+  <aside class="side-col">
+    <h2 class="side-title">설정</h2>
+
+    <div class="field">
+      <label class="field-label">저장 폴더</label>
+      <div class="path-box" id="outDirText" title="">—</div>
+      <div class="row-btns">
+        <button id="pickDirBtn" class="btn tiny">폴더 고르기…</button>
+        <button id="openDirBtn" class="btn tiny hidden">열기</button>
+      </div>
+      <!-- 폴더 고르기 창이 막힌 PC(학교·회사 등)를 위한 뒷문 -->
+      <div id="dirTypeRow" class="row-btns hidden">
+        <input id="dirTypeInput" type="text" class="text grow"
+               placeholder="예: D:\녹화  또는  C:\Users\내이름\Videos\화면녹화"
+               spellcheck="false" autocomplete="off">
+        <button id="dirTypeBtn" class="btn tiny primary">이 폴더로</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="prefixInput">파일 이름 앞머리</label>
+      <input id="prefixInput" class="text" type="text" maxlength="40" placeholder="화면녹화">
+      <div class="muted-small" id="nameSample"></div>
+    </div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <label class="field-label" for="qualitySel">화질</label>
+      <select id="qualitySel" class="select">
+        <option value="saving">아끼기 — 용량 작게</option>
+        <option value="std">보통</option>
+        <option value="high">높음 (권장)</option>
+        <option value="max">최고 — 원본에 가깝게</option>
+      </select>
+    </div>
+
+    <div class="two">
+      <div class="field">
+        <label class="field-label" for="fpsSel">초당 장수</label>
+        <select id="fpsSel" class="select">
+          <option value="24">24</option>
+          <option value="30">30</option>
+          <option value="60">60 (부드러움)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="scaleSel">저장 크기</label>
+        <select id="scaleSel" class="select">
+          <option value="origin">원본 그대로</option>
+          <option value="1440">긴 변 2560</option>
+          <option value="1080">긴 변 1920</option>
+          <option value="720">긴 변 1280</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="field">
+        <label class="field-label" for="formatSel">파일 형식</label>
+        <select id="formatSel" class="select">
+          <option value="auto">자동 (mp4 우선)</option>
+          <option value="mp4">mp4</option>
+          <option value="webm">webm</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="saveModeSel">저장 방식</label>
+        <select id="saveModeSel" class="select">
+          <option value="stream">조각내어 바로 저장</option>
+          <option value="once">끝날 때 한 번에</option>
+        </select>
+      </div>
+    </div>
+    <div class="muted-small" id="saveModeNote"></div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <label class="check"><input type="checkbox" id="sysAudioChk"> 컴퓨터에서 나는 소리 (영상 소리)</label>
+      <div class="meter-row">
+        <input id="sysGainRange" class="range" type="range" min="0" max="200" value="100">
+        <div class="meter"><span id="sysMeter"></span></div>
+      </div>
+      <div class="muted-small" id="sysAudioNote">화면을 잡을 때 “시스템 오디오도 공유” 를 켜야 들어옵니다.</div>
+    </div>
+
+    <div class="field">
+      <label class="check"><input type="checkbox" id="micChk"> 마이크 (내 목소리)</label>
+      <select id="micSel" class="select" disabled></select>
+      <div class="meter-row">
+        <input id="micGainRange" class="range" type="range" min="0" max="200" value="100" disabled>
+        <div class="meter"><span id="micMeter"></span></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <div class="two">
+      <div class="field">
+        <label class="field-label" for="countdownSel">시작 전 셈하기</label>
+        <select id="countdownSel" class="select">
+          <option value="0">바로 시작</option>
+          <option value="3">3초</option>
+          <option value="5">5초</option>
+          <option value="10">10초</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="maxMinutesInput">최대 길이(분)</label>
+        <input id="maxMinutesInput" class="text" type="number" min="0" max="600" step="1" placeholder="0 = 무제한">
+      </div>
+    </div>
+
+    <label class="check hidden"><input type="checkbox" id="openWhenDoneChk"> 끝나면 저장 폴더 열기</label>
+    <div class="muted-small">폴더를 고르면(크롬·엣지) 녹화하는 동안 그 폴더의 파일에 바로 이어 씁니다 — 긴 녹화는 이쪽이 안전합니다. 고르지 않으면 끝날 때 내려받습니다.</div>
+
+    <hr class="sep">
+
+    <h3 class="side-title small">녹화 중 도움</h3>
+    <div class="hidden">
+      <label class="check"><input type="checkbox" id="showBorderChk"> 녹화 중인 곳에 빨간 테두리</label>
+      <label class="check"><input type="checkbox" id="showBarChk"> 항상 위에 조작 막대 띄우기</label>
+      <label class="check"><input type="checkbox" id="hotkeysChk"> 전역 단축키 쓰기</label>
+      <label class="check"><input type="checkbox" id="minimizeChk"> 녹화가 시작되면 이 창 내리기</label>
+      <div class="muted-small" id="hotkeyNote"></div>
+    </div>
+    <div class="muted-small">이 창 안에서 <b>F9</b> 시작·중지, <b>F10</b> 잠깐 멈춤.
+      빨간 테두리·항상 위 조작 막대·어디서나 듣는 단축키는 윈도우 설치판에서만 됩니다.</div>
+
+    <hr class="sep">
+    <div class="muted-small tip">
+      <b>팁</b><br>
+      · 유튜브·넷플릭스 같은 <b>보호된 영상</b>은 검게 나올 수 있습니다(브라우저가 막습니다).<br>
+      · 폴더를 골라 둔 경우, 녹화 중 이 창을 닫아도 그때까지 찍힌 만큼은 파일로 남습니다.<br>
+      · 소리가 안 들어가면 화면을 다시 잡고 <b>“시스템 오디오도 공유”</b>를 켜 주세요.
+    </div>
+  </aside>
+</main>
+
+<script src="lib/shared.js"></script>
+<script src="js/local-server.js"></script>
+<script src="js/capture.js"></script>
+<script src="js/region.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

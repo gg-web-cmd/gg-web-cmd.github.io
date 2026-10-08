@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF 쪽 편집</title>
+<meta name="description" content="PDF 합치기·나누기·쪽 돌리기·지우기·순서 바꾸기, 사진을 PDF 로. 브라우저 안에서만 처리합니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>📑</text></svg>">
+<link rel="stylesheet" href="../common/app.css">
+<link rel="stylesheet" href="css/pages.css">
+<script src="../common/theme.js"></script>
+</head>
+<body class="light">
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">📑</span>
+    <div>
+      <h1>PDF 쪽 편집</h1>
+      <p class="tagline">합치기 · 나누기 · 돌리기 · 지우기 · 순서 바꾸기 · 사진을 PDF 로</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button id="btnTheme" class="ghost" type="button" title="밝게 / 어둡게">🌙</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card">
+    <h2><span class="step">1</span> 파일 넣기</h2>
+    <div id="drop" class="drop">
+      <div class="drop-inner">
+        <div class="drop-icon">📄🖼️</div>
+        <p class="drop-title">PDF 나 사진을 여기에 끌어다 놓으세요</p>
+        <p class="drop-sub">여러 개를 넣으면 넣은 순서대로 이어 붙습니다 · JPG · PNG · WEBP 사진도 한 쪽이 됩니다</p>
+        <button id="btnPick" class="primary" type="button">파일 고르기…</button>
+        <input id="filePick" type="file" accept=".pdf,application/pdf,image/jpeg,image/png,image/webp,image/gif,image/bmp" multiple hidden>
+      </div>
+    </div>
+    <ul id="srcList" class="files" hidden></ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span> 쪽 다듬기 <span id="pageCount" class="muted"></span></h2>
+
+    <div class="toolbar" id="toolbar">
+      <button class="ghost small" type="button" data-act="all">모두 고르기</button>
+      <button class="ghost small" type="button" data-act="none">고르기 풀기</button>
+      <span class="tsep"></span>
+      <button class="ghost small" type="button" data-act="left" title="고른 쪽을 왼쪽으로 돌리기">↺ 왼쪽으로</button>
+      <button class="ghost small" type="button" data-act="right" title="고른 쪽을 오른쪽으로 돌리기">↻ 오른쪽으로</button>
+      <button class="ghost small" type="button" data-act="dup" title="고른 쪽을 하나 더 만들기">⧉ 복제</button>
+      <button class="ghost small danger" type="button" data-act="del">🗑 고른 쪽 빼기</button>
+      <span class="tsep"></span>
+      <button class="ghost small" type="button" data-act="reverse" title="쪽 순서를 거꾸로">⇅ 거꾸로</button>
+      <button class="ghost small" type="button" data-act="undo" id="btnUndo" title="되돌리기 (Ctrl+Z)">↶ 되돌리기</button>
+      <button class="ghost small" type="button" data-act="clear">모두 비우기</button>
+    </div>
+    <p class="hint">쪽을 눌러 고르고(Shift 로 여러 쪽), 끌어서 순서를 바꿉니다. 쪽 위의 단추로 하나씩 돌리거나 뺄 수도 있습니다.</p>
+
+    <div id="board" class="board"></div>
+    <p id="empty" class="empty">파일을 넣으면 쪽이 여기에 늘어섭니다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span> 저장하기</h2>
+
+    <div class="seg wide" id="segMode">
+      <button type="button" data-v="merge" class="on">하나로 합치기</button>
+      <button type="button" data-v="each">한 쪽씩 나누기</button>
+      <button type="button" data-v="chunk">몇 쪽씩 나누기</button>
+      <button type="button" data-v="ranges">범위로 나누기</button>
+    </div>
+
+    <div class="row" id="rowChunk" hidden>
+      <label class="lbl" for="chunk">몇 쪽씩</label>
+      <input id="chunk" type="number" class="num" min="1" max="999" value="2">
+      <span class="muted">쪽씩 끊어 여러 PDF 로 (ZIP)</span>
+    </div>
+    <div class="row" id="rowRanges" hidden>
+      <label class="lbl" for="ranges">범위</label>
+      <input id="ranges" type="text" class="text" placeholder="예: 1-3; 4-6; 7, 9  (세미콜론으로 파일을 나눕니다)" spellcheck="false">
+    </div>
+
+    <div class="row">
+      <label class="lbl" for="outName">파일 이름</label>
+      <input id="outName" type="text" class="text" maxlength="80" spellcheck="false" placeholder="합친문서">
+      <span class="muted">.pdf</span>
+    </div>
+
+    <label class="check"><input id="onlySel" type="checkbox"><span>고른 쪽만 저장하기</span></label>
+
+    <div class="row">
+      <label class="lbl" for="imgPage">사진 쪽</label>
+      <select id="imgPage" class="sel">
+        <option value="a4">A4 종이에 맞춰 넣기 (여백 조금)</option>
+        <option value="a4full">A4 종이에 꽉 차게</option>
+        <option value="image">사진 크기 그대로</option>
+      </select>
+    </div>
+
+    <div class="run" style="margin-top:14px">
+      <div class="run-left">
+        <button id="btnSave" class="primary big" type="button" disabled>PDF 로 저장</button>
+      </div>
+      <div class="run-right">
+        <div id="progWrap" class="prog" hidden>
+          <div class="prog-bar"><div id="progFill" class="prog-fill"></div></div>
+          <div id="progText" class="prog-text"></div>
+        </div>
+        <div id="saveHint" class="muted"></div>
+      </div>
+    </div>
+  </section>
+
+  <details class="log-box">
+    <summary>기록 보기</summary>
+    <div id="log" class="log"></div>
+  </details>
+
+  <p class="footnote">모든 처리는 이 브라우저 안에서 일어나며 파일을 어디로도 올리지 않습니다.
+    암호가 걸린 PDF 는 다룰 수 없습니다. 글자를 고치는 일은 설치판 「PDF 편집기」 로 하세요.</p>
+</main>
+
+<script src="../common/pdf-lib/pdf-lib.min.js"></script>
+<script src="../common/zip.js"></script>
+<script src="js/pages.js"></script>
+</body>
+</html>

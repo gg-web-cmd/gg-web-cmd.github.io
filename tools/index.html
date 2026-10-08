@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>교실 도구함</title>
+<meta name="description" content="PDF 편집·사진 변환·증명사진·명단 합치기·화면 녹화를 설치 없이 브라우저에서. 파일은 어디로도 올라가지 않습니다.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧰</text></svg>">
+<script src="common/theme.js"></script>
+<style>
+:root {
+  --bg: #f4f5f7; --side: #ffffff; --line: #e3e5ea; --ink: #1c1f24; --ink-soft: #5b616b; --ink-faint: #8a909a;
+  --accent: #c0392b; --hover: #f0f1f4; --on: #fdecea; --card: #ffffff;
+}
+html[data-theme="dark"] {
+  --bg: #14161a; --side: #1c1f25; --line: #2b2f37; --ink: #e8eaee; --ink-soft: #a5abb6; --ink-faint: #767d89;
+  --accent: #e05a49; --hover: #252932; --on: #3a201c; --card: #1c1f25;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px; display: grid; grid-template-columns: 232px 1fr; grid-template-rows: 100%;
+}
+nav {
+  background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column;
+  overflow-y: auto; min-height: 0;
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px; text-decoration: none; color: inherit; }
+.brand b { font-size: 16px; }
+.brand span { font-size: 24px; }
+.group { padding: 10px 10px 2px; }
+.group h3 { margin: 0 6px 6px; font-size: 11.5px; color: var(--ink-faint); font-weight: 700; letter-spacing: .3px; }
+.item {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; margin-bottom: 2px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left;
+  cursor: pointer; text-decoration: none;
+}
+.item:hover { background: var(--hover); }
+.item[aria-current="page"] { background: var(--on); color: var(--accent); font-weight: 700; }
+.item .ic { width: 22px; text-align: center; font-size: 16px; flex: none; }
+.item small { display: block; font-size: 11px; color: var(--ink-faint); font-weight: 400; }
+.foot { margin-top: auto; padding: 12px 16px 16px; display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--line); }
+.foot a { color: var(--ink-soft); font-size: 12.5px; text-decoration: none; }
+.foot a:hover { color: var(--ink); }
+#btnTheme {
+  margin-left: auto; border: 1px solid var(--line); background: transparent; color: inherit;
+  border-radius: 8px; padding: 5px 9px; cursor: pointer; font: inherit;
+}
+main { position: relative; min-width: 0; min-height: 0; }
+main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+#home { position: absolute; inset: 0; overflow-y: auto; padding: 40px 32px; }
+#home h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.3px; }
+#home > p { margin: 0 0 24px; color: var(--ink-soft); max-width: 640px; line-height: 1.6; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; max-width: 980px; }
+.cards button {
+  text-align: left; border: 1px solid var(--line); background: var(--card); color: inherit; border-radius: 12px;
+  padding: 16px; cursor: pointer; font: inherit; transition: transform .12s, box-shadow .12s;
+}
+.cards button:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0, 0, 0, .08); }
+.cards .ic { font-size: 26px; display: block; margin-bottom: 4px; }
+.cards b { display: block; margin: 8px 0 4px; font-size: 15px; }
+.cards span.d { color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+.cards .g { font-size: 11px; color: var(--accent); font-weight: 700; }
+#home > p.note, .note { margin-top: 28px; color: var(--ink-faint); font-size: 12.5px; max-width: 720px; line-height: 1.7; }
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  nav { flex-direction: row; align-items: center; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--line); }
+  .brand { padding: 10px 12px; flex: none; }
+  .brand b { display: none; }
+  #groups { display: flex; flex: none; }
+  .group { display: flex; padding: 6px 4px; flex: none; }
+  .group h3 { display: none; }
+  .item { white-space: nowrap; margin: 0 2px; padding: 7px 10px; }
+  .item small { display: none; }
+  .foot { margin: 0; border: 0; padding: 6px 10px; flex: none; }
+  .foot a { display: none; }
+  #home { padding: 22px 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav id="nav" aria-label="도구">
+  <a class="brand" href="#" data-go=""><span>🧰</span><b>교실 도구함</b></a>
+  <div id="groups"></div>
+  <div class="foot">
+    <a href="../">← 웹앱 모음</a>
+    <button id="btnTheme" type="button" title="밝게 / 어둡게">🌙</button>
+  </div>
+</nav>
+
+<main id="stage">
+  <section id="home">
+    <h1>교실 도구함</h1>
+    <p>학교에서 자주 하는 파일 일을 설치 없이 브라우저에서 합니다.
+      <b>파일은 어디로도 올라가지 않습니다</b> — 모든 처리가 지금 이 브라우저 안에서 일어납니다.
+      메뉴에서 도구를 고르세요. 여러 도구를 오가도 하던 일은 그대로 남아 있습니다.</p>
+    <div class="cards" id="cards"></div>
+    <p class="note">윈도우에 설치해 쓰는 판(폴더 통째로 처리, 한글 문서 변환 등 더 많은 기능)은
+      별도로 배포합니다. 크롬·엣지 최신판을 권합니다.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* 도구 목록 — 새 도구는 여기에 한 줄 더하면 메뉴와 첫 화면에 함께 나온다.
+   * allow: 그 도구가 iframe 안에서 써야 하는 권한 (화면 녹화는 display-capture 가 있어야 된다) */
+  var TOOLS = [
+    { group: 'PDF', id: 'pdf-pages', icon: '📑', name: 'PDF 쪽 편집', short: '합치기·나누기·돌리기',
+      desc: 'PDF 여러 개를 합치고, 나누고, 쪽을 돌리거나 빼고 순서를 바꿉니다. 사진도 PDF 쪽으로 넣습니다.' },
+    { group: 'PDF', id: 'pdf-jpg', icon: '🖼️', name: 'PDF → 사진', short: '쪽 순서대로 JPG',
+      desc: 'PDF 를 쪽 순서 그대로 JPG 로 바꿉니다. 1쪽은 001, 2쪽은 002. ZIP 으로 받거나 폴더에 바로 저장.' },
+    { group: '사진', id: 'idphoto', icon: '🪪', name: '증명사진 만들기', short: '얼굴 찾아 3:4 · 용량 맞춤',
+      desc: '학생 사진을 얼굴 중심으로 나이스 규격(3:4 · 폭 640 · 100KB)에 맞춰 자르고, 명단으로 학번_이름을 붙입니다.' },
+    { group: '명단', id: 'roster', icon: '📋', name: '명단 합치기', short: '엑셀 여러 개 → 한 표',
+      desc: '명렬표·급식지원·방과후 신청 같은 엑셀 명단을 학생 기준으로 한 표에 모으고, 빠진 사람과 기준에 없는 사람을 찾아 줍니다.' },
+    { group: '화면', id: 'recorder', icon: '🎬', name: '화면 녹화', short: '고른 영역 + 컴퓨터 소리',
+      allow: 'display-capture *; microphone *; autoplay *',
+      desc: '화면에서 고른 네모만, 컴퓨터에서 나는 소리와 마이크까지 함께 녹화합니다. 크롬·엣지에서 됩니다.' },
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var frames = {};
+
+  function draw() {
+    var groups = {};
+    TOOLS.forEach(function (t) { (groups[t.group] = groups[t.group] || []).push(t); });
+    $('groups').innerHTML = Object.keys(groups).map(function (g) {
+      return '<div class="group"><h3>' + g + '</h3>' + groups[g].map(function (t) {
+        return '<a class="item" href="#' + t.id + '" data-go="' + t.id + '"><span class="ic">' + t.icon + '</span>'
+          + '<span>' + t.name + '<small>' + t.short + '</small></span></a>';
+      }).join('') + '</div>';
+    }).join('');
+    $('cards').innerHTML = TOOLS.map(function (t) {
+      return '<button type="button" data-go="' + t.id + '"><span class="ic">' + t.icon + '</span>'
+        + '<span class="g">' + t.group + '</span><b>' + t.name + '</b><span class="d">' + t.desc + '</span></button>';
+    }).join('');
+  }
+
+  function show(id) {
+    var tool = TOOLS.find(function (t) { return t.id === id; });
+    $('home').hidden = !!tool;
+    Object.keys(frames).forEach(function (k) { frames[k].hidden = k !== id; });
+    Array.prototype.forEach.call(document.querySelectorAll('.item'), function (a) {
+      if (a.dataset.go === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    document.title = tool ? tool.name + ' · 교실 도구함' : '교실 도구함';
+    if (!tool) return;
+    /* 처음 열 때만 만든다. 다른 도구로 옮겨 가도 지우지 않는다 — 하던 일이 그대로 남게 */
+    if (!frames[id]) {
+      var f = document.createElement('iframe');
+      f.src = id + '/';
+      f.title = tool.name;
+      if (tool.allow) f.allow = tool.allow;
+      $('stage').appendChild(f);
+      frames[id] = f;
+    }
+  }
+
+  function route() { show(decodeURIComponent(location.hash.slice(1))); }
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-go]');
+    if (!a) return;
+    e.preventDefault();
+    var id = a.dataset.go;
+    if (('#' + id) !== location.hash) location.hash = id;
+    else route();
+    if (!id) history.replaceState(null, '', location.pathname);
+  });
+  window.addEventListener('hashchange', route);
+
+  window.ToolsShell = { TOOLS: TOOLS };
+  draw();
+  route();
+}());
+</script>
+</body>
+</html>

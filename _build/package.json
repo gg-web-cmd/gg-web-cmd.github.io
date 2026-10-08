@@ -1,0 +1,7 @@
+{
+  "name": "tools-web-build",
+  "private": true,
+  "description": "교실 도구함 웹판 — 설치판(C:/vibe/*)의 Node 라이브러리를 브라우저용으로 묶는다",
+  "scripts": { "build": "node build.js" },
+  "devDependencies": { "esbuild": "0.25.10", "fflate": "0.8.2", "buffer": "6.0.3" }
+}
