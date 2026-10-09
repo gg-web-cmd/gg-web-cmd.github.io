@@ -12,10 +12,11 @@
 .rename button,.back{font:inherit;border:1px solid var(--line-strong);border-radius:8px;padding:10px 14px;background:var(--card);color:var(--ink);cursor:pointer;text-decoration:none}.rename button:disabled{opacity:.5;cursor:not-allowed}
 .rename button.primary{background:var(--accent);color:var(--accent-ink)}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.table-wrap{overflow:auto;max-height:420px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;min-width:160px}th{position:sticky;top:0;background:var(--card)}.bad{color:var(--err)}.muted{color:var(--ink-soft)}
 #drop{border:2px dashed var(--line-strong)}#drop.drag{border-color:var(--accent)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.rename input:disabled,.rename select:disabled{opacity:.45;cursor:not-allowed}html.embedded .rename>.actions:first-child{display:none}html.embedded .rename>h1{margin-top:0!important}
 @media(max-width:650px){.fields{grid-template-columns:1fr}.rename{padding:18px 12px}.panel{padding:14px}}
 </style></head>
 <body><div class="rename">
-<div class="actions"><a class="back" href="../#rename">← 교실 도구함</a><button id="btnTheme" type="button" aria-label="화면 밝기 바꾸기">🌙</button></div>
+<div class="actions"><a class="back" href="../#rename" target="_top">← 교실 도구함</a><button id="btnTheme" type="button" aria-label="화면 밝기 바꾸기">🌙</button></div>
 <h1 style="margin-top:22px">파일이름 일괄 바꾸기</h1>
 <p>① 파일 선택 → ② 규칙 설정 → ③ 미리보기 확인 → ④ ZIP 저장<br>이름을 바꾼 <b>사본</b>을 받습니다. 원본 파일과 확장자는 그대로이며, 파일을 서버로 보내지 않습니다.</p>
 <fieldset class="panel" id="controls"><legend>파일과 이름 규칙</legend>
