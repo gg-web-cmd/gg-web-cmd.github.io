@@ -63,6 +63,10 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
 .cards b { display: block; margin: 8px 0 4px; font-size: 15px; }
 .cards span.d { color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
 .cards .g { font-size: 11px; color: var(--accent); font-weight: 700; }
+.search { display: block; max-width: 680px; margin: 0 0 20px; font-weight: 700; }
+.search input { display: block; width: 100%; margin-top: 8px; padding: 12px; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 #home > p.note, .note { margin-top: 28px; color: var(--ink-faint); font-size: 12.5px; max-width: 720px; line-height: 1.7; }
 @media (max-width: 760px) {
   body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
@@ -97,6 +101,8 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
     <p>학교에서 자주 하는 파일 일을 설치 없이 브라우저에서 합니다.
       <b>파일은 어디로도 올라가지 않습니다</b> — 모든 처리가 지금 이 브라우저 안에서 일어납니다(짧은 주소를 만들 때만 그 주소가 단축 서비스로 갑니다).
       메뉴에서 도구를 고르세요. 여러 도구를 오가도 하던 일은 그대로 남아 있습니다.</p>
+    <label class="search" for="toolSearch">어떤 일을 하시나요?<input id="toolSearch" type="search" placeholder="예: 이름 바꾸기, PDF, 명단, 사진"></label>
+    <p id="searchCount" role="status" aria-live="polite"></p>
     <div class="cards" id="cards"></div>
     <p class="note">윈도우에 설치해 쓰는 판(폴더 통째로 처리, 한글 문서 변환 등 더 많은 기능)은
       별도로 배포합니다. 크롬·엣지 최신판을 권합니다.</p>
@@ -110,6 +116,8 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
   /* 도구 목록 — 새 도구는 여기에 한 줄 더하면 메뉴와 첫 화면에 함께 나온다.
    * allow: 그 도구가 iframe 안에서 써야 하는 권한 (화면 녹화는 display-capture 가 있어야 된다) */
   var TOOLS = [
+    { group: '파일', id: 'rename', icon: '✏️', name: '파일이름 일괄 바꾸기', short: '미리보기 → 사본 ZIP',
+      desc: '여러 파일에 번호·앞뒤 문구를 붙이거나 이름을 찾아 바꿉니다. 겹치는 이름을 확인하고 원본을 보존한 사본을 ZIP으로 받습니다.' },
     { group: 'PDF', id: 'pdf-pages', icon: '📑', name: 'PDF 쪽 편집', short: '합치기·나누기·돌리기',
       desc: 'PDF 여러 개를 합치고, 나누고, 쪽을 돌리거나 빼고 순서를 바꿉니다. 사진도 PDF 쪽으로 넣습니다.' },
     { group: 'PDF', id: 'pdf-jpg', icon: '🖼️', name: 'PDF → 사진', short: '쪽 순서대로 JPG',
@@ -170,7 +178,23 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
     }
   }
 
-  function route() { show(decodeURIComponent(location.hash.slice(1))); }
+  function route() {
+    var id = '';
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch (_) {}
+    show(id);
+  }
+
+  function search() {
+    var terms = $('toolSearch').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    var count = 0;
+    Array.prototype.forEach.call($('cards').querySelectorAll('button'), function (button, i) {
+      var t = TOOLS[i];
+      var text = [t.name, t.short, t.desc, t.group, t.id].join(' ').toLocaleLowerCase().replace(/\s/g, '');
+      button.hidden = !terms.every(function (term) { return text.indexOf(term) !== -1; });
+      if (!button.hidden) count++;
+    });
+    $('searchCount').textContent = count ? count + '개 도구' : '찾는 도구가 없습니다. 다른 단어로 검색해 보세요.';
+  }
 
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-go]');
@@ -185,6 +209,8 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
 
   window.ToolsShell = { TOOLS: TOOLS };
   draw();
+  $('toolSearch').addEventListener('input', search);
+  search();
   route();
 }());
 </script>

@@ -44,6 +44,10 @@ main{padding:34px 0 70px}
 .card.feature h3{font-size:24px}
 .card.feature p{font-size:15.5px}
 .hidden{display:none!important}
+.search{display:block;margin-top:22px;max-width:620px;font-weight:700}
+.search input{display:block;width:100%;padding:12px 14px;margin-top:8px;border:1px solid #56608A;border-radius:10px;background:#fff;color:var(--navy);font:inherit}
+.search-status{color:var(--gray);margin:0 0 18px}
+:focus-visible{outline:3px solid var(--coral);outline-offset:4px}
 footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--gray);font-size:13.5px}
 @media (max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.card.feature{grid-column:1/-1}}
 @media (max-width:620px){.grid{grid-template-columns:1fr}.card.feature{flex-direction:column}.card.feature .th{border-right:0;border-bottom:1px solid var(--line);min-height:0;aspect-ratio:16/10}}
@@ -60,9 +64,11 @@ footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--gray);fo
     <button type="button" data-f="class" aria-pressed="false">수업용</button>
     <button type="button" data-f="tool" aria-pressed="false">교사 업무 도구</button>
   </div>
+  <label class="search" for="appSearch">원하는 앱 찾기<input id="appSearch" type="search" placeholder="예: PDF, 타자, 면접, 파일 이름"></label>
 </div></header>
 
 <main class="wrap">
+  <p class="search-status" id="appCount" role="status" aria-live="polite"></p>
   <div class="grid" id="grid">
     <a class="card feature" data-cat="train" href="vibe-coding/">
       <div class="th"><img src="thumbs/vibe-coding.webp" alt="나만의 앱 만들기 연수 안내서 화면" loading="lazy"></div>
@@ -76,7 +82,11 @@ footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--gray);fo
     <a class="card" data-cat="tool" href="tools/">
       <div class="th"><img src="thumbs/tools.png" alt="교실 도구함 화면" loading="lazy"></div>
       <div class="b"><div class="tags"><span class="tag new">NEW</span><span class="tag tool">교사 업무 도구</span></div>
-        <h3>교실 도구함</h3><p>PDF 합치기·나누기·사진 변환, 개인정보 지우개, PPT 리스타일러, 증명사진·명단 합치기·상장 만들기, QR·짧은 주소, 화면 녹화를 메뉴 하나에. 파일은 브라우저 밖으로 나가지 않습니다.</p><span class="go">열기 →</span></div>
+        <h3>교실 도구함</h3><p>PDF 합치기·나누기·사진 변환, 개인정보 지우개, PPT 리스타일러, 증명사진·명단 합치기·상장 만들기, QR·짧은 주소, 화면 녹화를 메뉴 하나에. 파일은 이 브라우저에서 처리합니다. 짧은 주소 생성 시 입력 주소를 외부 단축 서비스에 보냅니다.</p><span class="go">열기 →</span></div>
+    </a>
+    <a class="card" data-cat="tool" href="tools/#rename">
+      <div class="b"><div class="tags"><span class="tag new">NEW</span><span class="tag tool">교사 업무 도구</span></div>
+        <h3>파일이름 일괄 바꾸기</h3><p>파일 이름에 번호·앞뒤 문구를 붙이고 찾아 바꾸기. 미리보기로 이름 겹침을 확인하고, 원본을 보존한 사본을 ZIP으로 받습니다.</p><span class="go">열기 →</span></div>
     </a>
     <a class="card" data-cat="train" href="neulbom-ai/">
       <div class="th"><img src="thumbs/neulbom-ai.webp" alt="늘봄 행정 AI 실습 화면" loading="lazy"></div>
@@ -106,7 +116,7 @@ footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--gray);fo
     <a class="card" data-cat="tool" href="interview-prep/">
       <div class="th"><img src="thumbs/interview-prep.webp" alt="생기부 면접 준비기 화면" loading="lazy"></div>
       <div class="b"><div class="tags"><span class="tag tool">교사 업무 도구</span></div>
-        <h3>생기부 면접 준비기</h3><p>학생부 기록에서 면접 문항을 설계하는 교사용 도구. 데이터는 브라우저 밖으로 나가지 않습니다.</p><span class="go">열기 →</span></div>
+        <h3>생기부 면접 준비기</h3><p>학생부 기록에서 면접 문항을 설계하는 교사용 도구. AI 생성 기능을 사용하면 입력 자료가 외부 AI 서비스로 전송됩니다.</p><span class="go">열기 →</span></div>
     </a>
   </div>
 </main>
@@ -114,11 +124,25 @@ footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--gray);fo
 <footer><div class="wrap">gg-web-cmd · 바이브 코딩으로 만든 교실 도구 모음 — 각 앱은 GitHub Pages로 공개되어 있습니다.</div></footer>
 
 <script>
+let category = 'all';
+function filterApps() {
+  const terms = document.getElementById('appSearch').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  let count = 0;
+  document.querySelectorAll('#grid .card').forEach(c => {
+    const text = c.textContent.toLocaleLowerCase().replace(/\s/g, '');
+    const matches = (category === 'all' || c.dataset.cat === category) && terms.every(term => text.includes(term));
+    c.classList.toggle('hidden', !matches);
+    if (matches) count++;
+  });
+  document.getElementById('appCount').textContent = count ? count + '개 앱' : '찾는 앱이 없습니다. 검색어나 분류를 바꿔 보세요.';
+}
 document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
-  const f = b.dataset.f;
+  category = b.dataset.f;
   document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", x === b));
-  document.querySelectorAll("#grid .card").forEach(c => c.classList.toggle("hidden", f !== "all" && c.dataset.cat !== f));
+  filterApps();
 }));
+document.getElementById('appSearch').addEventListener('input', filterApps);
+filterApps();
 </script>
 </body>
 </html>

@@ -39,7 +39,7 @@
     var central = [];     // 가운데 목록
     var offset = 0;
     var count = 0;
-    var names = {};
+    var names = Object.create(null);
     var enc = new TextEncoder();
     var stamp = dosTime(new Date());
 

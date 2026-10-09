@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>파일이름 일괄 바꾸기 · 교실 도구함</title>
+<meta name="description" content="파일 이름을 미리 확인하고 이름을 바꾼 사본을 ZIP으로 받으세요. 원본과 확장자는 보존하며 파일은 서버로 보내지 않습니다.">
+<script src="../common/theme.js"></script><link rel="stylesheet" href="../common/app.css">
+<style>
+.rename{max-width:1050px;margin:0 auto;padding:24px 18px 50px}.rename h1{font-size:26px;margin:0 0 8px}.rename p{color:var(--ink-soft)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin:18px 0}.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.rename label{display:block;font-weight:600}.rename input,.rename select{display:block;width:100%;margin-top:6px;border:1px solid var(--line-strong);border-radius:7px;padding:10px;background:var(--bg);color:var(--ink);font:inherit}
+.rename button,.back{font:inherit;border:1px solid var(--line-strong);border-radius:8px;padding:10px 14px;background:var(--card);color:var(--ink);cursor:pointer;text-decoration:none}.rename button:disabled{opacity:.5;cursor:not-allowed}
+.rename button.primary{background:var(--accent);color:var(--accent-ink)}.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.table-wrap{overflow:auto;max-height:420px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);overflow-wrap:anywhere;min-width:160px}th{position:sticky;top:0;background:var(--card)}.bad{color:var(--err)}.muted{color:var(--ink-soft)}
+#drop{border:2px dashed var(--line-strong)}#drop.drag{border-color:var(--accent)}[hidden]{display:none!important}:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+@media(max-width:650px){.fields{grid-template-columns:1fr}.rename{padding:18px 12px}.panel{padding:14px}}
+</style></head>
+<body><div class="rename">
+<div class="actions"><a class="back" href="../#rename">← 교실 도구함</a><button id="btnTheme" type="button" aria-label="화면 밝기 바꾸기">🌙</button></div>
+<h1 style="margin-top:22px">파일이름 일괄 바꾸기</h1>
+<p>① 파일 선택 → ② 규칙 설정 → ③ 미리보기 확인 → ④ ZIP 저장<br>이름을 바꾼 <b>사본</b>을 받습니다. 원본 파일과 확장자는 그대로이며, 파일을 서버로 보내지 않습니다.</p>
+<fieldset class="panel" id="controls"><legend>파일과 이름 규칙</legend>
+<div class="panel" id="drop"><label for="files">파일을 여러 개 선택하거나 이곳에 끌어 놓으세요</label><input id="files" type="file" multiple><p>파일을 다시 선택하면 목록이 교체됩니다. 한 번에 500개 · 합계 250MB까지. 폴더 대신 파일을 선택하세요.</p></div>
+<div class="fields">
+<label>이름 규칙<select id="mode"><option value="keep">원래 이름에 문구 추가·찾아 바꾸기</option><option value="number">새 이름 + 순서 번호</option></select></label>
+<label>파일 순서<select id="order"><option value="picked">선택한 순서</option><option value="name">이름순 (2 다음 10)</option></select></label>
+<label>새 이름 (번호 규칙용)<input id="base" value="과제" maxlength="200"></label>
+<label>시작 번호<input id="start" type="number" value="1" min="0" max="999999" step="1"></label>
+<label>번호 자릿수<select id="width"><option value="2">2자리 (01)</option><option value="3" selected>3자리 (001)</option><option value="4">4자리 (0001)</option><option value="6">6자리 (000001)</option></select></label>
+<label>앞에 붙일 문구<input id="prefix" maxlength="200" placeholder="예: 2반_"></label>
+<label>뒤에 붙일 문구<input id="suffix" maxlength="200" placeholder="예: _제출"></label>
+<label>찾을 문구 (원래 이름 규칙용)<input id="find" maxlength="200" placeholder="예: - 복사본"></label>
+<label>바꿀 문구<input id="replace" maxlength="200" placeholder="빈칸이면 찾은 문구 삭제"></label>
+</div><div class="actions" style="margin-top:18px"><button id="sample" type="button">예시로 체험</button><button id="clear" type="button">파일 비우기</button></div>
+</fieldset>
+<section class="panel" aria-labelledby="preview-title"><h2 id="preview-title">바뀔 이름 미리보기</h2>
+<p id="summary" role="status" aria-live="polite">파일을 선택하세요.</p>
+<div class="table-wrap"><table><thead><tr><th scope="col">원래 이름</th><th scope="col">바뀔 이름</th><th scope="col">확인</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="actions" style="margin-top:18px"><button class="primary" id="save" type="button" disabled>이 이름으로 ZIP 저장</button></div>
+<p id="status" role="status" aria-live="polite"></p><p class="muted">ZIP을 풀어 사본을 사용하세요. 겹치는 이름은 저장을 막습니다. 입력한 규칙은 저장하지 않으며, 페이지를 새로고침하면 선택한 파일이 사라집니다.</p>
+</section></div><script src="../common/zip.js"></script><script src="plan.js"></script><script src="app.js"></script></body></html>
