@@ -6,7 +6,6 @@
   // 화면은 24×15칸(1152×720). 구역 지도(20×12)는 가운데에 놓여 둘레에 머리 위 표시판 자리가 남는다.
   const TS = 16, SC = 3, VW = 24, VH = 15, MOVE_MS = 150, MAX_HEARTS = 5;
   const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-  const TEACHER = /[?&]teacher\b/.test(location.search);
   const cvs = $('#view'), ctx = cvs.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
@@ -26,9 +25,9 @@
     ['buddy', '안녕, {name}! 나는 실험 도우미 비커봇이야.'],
     ['buddy', '여기는 과학 섬. 중학교 2학년 과학 연구소 여덟 곳이 모여 있는 곳이야.'],
     ['buddy', '그런데 "뒤죽박죽 슬라임"들이 연구소마다 숨어들어서 지식을 몽땅 뒤섞어 버렸어!'],
-    ['buddy', '연구소를 되찾을 때마다 단원 열쇠를 얻을 수 있어. 열쇠가 있어야 다음 연구소 문이 열려.'],
+    ['buddy', '연구소 여덟 곳은 어느 곳이든 바로 들어갈 수 있어. 보스를 물리치면 그 단원의 열쇠를 얻으니까 여덟 개를 모두 모아 보자!'],
     ['buddy', '방향키나 W·A·S·D로 움직이고, 가고 싶은 곳을 눌러도 돼. Space를 누르면 말을 걸 수 있어.'],
-    ['buddy', '먼저 1번 연구소로 가 보자! 노란 화살표를 따라가.'],
+    ['buddy', '노란 화살표는 아직 열쇠가 없는 가장 앞 번호 연구소를 가리켜. 지금 배우는 단원으로 바로 가도 돼!'],
   ];
 
   // ───────── 저장 ─────────
@@ -350,14 +349,15 @@
     G.bossAt = null;
     SFX.play('win');
     await say(G.data.clear);
-    const n = G.stageNo, pr = prog();
+    const n = G.stageNo, pr = prog(), first = !save.cleared[n];
     save.cleared[n] = true; pr.done = true; persist();
     await resultCard(n);
     await fade(() => goHubSync(n));
     toast(`🔑 ${n}단원 열쇠를 얻었어요!`);
-    const u = SQ_UNITS[n];
-    if (u) await say([['buddy', SQ_DATA[n + 1] ? `${n + 1}번 연구소 '${u.unit}' 문이 열렸어! 가 보자.` : `${n + 1}번 연구소 '${u.unit}'는 아직 공사 중이야. 선생님이 문제를 넣어 주시면 열릴 거야!`]]);
-    else if (SQ_UNITS.every((x) => save.cleared[x.no])) {
+    // 순서와 관계없이 깰 수 있으니, 아직 열쇠가 없는 가장 앞 번호 연구소를 권한다(마을의 노란 화살표와 같다)
+    const nx = SQ_UNITS.find((x) => !save.cleared[x.no]);
+    if (nx) await say([['buddy', SQ_DATA[nx.no] ? `아직 열쇠가 없는 ${nx.no}번 연구소 '${nx.unit}'에 가 볼까? 다른 연구소에 먼저 가도 좋아!` : `${nx.no}번 연구소 '${nx.unit}'는 아직 공사 중이야. 선생님이 문제를 넣어 주시면 열릴 거야!`]]);
+    else if (first) {
       SFX.play('win');
       toast(`🏆 열쇠 ${SQ_UNITS.length}개를 모두 모았어요!`);
       await say([
@@ -410,14 +410,13 @@
     showGame();
   }
 
+  // 연구소는 순서와 관계없이 처음부터 모두 열려 있다(지금 배우는 단원으로 바로 들어가게). 열쇠는 완료 표시다.
   function portalState(n) {
-    if (!(TEACHER || n === 1 || save.cleared[n - 1])) return 'locked';
     return SQ_DATA[n] ? 'open' : 'soon';
   }
 
   async function enterPortal(n) {
     const u = SQ_UNITS[n - 1], st = portalState(n);
-    if (st === 'locked') return say([['buddy', `${n - 1}단원 열쇠가 있어야 ${n}번 연구소 '${u.unit}'에 들어갈 수 있어.`]]);
     if (st === 'soon') return say([['sign', `${n}번 연구소 '${u.unit}' — 🚧 아직 공사 중이에요.`], ['buddy', '선생님이 이 단원의 문제를 넣어 주시면 문이 열릴 거야!']]);
     const choice = await portalCard(n);
     if (!choice) return;
@@ -549,13 +548,14 @@
   function openTeacher() {
     modal(`<h2>👩‍🏫 선생님 안내</h2><div class="guide-text">
       <p><b>게임 구조</b> — 마을(과학 섬)에 단원별 연구소 8곳이 있어요. 연구소마다 구역 3곳(중단원)과 보스 방이 있고,
-      구역의 <b>?</b> 칸 문제와 실험대 미니게임을 모두 해결해야 다음 문이 열려요. 보스를 이기면 단원 열쇠를 얻고 다음 연구소가 열려요.</p>
+      구역의 <b>?</b> 칸 문제와 실험대 미니게임을 모두 해결해야 다음 문이 열려요. 보스를 이기면 단원 열쇠를 얻어요.</p>
       <p><b>교과서</b> — 비상교육 중학교 과학 2 (2022 개정)의 단원 순서·중단원(블록)·용어·예시를 따랐어요.
       구역 하나가 교과서의 블록 하나이고, 문제를 맞히면 해설과 함께 "📖 교과서 ○쪽"이 나와요. 각 단원의 보스전 마지막 문제는 교과서 "단원의 문제"예요.</p>
       <p><b>준비된 단원</b> — Ⅰ. 물질의 특성(문제 25, 용어 15, 실험대 4) · Ⅱ. 지권의 변화(문제 29, 용어 14, 실험대 5) · Ⅲ. 빛과 파동(문제 31, 용어 14, 실험대 6) · Ⅳ. 물질의 구성(문제 33, 용어 15, 실험대 6) · Ⅴ. 식물과 에너지(문제 31, 용어 14, 실험대 6) · Ⅵ. 동물과 에너지(문제 33, 용어 15, 실험대 7) · Ⅶ. 전기와 자기(문제 35, 용어 15, 실험대 8) · Ⅷ. 별과 우주(문제 36, 용어 15, 실험대 6). 여덟 단원이 모두 준비되어 있어요.</p>
       <p><b>문제 고치기</b> — 단원마다 <code>js/stages/stage1.js</code> ~ <code>stage8.js</code> 한 파일에 문제·용어·지도가 모두 들어 있어요.
       문제 문장이나 보기를 바꾸고 저장한 뒤 새로 고침하면 바로 반영돼요. "골라 보세요" 보기는 화면에서 섞여 나와요.</p>
-      <p><b>시범 보이기</b> — 주소 끝에 <code>?teacher</code> 를 붙이면 열쇠 없이 준비된 모든 연구소에 들어갈 수 있어요.</p>
+      <p><b>단원 고르기</b> — 연구소 8곳은 처음부터 모두 열려 있어서, 지금 배우는 단원으로 바로 들어갈 수 있어요.
+      마을의 노란 화살표는 아직 열쇠가 없는 가장 앞 번호 연구소를 가리켜요.</p>
       <p><b>기록</b> — 별명과 진행 상황은 이 기기의 브라우저에만 저장돼요. 서버로 보내는 정보는 없어요.
       단원을 마치면 결과 카드(정답률·틀린 문제)가 나오니 화면을 캡처해 제출하게 할 수 있어요.</p></div>`, { cls: 'wide' });
   }
@@ -672,7 +672,7 @@
       else if (ch === 'D' && !G.doorOpen) t = '잠긴 문 살펴보기';
       else if (isDigit(ch)) {
         const n = Number(ch), u = SQ_UNITS[n - 1], st = portalState(n);
-        t = `${n}. ${u.unit} — ${st === 'open' ? '들어가기' : st === 'locked' ? '🔒 잠김' : '🚧 공사 중'}`;
+        t = `${n}. ${u.unit} — ${st === 'open' ? '들어가기' : '🚧 공사 중'}`;
       }
     }
     if (t === lastPrompt) return;
@@ -802,7 +802,7 @@
     for (let y = 0; y < 6; y++) for (let x = 0; x < 20; x++) tctx.drawImage(y === 4 ? Sprites.path(x & 3) : (x * 3 + y) % 7 === 0 ? Sprites.flower(x & 3) : Sprites.grass((x + y) & 3), x * 16, y * 16);
     tctx.drawImage(Sprites.tree(1), 0, 16); tctx.drawImage(Sprites.tree(2), 304, 32); tctx.drawImage(Sprites.tree(3), 272, 0);
     tctx.drawImage(Sprites.portal(f, 'open'), 64, 32);
-    tctx.drawImage(Sprites.portal(f, 'locked'), 208, 32);
+    tctx.drawImage(Sprites.portal(f ^ 1, 'open'), 208, 32);
     tctx.drawImage(Sprites.archimedes(), 96, 48 + f);
     tctx.drawImage(Sprites.person(save.look).right[Math.floor(t / 160) % 2], 128, 48);
     tctx.drawImage(Sprites.buddy(), 112, 46 + Math.round(Math.sin(t / 260) * 1.5));
