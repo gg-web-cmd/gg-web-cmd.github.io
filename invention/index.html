@@ -294,6 +294,29 @@ table.guide td, table.guide th { text-align: left; font-size: .9rem; vertical-al
   body.printing .sp-break { break-before: page; border: 0; }
 }
 
+/* ---------- 추가: 3칸 입력, 연산자 표, 일정, 보고서 ---------- */
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 12px; }
+.techs.persp { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+table.ops { border-collapse: collapse; margin: 12px 0 6px; font-size: .92rem; }
+table.ops th, table.ops td { border: 1px solid var(--line); padding: 5px 12px; text-align: left; }
+table.ops th { background: #f7f8fb; }
+ul.tips { margin: 6px 0 0; padding-left: 20px; }
+ul.tips li { margin: 2px 0; }
+table.fee { max-width: 520px; }
+table.fee td:first-child { font-weight: 600; }
+ol.timeline { list-style: none; padding: 0; margin: 14px 0 6px; border-left: 3px solid var(--pri-soft); }
+ol.timeline li { position: relative; padding: 4px 0 8px 18px; }
+ol.timeline li::before { content: ""; position: absolute; left: -8px; top: 10px; width: 13px; height: 13px; border-radius: 50%; background: var(--pri); }
+ol.timeline li b { display: inline-block; min-width: 116px; color: var(--pri); }
+.reportbox { font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", sans-serif; }
+table.rep { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: .93rem; }
+table.rep th, table.rep td { border: 1px solid #c9cfdb; padding: 6px 10px; text-align: left; vertical-align: top; }
+table.rep th { width: 140px; background: #f2f4f8; }
+table.rep th[colspan] { width: auto; background: var(--pri-soft); color: var(--pri); }
+table.rep code { font-family: Consolas, "D2Coding", monospace; word-break: break-all; }
+@media (max-width: 900px) { .grid3 { grid-template-columns: 1fr; } table.rep th { width: 96px; } }
+@media print { body.printing table.rep { break-inside: avoid; } }
+
 </style>
 </head>
 <body>
@@ -345,12 +368,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       createdAt: now, updatedAt: now,
       level: "easy",
       student: { name: name || "", school: "", grade: "", team: "" },
-      s1: { who: "", where: "", what: "", sentence: "", product: "", inconvenience: "", improve: "",
+      s1: { who: "", where: "", what: "", sentence: "", product: "", inconvenience: "", cause: "", improve: "",
             analysis: { purpose: "", structure: "", shape: "", size: "", material: "", usage: "" }, memo: [] },
       s2: { ideas: [], contradiction: { better: "", worse: "", principle: "", idea: "" } },
       s3: { chosen: "", scores: {}, pmi: { p: "", m: "", i: "", summary: "" }, notPatentable: {} },
       s4: { type: "patent", components: [], drawings: [], rep: 1, usage: "", variants: "" },
-      s5: { keywords: [], query: "", found: [], verdict: "", diff: "", cite: true },
+      s5: { keywords: [], exclude: "", query: "", found: [], verdict: "", diff: "", cite: true },
       s6: { title: "", titleEn: "", field: "", background: "", problem: "", solution: "",
             effects: [], effectsText: "", drawingDesc: "", detail: "", symbols: "", claims: [], abstract: "" },
       s8: { checks: {}, appNo: "", appDate: "", memo: "" },
@@ -588,13 +611,38 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 
   // ---------------------------------------------------------------- 선행조사 검색식
-  function searchQuery(keywords) {
+  function searchQuery(keywords, exclude) {
     var groups = (keywords || []).map(function (k) {
       var words = [k.word].concat(String(k.synonyms || "").split(/[,，\n]/)).map(function (w) { return String(w || "").trim(); }).filter(Boolean);
       var uniq = words.filter(function (w, i) { return words.indexOf(w) === i; });
       return uniq.length ? (uniq.length > 1 ? "(" + uniq.join("+") + ")" : uniq[0]) : "";
     }).filter(Boolean);
-    return groups.join("*");
+    var q = groups.join("*");
+    var ex = String(exclude || "").split(/[,，\n]/).map(function (w) { return w.trim(); }).filter(Boolean);
+    if (q && ex.length) q += ex.map(function (w) { return "*!" + w; }).join("");
+    return q;
+  }
+
+  // ---------------------------------------------------------------- 선행기술조사 보고서
+  var PA_STATUS = { published: "공개", registered: "등록", rejected: "거절", withdrawn: "취하·포기", expired: "소멸" };
+  var PA_RELEVANCE = { "4": "75~100 (매우 비슷)", "3": "50~75 (비슷)", "2": "25~50 (일부 비슷)", "1": "0~25 (관련 적음)" };
+  function priorArtReport(p) {
+    var core = coreList(p);
+    return {
+      title: (p.s6.title || (chosenIdea(p) || {}).name || "").trim(),
+      keywords: (p.s5.keywords || []).map(function (k) { return [k.word].concat(String(k.synonyms || "").split(/[,，]/)).map(function (w) { return String(w || "").trim(); }).filter(Boolean).join(", "); }),
+      exclude: String(p.s5.exclude || "").trim(),
+      query: p.s5.query || "",
+      verdict: ({ go: "계속 진행", fix: "아이디어 고치기", change: "다른 아이디어로" })[p.s5.verdict] || "",
+      diff: p.s5.diff || "",
+      rows: (p.s5.found || []).map(function (f, i) {
+        return {
+          n: i + 1, no: f.no || "", title: f.title || "", status: PA_STATUS[f.status] || "", relevance: PA_RELEVANCE[f.relevance] || "",
+          feature: f.memo || "", similar: f.similar || "", differ: f.differ || "", improve: f.improve || "",
+          compare: core.map(function (c) { return { name: c.name, v: ({ same: "같음", similar: "비슷함", none: "없음" })[(f.compare || {})[c.id]] || "-" }; })
+        };
+      })
+    };
   }
 
   // ---------------------------------------------------------------- 진행률
@@ -631,26 +679,31 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       ["custGuardian", "보호자(법정대리인)의 특허고객번호를 먼저 발급받았어요"],
       ["custStudent", "학생의 특허고객번호를 발급받았어요 (보호자 정보·주민등록등본·필요하면 가족관계증명서)"],
       ["cert", "보호자의 인증서를 특허로에 등록했어요"],
-      ["certReady", "출원하는 날 쓸 인증서(USB 등)와 비밀번호를 준비했어요"]
+      ["certReady", "출원하는 날 쓸 인증서(USB 등)와 비밀번호를 준비하고, 인증서 유효기간도 확인했어요"]
     ] },
     { group: "서류 준비하기", items: [
       ["noErrors", "7단계 점검에서 빨간 표시를 모두 고쳤어요"],
       ["teacherOk", "선생님께 명세서 최종 확인을 받았어요"],
       ["fileReady", "명세서 파일(워드 또는 한글)을 내려받았어요"],
-      ["drawingOk", "도면이 흰 바탕에 검은 선으로 또렷하게 보여요"]
+      ["drawingOk", "도면이 흰 바탕에 검은 선으로 또렷하게 보여요"],
+      ["drawingNums", "청구항에 나오는 부품이 모두 도면에 부호(번호)로 표시되어 있어요"],
+      ["research", "출원 직전에 KIPRIS에서 한 번 더 검색해 새로 나온 비슷한 특허가 없는지 확인했어요"]
     ] },
     { group: "특허로에서 출원하기", items: [
       ["login", "특허로(www.patent.go.kr)에 보호자 인증서로 로그인했어요"],
       ["form", "출원서에 출원인(학생)·법정대리인(보호자)·발명자를 입력했어요"],
       ["attach", "명세서·요약서·도면 파일을 첨부했어요"],
-      ["fee", "학생·미성년자 수수료 감면 대상인지 확인하고 선택했어요"],
-      ["submit", "제출하고 출원번호(접수번호)를 기록했어요"]
+      ["fee", "수수료 면제(감면) 사유를 선택했어요 (만 6~18세는 출원료·심사청구료·최초 3년분 등록료 면제)"],
+      ["submit", "제출하고 출원번호(접수번호)를 기록했어요"],
+      ["receipt", "접수증(PDF)을 내려받아 보관했어요"]
     ] },
     { group: "제출한 뒤에", items: [
       ["digitized", "특허청 전자화 결과를 확인했어요 (내용이 다르면 30일 안에 정정 신청)"],
-      ["paid", "수수료 납부를 확인했어요"],
-      ["exam", "심사청구 시기를 선생님과 상의했어요 (출원일부터 3년 안에 청구해야 심사를 받아요)"],
-      ["notice", "의견제출통지서가 오면 선생님과 함께 대응하기로 했어요"]
+      ["paid", "수수료가 면제(또는 납부) 처리되었는지 확인했어요"],
+      ["exam", "심사청구를 할지 선생님과 정했어요 (출원일부터 3년 안, 학생은 청구항 30개 이하면 심사청구료 면제)"],
+      ["notice", "의견제출통지서가 오면 기한(보통 2개월, 연장 신청 가능) 안에 선생님과 함께 대응하기로 했어요"],
+      ["priority", "출원 뒤 1년 안에 발명을 더 개선하면 '국내우선권 주장 출원'을 할 수 있다는 것을 알아요"],
+      ["register", "등록결정이 나면 3개월 안에 등록료를 내야 한다는 것을 알아요 (학생은 최초 3년분 면제)"]
     ] }
   ];
 
@@ -667,6 +720,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     else {
       EVAL_WORDS.forEach(function (w) { if (t.indexOf(w) >= 0) add("warn", 6, "명칭에 '" + w + "' 같은 자랑하는 말은 빼요. 무엇인지만 쓰면 돼요.", "title"); });
       if (t.length > 60) add("warn", 6, "명칭이 너무 길어요. 짧고 분명하게 줄여 보세요.", "title");
+      if (/특허|실용신안/.test(t)) add("warn", 6, "명칭에는 '특허', '실용신안'이라는 말을 쓰지 않아요.", "title");
+      if (!(s6.titleEn || "").trim()) add("info", 6, "영문 명칭도 써 두면 좋아요. 명세서에는 '국문 명칭{영문 명칭}'으로 들어가요.", "titleEn");
     }
     [["field", "기술분야"], ["background", I + "의 배경이 되는 기술"], ["problem", "해결하려는 과제"],
      ["solution", "과제의 해결 수단"], ["effectsText", I + "의 효과"], ["detail", I + "을 실시하기 위한 구체적인 내용"],
@@ -720,6 +775,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (/종래/.test((s6.background || "") + (s6.problem || ""))) add("info", 6, "'종래' 대신 '기존의', '일반적인' 같은 쉬운 말을 써도 돼요.", "background");
 
     if (!(p.s5.query || "").trim()) add("warn", 5, "선행기술 조사(KIPRIS 검색)를 아직 하지 않았어요.", "query");
+    if ((p.s5.found || []).some(function (f) { return f.relevance === "4"; }) && p.s5.verdict === "go")
+      add("warn", 5, "관련도 75~100(매우 비슷)인 특허가 있어요. 내 발명만의 차이점을 더 분명하게 만들어 보세요.", "found");
     if (p.s5.verdict === "change") add("warn", 5, "선행기술 조사에서 '다른 아이디어로 바꾸기'를 골랐어요. 아이디어를 다시 정해 보세요.", "verdict");
     var bad = Object.keys(p.s3.notPatentable || {}).filter(function (k) { return p.s3.notPatentable[k]; });
     if (bad.length) add("warn", 3, "특허를 받기 어려운 경우에 해당하는 항목이 체크되어 있어요. 선생님과 확인해 보세요.", "notPatentable");
@@ -745,7 +802,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     var docs = (p.s5.found || []).filter(function (f) { return (f.no || "").trim(); });
     if (p.s5.cite && docs.length) {
       h2("(【선행기술문헌】)"); h2("(【특허문헌】)");
-      body(docs.map(function (f, i) { return "(특허문헌 " + (i + 1) + ") " + f.no.trim(); }).join("\n"));
+      body(docs.map(function (f, i) { return "(특허문헌 " + (i + 1) + ") " + citeText(f); }).join("\n"));
     }
     h2("【" + I + "의 내용】");
     h2(I === "고안" ? "【해결하고자 하는 과제】" : "【해결하려는 과제】"); body(s6.problem);
@@ -771,6 +828,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       });
     }
     return b;
+  }
+
+  // 공보 종류를 붙인 인용 표기: 한국 등록특허공보 제10-1234567호
+  function citeText(f) {
+    var n = String(f.no || "").trim();
+    if (!n || /^[A-Za-z]{2}/.test(n)) return n;
+    var kind = /^20-/.test(n) ? "실용신안" : "특허";
+    if (f.status === "registered") return "한국 등록" + kind + "공보 제" + n + "호";
+    if (f.status === "published" || f.status === "rejected" || f.status === "withdrawn") return "한국 공개" + kind + "공보 제" + n + "호";
+    return n;
   }
 
   // ---------------------------------------------------------------- 공통 유틸
@@ -936,13 +1003,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     josa: josa, pick: pick, toAdnominal: toAdnominal, renumber: renumber, topLevel: topLevel, childrenOf: childrenOf,
     coreList: coreList, drafts: drafts, draftAll: draftAll, searchQuery: searchQuery, progress: progress, runChecks: runChecks,
     FILING_CHECKS: FILING_CHECKS, specBlocks: specBlocks, previewHtml: previewHtml, buildDocx: buildDocx, buildHwpx: buildHwpx,
-    chosenIdea: chosenIdea, inv: inv, fileBase: fileBase
+    chosenIdea: chosenIdea, inv: inv, fileBase: fileBase, priorArtReport: priorArtReport, PA_STATUS: PA_STATUS, PA_RELEVANCE: PA_RELEVANCE
   };
 });
 
 </script>
 <script>
-window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2lqoua6yek", "createdAt": "2026-10-10T16:21:52.064Z", "updatedAt": "2026-10-10T16:21:52.064Z", "level": "easy", "student": {"name": "예시 학생", "school": "○○초등학교", "grade": "6학년", "team": ""}, "s1": {"who": "나와 친구들", "where": "교실 앞 우산꽂이", "what": "젖은 우산에서 빗물이 흘러내림", "sentence": "나와 친구들은 교실 앞 우산꽂이에서 젖은 우산의 빗물이 바닥으로 흘러 불편하다.", "product": "장우산", "inconvenience": "젖은 우산을 세워 두면 빗물이 바닥으로 흘러내려 바닥이 미끄러워지고 물을 닦아야 한다.", "improve": "우산에서 떨어지는 빗물을 바닥에 흘리지 않고 모을 수 있다", "analysis": {"purpose": "비가 올 때 머리와 몸이 젖지 않도록 막아 준다", "structure": "우산대에 연결된 살대가 우산 천을 펼치고 접는다", "shape": "펼치면 둥근 지붕 모양, 접으면 긴 막대 모양", "size": "길이 약 90cm, 무게 약 400g", "material": "금속 우산대, 방수 천, 플라스틱 손잡이", "usage": "비가 오면 펼쳐서 쓰고, 다 쓴 뒤에는 접어서 우산꽂이에 세워 둔다"}, "memo": ["실내화가 젖어서 미끄럽다", "급식실 물컵을 놓을 곳이 없다"]}, "s2": {"ideas": [{"id": "i1", "tech": "더하기", "name": "빗물받이 컵이 달린 우산", "desc": "우산대 끝에 컵을 끼워서 흘러내린 빗물을 모은다. 모인 물은 마개를 열어 버린다."}, {"id": "i2", "tech": "재료 바꾸기", "name": "물을 빨아들이는 우산 덮개", "desc": "접은 우산에 물을 흡수하는 천 덮개를 씌운다."}, {"id": "i3", "tech": "모양 바꾸기", "name": "물이 모이는 홈이 있는 우산꽂이", "desc": "우산꽂이 바닥에 물이 모이는 홈과 서랍을 만든다."}], "contradiction": {"better": "", "worse": "", "principle": "", "idea": ""}}, "s3": {"chosen": "i1", "scores": {"i1": {"new": 2, "better": 3, "make": 3}, "i2": {"new": 1, "better": 2, "make": 3}, "i3": {"new": 1, "better": 2, "make": 2}}, "pmi": {"p": "빗물이 바닥에 떨어지지 않아 미끄럽지 않다. 우산꽂이가 없어도 세워 둘 수 있다.", "m": "컵이 있으면 우산이 조금 무거워진다.", "i": "컵을 접을 수 있게 만들면 가방에도 넣을 수 있을 것 같다.", "summary": "가장 쓸모 있고 만들기도 쉬워서 이 아이디어로 정했다."}, "notPatentable": {}}, "s4": {"type": "patent", "components": [{"id": "c1", "name": "우산대", "parent": null, "core": true, "role": "우산 천을 지지하는 긴 막대이다", "claimPhrase": "우산 천이 결합되는", "relation": "우산대(10)의 위쪽에는 손잡이(20)가, 아래쪽 끝에는 물받이 컵(30)이 결합된다", "features": "", "num": "10"}, {"id": "c2", "name": "손잡이", "parent": null, "core": false, "role": "사용자가 우산을 잡는 부분이다", "claimPhrase": "", "relation": "", "features": "", "num": "20"}, {"id": "c3", "name": "물받이 컵", "parent": null, "core": true, "role": "우산 천에서 흘러내린 빗물을 담는다", "claimPhrase": "상기 우산대의 아래쪽 끝에 결합되어 빗물을 모으는", "relation": "물받이 컵(30)은 위쪽이 열린 컵 모양으로, 접은 우산 천의 아래쪽을 감싼다", "features": "실리콘처럼 접을 수 있는 재료로 만들어진", "num": "30"}, {"id": "c4", "name": "연결부", "parent": "c3", "core": false, "role": "물받이 컵을 우산대에 끼우거나 뺄 수 있게 한다", "claimPhrase": "", "relation": "", "features": "", "num": "31"}, {"id": "c5", "name": "배수 마개", "parent": "c3", "core": false, "role": "물받이 컵의 바닥에 있어 모인 물을 버릴 때 연다", "claimPhrase": "", "relation": "", "features": "", "num": "32"}], "drawings": [{"id": "d1", "kind": "사시도", "caption": "전체 모습을 나타낸", "img": "data:image/png;base64,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", "w": 640, "h": 820}, {"id": "d2", "kind": "단면도", "caption": "물받이 컵 부분을 확대한", "img": "data:image/png;base64,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", "w": 640, "h": 480}], "rep": 1, "usage": "사용자는 우산을 다 쓴 뒤 우산을 접고 물받이 컵(30)을 연결부(31)로 우산대(10)의 끝에 끼운다\n우산 천에서 흘러내린 빗물은 물받이 컵(30)에 모인다\n물이 차면 배수 마개(32)를 열어 물을 버린다", "variants": "물받이 컵(30)은 우산 천을 접을 때 함께 접히는 주름 모양으로 만들 수도 있다"}, "s5": {"keywords": [{"word": "우산", "synonyms": "양산, umbrella"}, {"word": "물받이", "synonyms": "빗물받이, 받침, 컵, 용기"}, {"word": "끝", "synonyms": "하단, 팁, 꼭지"}], "query": "(우산+양산+umbrella)*(물받이+빗물받이+받침+컵+용기)*(끝+하단+팁+꼭지)", "found": [{"no": "", "title": "(예시) KIPRIS에서 찾은 비슷한 특허를 여기에 적어요", "url": "", "memo": "번호와 이름은 실제 검색 결과로 바꿔요", "compare": {"c1": "same", "c3": "similar"}}], "verdict": "go", "diff": "기존 제품은 우산꽂이에 물받이가 있지만, 이 발명은 우산 자체에 떼었다 붙일 수 있는 물받이 컵이 있다는 점이 다르다", "cite": true}, "s6": {"title": "빗물받이 컵이 달린 우산", "titleEn": "", "field": "본 발명은 빗물받이 컵이 달린 우산에 관한 것이다.", "background": "장우산은 비가 올 때 머리와 몸이 젖지 않도록 막아 준다. 일반적으로 장우산은 비가 오면 펼쳐서 쓰고, 다 쓴 뒤에는 접어서 우산꽂이에 세워 둔다. 그러나 젖은 우산을 세워 두면 빗물이 바닥으로 흘러내려 바닥이 미끄러워지고 물을 닦아야 한다. 따라서 이러한 불편을 줄일 수 있는 새로운 장우산이 필요하다.", "problem": "본 발명은 위와 같은 문제를 해결하기 위한 것으로, 우산에서 떨어지는 빗물을 바닥에 흘리지 않고 모을 수 있는 빗물받이 컵이 달린 우산을 제공하는 것을 목적으로 한다.", "solution": "상기 목적을 달성하기 위한 본 발명에 따른 빗물받이 컵이 달린 우산은, 우산 천이 결합되는 우산대 및 상기 우산대의 아래쪽 끝에 결합되어 빗물을 모으는 물받이 컵을 포함한다.\n우산대는 우산 천을 지지하는 긴 막대이다.\n물받이 컵은 우산 천에서 흘러내린 빗물을 담는다.\n또한, 물받이 컵은 실리콘처럼 접을 수 있는 재료로 만들어진 것일 수 있다.", "effects": [{"cause": "물받이 컵이 우산대 끝에 결합되어 있어서", "result": "젖은 우산을 세워 두어도 빗물이 바닥에 떨어지지 않는다"}, {"cause": "배수 마개를 열어 모인 물을 버릴 수 있으므로", "result": "물받이 컵을 계속 사용할 수 있다"}], "effectsText": "본 발명에 따르면, 물받이 컵이 우산대 끝에 결합되어 있어서 젖은 우산을 세워 두어도 빗물이 바닥에 떨어지지 않는다.\n본 발명에 따르면, 배수 마개를 열어 모인 물을 버릴 수 있으므로 물받이 컵을 계속 사용할 수 있다.", "drawingDesc": "도 1은 본 발명의 일 실시예에 따른 빗물받이 컵이 달린 우산의 전체 모습을 나타낸 사시도이다.\n도 2는 본 발명의 일 실시예에 따른 빗물받이 컵이 달린 우산의 물받이 컵 부분을 확대한 단면도이다.", "detail": "이하, 첨부된 도면을 참조하여 본 발명의 바람직한 실시예를 상세히 설명한다.\n도 1을 참조하면, 본 발명의 일 실시예에 따른 빗물받이 컵이 달린 우산은 우산대(10), 손잡이(20) 및 물받이 컵(30)을 포함한다.\n우산대(10)는 우산 천을 지지하는 긴 막대이다. 우산대(10)의 위쪽에는 손잡이(20)가, 아래쪽 끝에는 물받이 컵(30)이 결합된다.\n손잡이(20)는 사용자가 우산을 잡는 부분이다.\n물받이 컵(30)은 우산 천에서 흘러내린 빗물을 담는다. 물받이 컵(30)은 위쪽이 열린 컵 모양으로, 접은 우산 천의 아래쪽을 감싼다. 물받이 컵(30)은 연결부(31) 및 배수 마개(32)를 포함할 수 있다. 연결부(31)는 물받이 컵을 우산대에 끼우거나 뺄 수 있게 한다. 배수 마개(32)는 물받이 컵의 바닥에 있어 모인 물을 버릴 때 연다. 물받이 컵(30)은 실리콘처럼 접을 수 있는 재료로 만들어진 것일 수 있다.\n다음으로, 본 발명에 따른 빗물받이 컵이 달린 우산을 사용하는 방법을 설명한다.\n사용자는 우산을 다 쓴 뒤 우산을 접고 물받이 컵(30)을 연결부(31)로 우산대(10)의 끝에 끼운다.\n우산 천에서 흘러내린 빗물은 물받이 컵(30)에 모인다.\n물이 차면 배수 마개(32)를 열어 물을 버린다.\n한편, 본 발명은 위 실시예에 한정되지 않으며 다음과 같이 변형하여 실시할 수도 있다.\n물받이 컵(30)은 우산 천을 접을 때 함께 접히는 주름 모양으로 만들 수도 있다.", "symbols": "10: 우산대\n20: 손잡이\n30: 물받이 컵\n31: 연결부\n32: 배수 마개", "claims": [{"type": "indep", "ref": "", "text": "우산 천이 결합되는 우산대; 및\n상기 우산대의 아래쪽 끝에 결합되어 빗물을 모으는 물받이 컵을 포함하는 빗물받이 컵이 달린 우산."}, {"type": "dep", "ref": "1", "text": "청구항 1에 있어서,\n상기 물받이 컵은 실리콘처럼 접을 수 있는 재료로 만들어진 것을 특징으로 하는 빗물받이 컵이 달린 우산."}], "abstract": "본 발명은 빗물받이 컵이 달린 우산에 관한 것이다. 본 발명에 따른 빗물받이 컵이 달린 우산은 우산대 및 물받이 컵을 포함한다. 이에 따라 물받이 컵이 우산대 끝에 결합되어 있어서 젖은 우산을 세워 두어도 빗물이 바닥에 떨어지지 않는다."}, "s8": {"checks": {}, "appNo": "", "appDate": "", "memo": ""}, "teacher": {"comments": {}, "notes": ""}};
+window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2lqoua6yek", "createdAt": "2026-10-10T16:21:52.064Z", "updatedAt": "2026-11-04T13:16:06.418Z", "level": "easy", "student": {"name": "예시 학생", "school": "○○초등학교", "grade": "6학년", "team": ""}, "s1": {"who": "나와 친구들", "where": "교실 앞 우산꽂이", "what": "젖은 우산에서 빗물이 흘러내림", "sentence": "나와 친구들은 교실 앞 우산꽂이에서 젖은 우산의 빗물이 바닥으로 흘러 불편하다.", "product": "장우산", "inconvenience": "젖은 우산을 세워 두면 빗물이 바닥으로 흘러내려 바닥이 미끄러워지고 물을 닦아야 한다.", "improve": "우산에서 떨어지는 빗물을 바닥에 흘리지 않고 모을 수 있다", "analysis": {"purpose": "비가 올 때 머리와 몸이 젖지 않도록 막아 준다", "structure": "우산대에 연결된 살대가 우산 천을 펼치고 접는다", "shape": "펼치면 둥근 지붕 모양, 접으면 긴 막대 모양", "size": "길이 약 90cm, 무게 약 400g", "material": "금속 우산대, 방수 천, 플라스틱 손잡이", "usage": "비가 오면 펼쳐서 쓰고, 다 쓴 뒤에는 접어서 우산꽂이에 세워 둔다"}, "memo": ["실내화가 젖어서 미끄럽다", "급식실 물컵을 놓을 곳이 없다"], "cause": "우산 천에 묻은 빗물이 우산 끝으로 모여 떨어진다. 왜? 떨어지는 물을 받아 줄 곳이 우산에 없다."}, "s2": {"ideas": [{"id": "i1", "tech": "더하기", "name": "빗물받이 컵이 달린 우산", "desc": "우산대 끝에 컵을 끼워서 흘러내린 빗물을 모은다. 모인 물은 마개를 열어 버린다."}, {"id": "i2", "tech": "재료 바꾸기", "name": "물을 빨아들이는 우산 덮개", "desc": "접은 우산에 물을 흡수하는 천 덮개를 씌운다."}, {"id": "i3", "tech": "모양 바꾸기", "name": "물이 모이는 홈이 있는 우산꽂이", "desc": "우산꽂이 바닥에 물이 모이는 홈과 서랍을 만든다."}], "contradiction": {"better": "", "worse": "", "principle": "", "idea": ""}}, "s3": {"chosen": "i1", "scores": {"i1": {"new": 2, "better": 3, "make": 3, "clear": 3, "safe": 3}, "i2": {"new": 1, "better": 2, "make": 3, "clear": 2, "safe": 3}, "i3": {"new": 1, "better": 2, "make": 2, "clear": 2, "safe": 2}}, "pmi": {"p": "빗물이 바닥에 떨어지지 않아 미끄럽지 않다. 우산꽂이가 없어도 세워 둘 수 있다.", "m": "컵이 있으면 우산이 조금 무거워진다.", "i": "컵을 접을 수 있게 만들면 가방에도 넣을 수 있을 것 같다.", "summary": "가장 쓸모 있고 만들기도 쉬워서 이 아이디어로 정했다."}, "notPatentable": {}}, "s4": {"type": "patent", "components": [{"id": "c1", "name": "우산대", "parent": null, "core": true, "role": "우산 천을 지지하는 긴 막대이다", "claimPhrase": "우산 천이 결합되는", "relation": "우산대(10)의 위쪽에는 손잡이(20)가, 아래쪽 끝에는 물받이 컵(30)이 결합된다", "features": "", "num": "10"}, {"id": "c2", "name": "손잡이", "parent": null, "core": false, "role": "사용자가 우산을 잡는 부분이다", "claimPhrase": "", "relation": "", "features": "", "num": "20"}, {"id": "c3", "name": "물받이 컵", "parent": null, "core": true, "role": "우산 천에서 흘러내린 빗물을 담는다", "claimPhrase": "상기 우산대의 아래쪽 끝에 결합되어 빗물을 모으는", "relation": "물받이 컵(30)은 위쪽이 열린 컵 모양으로, 접은 우산 천의 아래쪽을 감싼다", "features": "실리콘처럼 접을 수 있는 재료로 만들어진", "num": "30"}, {"id": "c4", "name": "연결부", "parent": "c3", "core": false, "role": "물받이 컵을 우산대에 끼우거나 뺄 수 있게 한다", "claimPhrase": "", "relation": "", "features": "", "num": "31"}, {"id": "c5", "name": "배수 마개", "parent": "c3", "core": false, "role": "물받이 컵의 바닥에 있어 모인 물을 버릴 때 연다", "claimPhrase": "", "relation": "", "features": "", "num": "32"}], "drawings": [{"id": "d1", "kind": "사시도", "caption": "전체 모습을 나타낸", "img": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAoAAAAM0CAAAAAAOiswoAAAT/klEQVR4nO3dfYhld33H8e9JIskaN2lQ4wOS1foQQVwhC0ZXERWxf0UW0urWGowGFhcfwJiiFFFBSynVVm2sqInxDyktqVRr9g8VDSuSLRuikjY2BFuUaCJq0jSbzYMxOeXOzmSfZmdndu7cz++e83r9MffemTszy/Ht7/6+Z27u7fqCnNOCvxsESJYVkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJOiP76+dYd/RN77dyajoH7hQO2om+4GCumQDXfMRW/rIG10aAaztcq7mTBtdAgGs5WCfubIUvsRIBrlp30sBOfg+OJcBV6laZ1mrvxyECXJW1ZCXBtRDgqo7SGhe1td5/xAS4imN0CjlJcJX8KW5jWurXcNpm1KyAJz1Cp/poesrfOCoCPMnxqVPPyMPwKghw5cOzvlXMInhS9oAbGdCh77QRXIEAN3QBU+DJCHBjH0AVeBIC3OANnAJXJsCVrf8sivMwKxLgigvgNOpZ+BkGkRMQ4Eb3p8AVCXDD+1PgSgQ4i92bfeAJCXBZG7Flsw1cjgA3/AH4iZ+lwGUIcDYPmx6ET0CAy9iopcoSeDwBzmjJsgQuT4DLL1TT72XyEy2BxxEgUQKc0QJoCVyeAIkS4LE2dp9mF3gMAc5uZDUIL0OARAlwRiPIhDMxxxMgUQIkSoCznlLNwUcR4CynVXPwcQRIlACJEiBRApz5hGAKOZIAZzopmEKOJUCiBEiUAIkSIFECJEqAs9c5EXOYV8kf0hMO55AVkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIVNdnf/9IdCf6Ql8jZwUkSoBECZCoM7K/fkz6VW8Mx8QKSJQAiRIgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECXDI9u14+pnPf9+vF67fdunTzr74a9UaL9E7m8N8opdn6zfyt35x9+OTi2fftKVq/+senFz//LuqLVbAAdv9mm8f+M31F9z1warHLnvw8l/e+4G66p5qixVwwCvghz8++RX7tp93b31jx9Yfnl71qps++95qihVwwD6x8BqsL63fV+2pK06vqrfX96otAhyk7ojrt9aFVT+u7ZPrL6/bqy1eI3oIuhW+1n+sdlX9rJ43uXFB3V1tEeAgeutPeN9Hd3/nDe+oOlDnTG5troVZuCECnMflrV/1N//k8pvf/JUzqn5Xky1gndbcS/PbA7amO1b1x1n1D/v0RT/98j9vqqon18HJ7Qdqc7VFgO33Vqfq4T95/yW3v2Ph6jPrF5OLO2tLtUWAaf3UejvW43/6r1+4/vxD119SN08u9tfLqi0CDOs37kd/5et/vWvp+hvr2snFdXVJtcVfQob7l5Dt+/73D5au3/fc/3v/X3R/+Xcv/K+FYaQdAhxugOccWLrWV331ssmVTTdeXG3xEDxcB4688bYbXrHpvB37W+vPCjjkJyPMAysgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECZAoARIlQKIESJQAiRIgUQIkSoBECZAob1Y4M629TWAbrIBECZAoARLlrbpmfcAnH0b/9jSHWQGJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAky8RptXanuCAIkSIFECJEqAM7W0+bMJXCJAogRIlACJEiBRApylw7OHKWSRAIkSIFECJEqARAlwhroj3qLGFHKIAIkSIFECJEqAkS1gbxO4SIBECZAoARIlQKIEGDkNbQpZIkCiBEiUACP8JXiJAIkSYGQGMYUsESBRAiRKgEQJkCgBZmYQU8giARIlQKIESJQAQ1tAm8BDBEiUABN6z0ZYIkCiBEiUAFMziClkgQCJEiBRAiRKgEQJMDaDmEIESJwVkCgBEiXA3BawvEKMAEM8G2GJFZAoARIlQKIEGJxByhQiQLKsgEQJkCgBEiXA5AxSphABEiVAogRIlAAzPBthkQCjM0iNfgoRIFECJEqARAkwuwWssW8CBUiUAIkSIFECJEqAs51Blpk3+lFPIQIkSoBECTDEsxEOESBRAsz+HaTGPoUIkCgBEiVAogQY3wLWqDeBAiRKgEQJkCgBEiXA/AxSY55CBEiUAFNWtzYOngBzuuDvboYAiRJgAzNIjXgKESBRAiRKgEQJkCgBtjCD1HinEAESJUCiBEiUAJvYAtZoN4ECJEqAMV6cQ4DEWQGJEuBMZ5AV5ox+nFOIAIkSIFECJEqARAmwib+DjHcKESBRAiRKgEQJsJUtYI1zEyjAnH6EvR1HgEQJkCgBEiXAZmaQGuUUIkCiBEiUAIkSIFECbGcGqTFOIQIkSoBECRABjlU/uh3f8ayADc0gNcIpRIBECZAoARIlwJa2gDX1TeBdO5d+3G2XPu3si79Wrem8aeMsA1ysYenr3fH3XFe+x7rjc196aPHH7X/dg5OLz7+r2mIFHLCtF179lsWrj1324OW/vPcDddU91RYBDtgD77/tusWrN9yx9Zpnn/fJ7Qf/sdoiwAH7n7998dLVPXXF6VX19vpeteWM9D9gZFvAfmEXeHjO6Jb/Cet27D/hx7V9cvHyur3aYgUch5/V8yYXF9Td1RYrYMIKU3BNdQx+woE6Z3KxuRZm4YZYAcfxbITf1WQLWKc196dmAY7Dk+vg5OKB2lxtEeCUrfsRtN+QJ8Q8s34xubiztlRbBDgOL6mbJxf762XVFgGOwxvr2snFdXVJtUWA4/DWc79/5W/vufIHL3xTtcWTEWa5BVw6Ef3EXboTvJ3S9E7ELP2Gr142+bjpxourLVbAkXjbDa/YdN6O/a31ZwUc+grYOisgUQIkSoBTNZVHz35M/22mAIkSYFRfYyfAsK7GTYBECXCapnQGrx/RwihAogRIlACJEiBRApyiqT2LoB/PFCJAogRIlACJEuD0TPGJpP1oNoECJEqAWf1YVroTESBRAiRKgDOcQZb9b+BGPoUIkCgBEiVAogRIlACnZcovqNGPZAoRIFECRICMlxVwSqb+mmr9ODaBAgzrR5HZiQmQKAESJUCiBDgdG/C6zv0ophABEiVAogRIlACJEuBUbMh7y/RjmEIESJQAiRIgUQJM60ew0VuBAKdhg97fsh/BFCJAogRIlACJEuAUbNhbnPfD3wQKkCgBEiVAogRIlABnN4Os4fUpxzOFCJAoARIlwLh+6I+yKxIgUQJs9+8go5hCBEiUAIkSIFECbHoLWIPfBAqQKAESJUCiBEiUANueQWroU4gAiRJgXl8jJsAWdDVaAiRKgI3PIDXwKUSARAmQKAESJUCiBNj6DFLDnkIEiAAZLysgUQJsfgtYg94ECpAoATagH+4Cd1ICJEqARAlwZjPIKbw+5QimEAESJUCiBEiUAIkSYPN/Bxn2FCJAogRIlACJEuA8bAFruJtAAbagH2hdqyBAogRIlACJEuBczCA12ClEgEQJkCgBEiVAogQ4HzNIDXUKESBRAiRKgEQJsAn9IPd3qyHAOZlBaqBTiACJEiBRAiRKgPOyBaxhbgIFSJQAiRIgUQIkSoCzmkHW8fqUQ55CBEiUAIkSYBv64T24ro4AiRLgvPwdZKBTiACJEiBRAiRKgHO0BawBbgIFSJQAiRIgUQIkSoDzNIPU8KYQARIlwEb0NU4CbEZXYyRAogQ4VzNIDW4KESBRAiRKgEQJkCgBztcMUkObQgRIlACJEiBRApyzLWANbBMoQKIE2Ip+SOva6gmQKAESJcAZzSBTeH3KQU4hAiRKgEQJkCgBEiXAOfs7yNCmEAESJUCiBEiUAOdvC1hD2gQKsBn9YKJaCwESJUCiBEiUAOdwBqkBTSECJKpr5f/Tc6CxNaevIRDgrA/4cNqZCg/BRAmQKAESJUCiBEiUAIkSIFECJEqARAmQKAESJUCiBDhg+3a+aNP5O29funnXzsaezzPh2TCzPuAzfDZMt/Dx7L3bJhd3fO5LDzX4NBwr4IC9ds+v7r9x68ErJ9e3Xnj1W6pBVsBZH/DJh1kuRD+66KyHquoPd+x68RRfJHNqBDjrAz75MMsODpzzrLue+N3tBegheJC6w1f31uurYVbADTuya/+Wfnq/d/FHPXL3no88Ze9zG14Bz0j/A5ieo9pb/MST3v2hZ1TDrIAbdmTX/i39en9bv8xnn/Kav9ra8AoowA07sssHdcIhpFvHO0CcMN7HD/z3N//mkRv+aOmOAhyPmQTYLXxc+ftuuOSlty7dW4DjsdEBdgsfV/EtD2868+F2AzSEzKFu4eNqY/pubal2CXC47W3btX1L9/PrP1W7q12GkLl5CO4WPvZrn8Pf85nFPzd4CObUdGttb8G+q2+587HnvHrXK1s+7FbAxlfAbuFje8PDtNgDNqwbdnsLBNimrkYQ34QAm9ONpb0FAmxJN6r2FgiwKX2NjSektqSv0REgUQIkSoBECZAoU/CMjXDOWJEVkCgBEiVAogRIlACJEiBRTsNsoAZfkLQ5npK/3gNYM9DXYHkInodFrhvuWipAogRIlCGk/R1aVwNmBVx/fBscSDfoKUSARAmQKAESJUCiBEiUAIkS4DrN5ARJX4MlwCnY0BOBXQ2aAIkSIFECJEqARAmQKAESJcDGn5DVDfs0oADJsgISJUCiBEiUAIkSIFECbPs8TDfwszACJMsKSJQAiRIgUQIkSoBECXD9Nvg0SV9DJsDp2KATgV0NnQCJEiBRAiRKgEQJkCgBEiXAlp+Q1Q3+NKAAybICEiXAAdu380Wbzt95+6Ebt136tLMv/lq1xrtltrxX69b3cw/tS8/eu62q9r/uwcmNz7+r2mIFHLDX7vnV/TduPXhlVT122YOX//LeD9RV91RbrIADXgEX/Oiisx6q+saOrT88vepVN332vdUUK2DD52G6aXT9gjqvqvbUFadX1dvre9UW75bZuO7Uvu1wt3vr9VX149o+ufHyWhxJmuEhuOHH4O7Uv3XxH/PI3Xs+8pS9z606/ze/fWpV3fvUc++rplgBG9ev55u7qie9+0PPqKoDdc7kE5trYRZuiD3gwD16zTtvrarf1WQLWKc19xxrAQ5Z/9h9t1y1d9u3qp5cByefeKA2V1sEOGinnXvRR//p939e9cz6xeT2nbWl2iLAqegb/sFvqDuqXlI3T67vr5dVWwQ4NV2jP/C7k1XvjXXt5Pp1dUm1RYDDte0L/3H/gf/86Ftqd9Vbz/3+lb+958ofvPBN1RbnAad0HDfgcbhb589cWkHf85nTqr562eTqphsvrrZYAYdr35+9+OyzXnD5TX8/+R/5bTe8YtN5O/a31p8VcMAr4FywAhIlQKIE2OwTsroxPAILkCwrIFECJEqARAmQKAESJcBWz8N0ozgLI0CyrIBECZAoARIlQKIESJQAp2UDTpn0NXwCnKYpngjsahwESJQAiRIgUQIkSoBECZAoAbb5hKxuJKcBBUiWFZAoARIlQKIESJQAiRJgk+dhurGchREgWVZAogRIlACJEiBRAiRKgFM01RMnfY2CAKdsKicCuxoNARIlQKIESJQAiRIgUQIkSoANPiGrG89pQAGSdUb49w/QiM4iT4GHYKIEOFXT2rn1Y9kCCpCsbjT/V2tkc9gffW30BDgzR51cGdOZlhXZA87K0clN/b0N55UAZ+jIJc/yd4gAZ2S55a6b1S9vmABn5+hFzxK4QIBECZAoARLlyQhJ3eTDuDeDTkTP6kAfm9rSJ7oadYUCnNmRPj7A/sgbI61QgDM70kcXtszf4roxVijAxv4W3I2sQgHO8Fiv+tkw3XgqFOAsD/aRN06aV7e6u805Ac70aB++usqwurXceR4JcMbHu06hqO4UvmdeCHBedMOsUIBzpRtchQKcP92QKvRkhPnTT1Q3sfId9+180abzd96+eGPH0898/vt+XY2xAg54LewWPp69d1tVfXH345Mbz75pSzXFCjjgtfC1e351/41bD145ub77Nd8+8JvrL7jrg9UWK+DQ18IfXXTWQ1X14Y9P7rJv+3n3VlMEOPQKD5zzrLueuPHA5s33V1M8IXVA+smHQ4/GhyvcW68/fI9b68JqiwCHpp98WNoSPnL3no9c8InDX/tY7aq2CHCQ+kMXXdWT3v2hZyx99tHd33nDO6otpuCBe/Sad966ePUnr7r2zf/W2oojwCHrH7vvlqv2bvvWwo1PX/TTL//zpmqMKXjwbrjkpbdWPXzZv/zx586v5ghw8B7edObD9fil3/yH1uaPBa1tCZi679aWqq98/ZNN9ifAAdu2a/uW7ufXf6p2V11TV1STPAQPV7d4+Z7PnFbnHFj6bGNP4xLgcP371bfc+dhzXr3rlUf91ygChMOcByRKgEQJkCgBEiVAogRIlACJEiBRAiRKgEQJkCgBEiVAogRIlACJEiBRAkSAjJcVkEr6fyHkZxssyOz7AAAAAElFTkSuQmCC", "w": 640, "h": 820}, {"id": "d2", "kind": "단면도", "caption": "물받이 컵 부분을 확대한", "img": "data:image/png;base64,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", "w": 640, "h": 480}], "rep": 1, "usage": "사용자는 우산을 다 쓴 뒤 우산을 접고 물받이 컵(30)을 연결부(31)로 우산대(10)의 끝에 끼운다\n우산 천에서 흘러내린 빗물은 물받이 컵(30)에 모인다\n물이 차면 배수 마개(32)를 열어 물을 버린다", "variants": "물받이 컵(30)은 우산 천을 접을 때 함께 접히는 주름 모양으로 만들 수도 있다"}, "s5": {"keywords": [{"word": "우산", "synonyms": "양산, umbrella"}, {"word": "물받이", "synonyms": "빗물받이, 받침, 컵, 용기"}, {"word": "끝", "synonyms": "하단, 팁, 꼭지"}], "query": "(우산+양산+umbrella)*(물받이+빗물받이+받침+컵+용기)*(끝+하단+팁+꼭지)*!양산꽂이", "found": [{"no": "", "title": "(예시) KIPRIS에서 찾은 비슷한 특허를 여기에 적어요", "url": "", "memo": "번호와 이름은 실제 검색 결과로 바꿔요", "compare": {"c1": "same", "c3": "similar"}, "status": "", "relevance": "2", "similar": "(예시) 빗물을 모아 바닥이 젖지 않게 한다는 목적이 같다", "differ": "(예시) 우산꽂이에 설치하는 방식이라 우산 자체에는 물받이가 없다", "improve": "(예시) 컵을 접을 수 있게 하면 들고 다니기 쉬워진다"}], "verdict": "go", "diff": "기존 제품은 우산꽂이에 물받이가 있지만, 이 발명은 우산 자체에 떼었다 붙일 수 있는 물받이 컵이 있다는 점이 다르다", "cite": true, "exclude": "양산꽂이"}, "s6": {"title": "빗물받이 컵이 달린 우산", "titleEn": "Umbrella with rainwater cup", "field": "본 발명은 빗물받이 컵이 달린 우산에 관한 것이다.", "background": "장우산은 비가 올 때 머리와 몸이 젖지 않도록 막아 준다. 일반적으로 장우산은 비가 오면 펼쳐서 쓰고, 다 쓴 뒤에는 접어서 우산꽂이에 세워 둔다. 그러나 젖은 우산을 세워 두면 빗물이 바닥으로 흘러내려 바닥이 미끄러워지고 물을 닦아야 한다. 따라서 이러한 불편을 줄일 수 있는 새로운 장우산이 필요하다.", "problem": "본 발명은 위와 같은 문제를 해결하기 위한 것으로, 우산에서 떨어지는 빗물을 바닥에 흘리지 않고 모을 수 있는 빗물받이 컵이 달린 우산을 제공하는 것을 목적으로 한다.", "solution": "상기 목적을 달성하기 위한 본 발명에 따른 빗물받이 컵이 달린 우산은, 우산 천이 결합되는 우산대 및 상기 우산대의 아래쪽 끝에 결합되어 빗물을 모으는 물받이 컵을 포함한다.\n우산대는 우산 천을 지지하는 긴 막대이다.\n물받이 컵은 우산 천에서 흘러내린 빗물을 담는다.\n또한, 물받이 컵은 실리콘처럼 접을 수 있는 재료로 만들어진 것일 수 있다.", "effects": [{"cause": "물받이 컵이 우산대 끝에 결합되어 있어서", "result": "젖은 우산을 세워 두어도 빗물이 바닥에 떨어지지 않는다"}, {"cause": "배수 마개를 열어 모인 물을 버릴 수 있으므로", "result": "물받이 컵을 계속 사용할 수 있다"}], "effectsText": "본 발명에 따르면, 물받이 컵이 우산대 끝에 결합되어 있어서 젖은 우산을 세워 두어도 빗물이 바닥에 떨어지지 않는다.\n본 발명에 따르면, 배수 마개를 열어 모인 물을 버릴 수 있으므로 물받이 컵을 계속 사용할 수 있다.", "drawingDesc": "도 1은 본 발명의 일 실시예에 따른 빗물받이 컵이 달린 우산의 전체 모습을 나타낸 사시도이다.\n도 2는 본 발명의 일 실시예에 따른 빗물받이 컵이 달린 우산의 물받이 컵 부분을 확대한 단면도이다.", "detail": "이하, 첨부된 도면을 참조하여 본 발명의 바람직한 실시예를 상세히 설명한다.\n도 1을 참조하면, 본 발명의 일 실시예에 따른 빗물받이 컵이 달린 우산은 우산대(10), 손잡이(20) 및 물받이 컵(30)을 포함한다.\n우산대(10)는 우산 천을 지지하는 긴 막대이다. 우산대(10)의 위쪽에는 손잡이(20)가, 아래쪽 끝에는 물받이 컵(30)이 결합된다.\n손잡이(20)는 사용자가 우산을 잡는 부분이다.\n물받이 컵(30)은 우산 천에서 흘러내린 빗물을 담는다. 물받이 컵(30)은 위쪽이 열린 컵 모양으로, 접은 우산 천의 아래쪽을 감싼다. 물받이 컵(30)은 연결부(31) 및 배수 마개(32)를 포함할 수 있다. 연결부(31)는 물받이 컵을 우산대에 끼우거나 뺄 수 있게 한다. 배수 마개(32)는 물받이 컵의 바닥에 있어 모인 물을 버릴 때 연다. 물받이 컵(30)은 실리콘처럼 접을 수 있는 재료로 만들어진 것일 수 있다.\n다음으로, 본 발명에 따른 빗물받이 컵이 달린 우산을 사용하는 방법을 설명한다.\n사용자는 우산을 다 쓴 뒤 우산을 접고 물받이 컵(30)을 연결부(31)로 우산대(10)의 끝에 끼운다.\n우산 천에서 흘러내린 빗물은 물받이 컵(30)에 모인다.\n물이 차면 배수 마개(32)를 열어 물을 버린다.\n한편, 본 발명은 위 실시예에 한정되지 않으며 다음과 같이 변형하여 실시할 수도 있다.\n물받이 컵(30)은 우산 천을 접을 때 함께 접히는 주름 모양으로 만들 수도 있다.", "symbols": "10: 우산대\n20: 손잡이\n30: 물받이 컵\n31: 연결부\n32: 배수 마개", "claims": [{"type": "indep", "ref": "", "text": "우산 천이 결합되는 우산대; 및\n상기 우산대의 아래쪽 끝에 결합되어 빗물을 모으는 물받이 컵을 포함하는 빗물받이 컵이 달린 우산."}, {"type": "dep", "ref": "1", "text": "청구항 1에 있어서,\n상기 물받이 컵은 실리콘처럼 접을 수 있는 재료로 만들어진 것을 특징으로 하는 빗물받이 컵이 달린 우산."}], "abstract": "본 발명은 빗물받이 컵이 달린 우산에 관한 것이다. 본 발명에 따른 빗물받이 컵이 달린 우산은 우산대 및 물받이 컵을 포함한다. 이에 따라 물받이 컵이 우산대 끝에 결합되어 있어서 젖은 우산을 세워 두어도 빗물이 바닥에 떨어지지 않는다."}, "s8": {"checks": {}, "appNo": "", "appDate": "", "memo": ""}, "teacher": {"comments": {}, "notes": ""}};
 </script>
 <script>
 /* 발명특허교실 — 학생용 웹앱 (AI 없이 질문·예시·체크리스트로 안내) */
@@ -1015,7 +1082,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
   var STEPS = [
     { n: 1, t: "문제 찾기", ic: "🔎", goal: "생활 속에서 불편한 점을 찾아 '문제 문장'으로 써요.", todo: ["누가, 어디서, 무엇이 불편한지 골라요", "관련된 물건을 자세히 살펴봐요", "불편한 점과 바꾸고 싶은 점을 써요"] },
     { n: 2, t: "아이디어 내기", ic: "💡", goal: "발명 기법 카드를 써서 해결 아이디어를 3개 이상 떠올려요.", todo: ["발명 기법 카드를 하나 골라요", "카드의 질문에 답하듯 아이디어를 적어요", "다른 카드로 2~3개 더 만들어요"] },
-    { n: 3, t: "아이디어 고르기", ic: "⚖️", goal: "아이디어를 비교해 하나를 고르고, PMI로 좋은 점·아쉬운 점을 따져 봐요.", todo: ["세 가지 질문에 점수를 매겨요", "가장 좋은 아이디어를 골라요", "PMI 표를 채워요"] },
+    { n: 3, t: "아이디어 고르기", ic: "⚖️", goal: "아이디어를 비교해 하나를 고르고, PMI로 좋은 점·아쉬운 점을 따져 봐요.", todo: ["다섯 가지 질문에 점수를 매겨요", "가장 좋은 아이디어를 골라요", "PMI 표를 채워요"] },
     { n: 4, t: "구성과 도면", ic: "🧩", goal: "발명을 부품(구성요소)으로 나누고 번호(부호)를 붙여 그림(도면)을 그려요.", todo: ["특허·실용신안 중 무엇으로 낼지 골라요", "부품을 적고 하는 일을 써요", "도면을 그리고 부호를 붙여요", "사용 방법을 순서대로 써요"] },
     { n: 5, t: "선행기술 조사", ic: "🗂️", goal: "KIPRIS에서 비슷한 특허가 이미 있는지 찾아 내 발명과 비교해요.", todo: ["핵심 단어와 비슷한 말을 적어요", "만들어진 검색식으로 KIPRIS에서 검색해요", "찾은 특허를 적고 내 발명과 비교해요", "계속할지, 고칠지 정해요"] },
     { n: 6, t: "명세서 쓰기", ic: "📝", goal: "특허청 양식(명세서)에 맞춰 내 발명을 글로 정리해요.", todo: ["'빈 칸 자동 채우기'로 초안을 만들어요", "칸마다 읽어 보며 내 말로 고쳐요", "청구항(내 권리의 울타리)을 확인해요"] },
@@ -1042,9 +1109,22 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     ["조건으로 나누기", "상황(온도·무게 등)에 따라 저절로 바뀌게 해요. (예: 뜨거우면 색이 바뀌는 컵)"],
     ["부분과 전체로 나누기", "부분은 A, 전체는 B가 되게 해요. (예: 마디는 단단하지만 전체는 휘는 자전거 체인)"]
   ];
+  var PERSPECTIVES = [
+    ["⚙️", "전기 없이 기계로", "바퀴·스프링·경첩·자석처럼 전기 없이 움직이게 하면?"],
+    ["📡", "센서를 써서", "무게·기울기·온도·거리를 재서 알려 주면?"],
+    ["📱", "스마트폰·앱과 연결", "앱으로 알림을 받거나 조절하면?"],
+    ["🏫", "학교에서 직접 만들기", "재활용품·우드락·아두이노로 만들 수 있게 하면?"],
+    ["🖨️", "3D 프린터로 만들기", "필요한 부품을 3D 프린터로 출력하면?"]
+  ];
+  function techOptions(cur) {
+    var o = [["", "기법 고르기"]].concat(TECHS.map(function (t) { return [t.k, t.ic + " " + t.k]; }))
+      .concat(PERSPECTIVES.map(function (x) { return ["관점: " + x[1], x[0] + " 관점: " + x[1]]; })).concat([["기타", "기타"]]);
+    if (cur && !o.some(function (x) { return x[0] === cur; })) o.push([cur, cur]);
+    return o;
+  }
   var WHO = ["나", "친구", "가족", "동생", "할머니·할아버지", "선생님", "몸이 불편한 사람", "반려동물"];
   var WHERE = ["교실", "급식실", "집", "부엌", "화장실", "길·버스", "운동장·놀이터", "여행·캠핑"];
-  var KINDS = ["사시도", "정면도", "측면도", "평면도", "단면도", "분해 사시도", "사용 상태도", "확대도"];
+  var KINDS = ["사시도", "정면도", "배면도", "측면도", "평면도", "저면도", "단면도", "분해 사시도", "사용 상태도", "확대도"];
   var NOT_PAT = [
     ["nature", "자연법칙 그 자체예요 (예: 중력, 에너지 보존)"],
     ["abstract", "어떻게 만드는지 없이 생각(바람)만 있어요"],
@@ -1059,8 +1139,8 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     var v = getPath(P, path); v = v == null ? "" : v;
     var id = "f_" + path.replace(/\W/g, "_");
     var ctl = o.rows
-      ? '<textarea id="' + id + '" data-k="' + path + '" rows="' + o.rows + '" placeholder="' + esc(o.ph || "") + '">' + esc(v) + "</textarea>"
-      : '<input id="' + id + '" data-k="' + path + '" type="text" value="' + esc(v) + '" placeholder="' + esc(o.ph || "") + '">';
+      ? '<textarea id="' + id + '" data-k="' + path + '"' + (o.attr ? " " + o.attr : "") + ' rows="' + o.rows + '" placeholder="' + esc(o.ph || "") + '">' + esc(v) + "</textarea>"
+      : '<input id="' + id + '" data-k="' + path + '"' + (o.attr ? " " + o.attr : "") + ' type="text" value="' + esc(v) + '" placeholder="' + esc(o.ph || "") + '">';
     return '<div class="fld ' + (o.cls || "") + '"><label for="' + id + '">' + label + (o.term ? ' <span class="term">' + o.term + "</span>" : "") + "</label>" +
       (o.hint ? '<p class="hint">' + o.hint + "</p>" : "") + ctl +
       (o.ex ? '<p class="ex">예) ' + esc(o.ex) + "</p>" : "") +
@@ -1163,6 +1243,8 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       tip("여기 쓴 내용은 명세서의 '배경이 되는 기술'로 이어져요.", true), { sub: an ? "물건을 직접 보거나 사진을 보며 칸을 채워요." : "" });
     var d = card("④ 불편한 점과 바꾸고 싶은 점",
       F("s1.inconvenience", "어떤 점이 불편한가요? 자세히 써요", { rows: 3, ex: "젖은 우산을 세워 두면 빗물이 바닥으로 흘러 미끄럽다." }) +
+      F("s1.cause", "왜 불편할까요? (원인 찾기)", { rows: 2, hint: "'왜?'를 두세 번 이어서 물어 진짜 원인을 찾아요. 원인을 알면 해결 방법이 보여요.", ex: "빗물이 우산 끝으로 모여 떨어진다 → 왜? 떨어진 물을 받을 곳이 없다" }) +
+      tip("나 말고도 이 불편을 겪는 사람이 많을수록, 모두가 공감하는 좋은 발명 문제예요.") +
       F("s1.improve", "어떻게 바뀌면 좋을까요?", { rows: 2, hint: "'~할 수 있는'처럼 끝나게 쓰면 명세서에 바로 쓸 수 있어요.", ex: "빗물을 바닥에 흘리지 않고 모을 수 있는" }));
     return a + b + c + d;
   }
@@ -1176,17 +1258,20 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       { sub: "문제 문장: <b>" + esc(P.s1.sentence || P.s1.what || "(1단계에서 문제를 먼저 써 주세요)") + "</b>" });
     var ideas = (P.s2.ideas || []).map(function (it, i) {
       return '<div class="idea"><div class="idea-h"><span class="pill">' + (i + 1) + "</span>" +
-        sel("s2.ideas." + i + ".tech", [["", "기법 고르기"]].concat(TECHS.map(function (t) { return [t.k, t.ic + " " + t.k]; })).concat([["기타", "기타"]]), { label: "발명 기법" }) +
+        sel("s2.ideas." + i + ".tech", techOptions(it.tech), { label: "발명 기법" }) +
         '<button class="x" data-act="del" data-list="s2.ideas" data-i="' + i + '" aria-label="아이디어 삭제">✕</button></div>' +
         F("s2.ideas." + i + ".name", "아이디어 이름", { ph: "예: 빗물받이 컵이 달린 우산" }) +
         F("s2.ideas." + i + ".desc", "어떻게 작동하나요?", { rows: 3, ph: "무엇을 어디에 어떻게 바꾸는지 써요." }) + "</div>";
     }).join("");
     var n = (P.s2.ideas || []).length;
-    var b = card("② 내 아이디어 (" + n + "개)", (ideas || '<p class="empty">아직 아이디어가 없어요. 위의 카드를 눌러 시작해요.</p>') +
+    var a2 = card("② 관점 바꿔 보기", '<div class="techs persp">' + PERSPECTIVES.map(function (x, i) {
+      return '<button class="tech" data-act="usePersp" data-i="' + i + '"><span class="ic">' + x[0] + "</span><b>" + x[1] + '</b><span class="q">' + x[2] + "</span></button>";
+    }).join("") + "</div>", { sub: "같은 문제를 다른 방법으로 풀어 보면 더 좋은 아이디어가 나와요." });
+    var b = card("③ 내 아이디어 (" + n + "개)", (ideas || '<p class="empty">아직 아이디어가 없어요. 위의 카드를 눌러 시작해요.</p>') +
       '<button class="btn" data-act="addIdea">+ 아이디어 추가</button>' + (n && n < 3 ? '<p class="mini">3개 이상 떠올리면 더 좋은 아이디어를 고를 수 있어요.</p>' : ""));
     var c = "";
     if (deep()) {
-      c = card("③ 심화: 모순 풀기 (TRIZ 맛보기)",
+      c = card("④ 심화: 모순 풀기 (TRIZ 맛보기)",
         '<p class="sub">"무엇을 좋게 하면 다른 것이 나빠지는" 문제를 찾아 나누기 원리로 풀어요.</p><div class="grid2">' +
         F("s2.contradiction.better", "좋게 하고 싶은 것", { ph: "예: 물받이 컵을 크게 하고 싶다" }) +
         F("s2.contradiction.worse", "그러면 나빠지는 것", { ph: "예: 우산이 무겁고 들고 다니기 불편하다" }) + "</div>" +
@@ -1197,7 +1282,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
         F("s2.contradiction.idea", "이 원리로 떠올린 아이디어", { rows: 2, ph: "예: 쓸 때만 펼쳐지는 주름 컵" }) +
         '<button class="btn ghost" data-act="triz2idea">아이디어 목록에 넣기</button>');
     }
-    return a + b + c;
+    return a + a2 + b + c;
   }
 
   // ------------------------------------------------------------ 3. 아이디어 고르기
@@ -1206,14 +1291,14 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     if (!ideas.length) return card("", '<p class="empty">2단계에서 아이디어를 먼저 적어 주세요.</p>');
     var opts = [["", "-"], [1, "1 조금"], [2, "2 보통"], [3, "3 많이"]];
     var rows = ideas.map(function (it) {
-      var sc = (P.s3.scores[it.id] = P.s3.scores[it.id] || {}), sum = (sc.new || 0) + (sc.better || 0) + (sc.make || 0);
+      var sc = (P.s3.scores[it.id] = P.s3.scores[it.id] || {}), sum = ["new", "better", "make", "clear", "safe"].reduce(function (n2, k) { return n2 + (sc[k] || 0); }, 0);
       var on = P.s3.chosen === it.id;
       return "<tr" + (on ? ' class="on"' : "") + "><td><b>" + esc(it.name || "(이름 없음)") + "</b><br><span class=\"mini\">" + esc(it.tech || "") + "</span></td>" +
-        ["new", "better", "make"].map(function (k) { return "<td>" + sel("s3.scores." + it.id + "." + k, opts, { num: 1, rr: 1, label: k }) + "</td>"; }).join("") +
+        ["new", "better", "make", "clear", "safe"].map(function (k) { return "<td>" + sel("s3.scores." + it.id + "." + k, opts, { num: 1, rr: 1, label: k }) + "</td>"; }).join("") +
         '<td class="sum">' + sum + '</td><td><label class="radio"><input type="radio" name="chosen" data-k="s3.chosen" value="' + it.id + '" data-rr' + (on ? " checked" : "") + "> 고르기</label></td></tr>";
     }).join("");
-    var a = card("① 세 가지 질문으로 비교하기",
-      '<div class="tablewrap"><table class="score"><thead><tr><th>아이디어</th><th>새로운가요?<br><span class="term">신규성</span></th><th>더 나아졌나요?<br><span class="term">진보성</span></th><th>만들 수 있나요?<br><span class="term">산업상 이용가능성</span></th><th>합계</th><th>선택</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+    var a = card("① 다섯 가지 질문으로 비교하기",
+      '<div class="tablewrap"><table class="score"><thead><tr><th>아이디어</th><th>새로운가요?<br><span class="term">신규성</span></th><th>더 나아졌나요?<br><span class="term">진보성</span></th><th>만들 수 있나요?<br><span class="term">산업상 이용가능성</span></th><th>읽으면 이해되나요?<br><span class="term">명확성</span></th><th>안전하고 비싸지 않나요?<br><span class="term">안전·비용</span></th><th>합계</th><th>선택</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
       tip("특허를 받으려면 <b>새롭고(신규성)</b>, 쉽게 생각해 낼 수 없을 만큼 <b>더 나아야 하며(진보성)</b>, 실제로 <b>만들어 쓸 수 있어야(산업상 이용가능성)</b> 해요.", true));
     var ch = SC.chosenIdea(P), b = "";
     if (ch) {
@@ -1255,7 +1340,8 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     var comp = card("② 부품(구성요소)과 번호(부호)",
       '<p class="sub">큰 부품은 10, 20, 30…, 그 안의 작은 부품은 31, 32…처럼 번호가 저절로 붙어요. <b>꼭 필요한 부분</b>에 체크한 부품은 청구항 1에 들어가요.</p>' +
       (list || '<p class="empty">부품을 추가해 주세요.</p>') + '<button class="btn" data-act="addComp">+ 부품 추가</button>' +
-      tip("청구항 1에는 꼭 필요한 부품만 넣어야 권리 범위가 넓어져요. 재료·크기 같은 세부 내용은 '더 자세한 특징'으로 빼세요.", true));
+      tip("청구항 1에는 꼭 필요한 부품만 넣어야 권리 범위가 넓어져요. 재료·크기 같은 세부 내용은 '더 자세한 특징'으로 빼세요.", true) +
+      tip("부품 이름은 넓은 뜻의 말로 써요. 예: 'LCD 화면'보다 '디스플레이', '고무줄'보다 '탄성 부재'. 그래야 비슷하게 바꾼 물건도 내 권리에 들어가요.", true));
     var ds = P.s4.drawings || [];
     var dl = ds.map(function (d, i) {
       return '<div class="draw"><div class="thumb">' + (d.img ? '<img src="' + d.img + '" alt="도 ' + (i + 1) + '">' : '<span>그림 없음</span>') + "</div>" +
@@ -1265,7 +1351,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
         '<div class="row"><button class="btn" data-act="draw" data-i="' + i + '">✏️ ' + (d.img ? "고치기" : "그리기") + '</button><button class="btn ghost" data-act="photo" data-i="' + i + '">📷 사진 올리기</button><button class="x" data-act="del" data-list="s4.drawings" data-i="' + i + '" aria-label="도면 삭제">✕</button></div></div></div>';
     }).join("");
     var dr = card("③ 도면 그리기",
-      '<div class="rules"><b>도면 규칙</b> 흰 바탕에 <b>검은 선</b>으로 그려요 · 색칠하지 않아요 · 설명 글 대신 <b>부호 숫자</b>만 붙여요 · 손으로 그린 그림은 사진을 올린 뒤 \'흑백 선명하게\'를 눌러요</div>' +
+      '<div class="rules"><b>도면 규칙</b> 흰 바탕에 <b>검은 선</b>으로 그려요 · 색칠하지 않아요 · 설명 글 대신 <b>부호 숫자</b>만 붙여요 · 손으로 그린 그림은 사진을 올린 뒤 \'흑백 선명하게\'를 눌러요<br><b>AI로 만든 그림</b>은 참고만 해요. 내가 정하지 않은 부품, 그림 속 글자·영어 설명이 있으면 그대로 쓰지 말고 다시 그려요. (명세서와 도면이 서로 맞아야 해요)</div>' +
       dl + '<button class="btn" data-act="addDrawing">+ 도면 추가</button>');
     var us = card("④ 사용 방법",
       F("s4.usage", "어떤 순서로 쓰나요? (한 줄에 한 단계)", { rows: 4, ph: "예: 우산을 접고 물받이 컵을 우산대 끝에 끼운다.\n빗물이 물받이 컵에 모인다." }) +
@@ -1284,24 +1370,31 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     }).join("");
     var a = card("① 핵심 단어와 비슷한 말",
       '<p class="sub">내 발명을 설명하는 단어 2~3개와, 같은 뜻의 다른 말(영어, 줄임말, 띄어쓰기 다른 말)을 적어요.</p>' + kl +
+      F("s5.exclude", "빼고 싶은 단어 (선택, 쉼표로 구분)", { attr: "data-q", ph: "예: 우산꽂이, 거치대", hint: "검색 결과에 자꾸 섞이는 다른 물건의 이름을 적으면 검색식에 *!로 들어가 빠져요." }) +
       '<div class="row"><button class="btn ghost" data-act="addKw">+ 단어 추가</button><button class="btn ghost" data-act="kwFromComp">부품 이름에서 가져오기</button></div>');
     var b = card("② 검색식 만들고 KIPRIS에서 찾기",
       '<div class="query"><code id="queryOut">' + esc(P.s5.query || "(위에 단어를 적으면 검색식이 생겨요)") + "</code></div>" +
-      '<div class="row"><button class="btn" data-act="copyQuery">📋 검색식 복사</button><a class="btn primary" href="https://www.kipris.or.kr/khome/main.do" target="_blank" rel="noopener">🔎 KIPRIS 열기</a></div>' +
-      '<p class="mini"><b>+</b>는 \'또는\', <b>*</b>는 \'그리고\'예요. KIPRIS 검색창에 붙여 넣고 검색해요. 결과가 너무 많으면 단어를 더하고, 없으면 비슷한 말을 늘려요.</p>');
+      '<div class="row"><button class="btn" data-act="copyQuery">📋 검색식 복사</button><a class="btn primary" href="https://www.kipris.or.kr/khome/main.do" target="_blank" rel="noopener">🔎 KIPRIS 열기</a><a class="btn ghost" href="https://patents.google.com/" target="_blank" rel="noopener">🌏 Google Patents (영어)</a></div>' +
+      '<table class="ops"><tr><th>기호</th><th>뜻</th><th>예</th></tr><tr><td><b>+</b></td><td>또는 (넓게)</td><td>휴대폰+핸드폰</td></tr><tr><td><b>*</b></td><td>그리고 (좁게)</td><td>휴대폰*케이스</td></tr>' +
+      '<tr><td><b>*!</b></td><td>빼기</td><td>스피커*!블루투스</td></tr><tr><td><b>( )</b></td><td>묶기</td><td>(휴대폰+핸드폰)*케이스</td></tr><tr><td><b>"…"</b></td><td>붙어 있는 말 (영어)</td><td>"phone case"</td></tr></table>' +
+      '<ul class="mini tips"><li>결과가 너무 많으면 단어를 더하고(*), 없으면 비슷한 말을 늘려요(+).</li><li>비슷한 특허를 찾으면 그 특허의 <b>IPC 분류 코드</b>로 한 번 더 검색해요.</li>' +
+      '<li>등록된 것만이 아니라 <b>공개·거절·취하</b>된 특허도 이미 알려진 기술이에요.</li><li>발명대회 수상작도 함께 찾아봐요. 출원 직전에 한 번 더 검색해요.</li></ul>');
     var core = SC.coreList(P);
     var fl = (P.s5.found || []).map(function (f, i) {
       var cmp = core.map(function (c) {
         return '<label class="cmp">' + esc(c.name) + " " + sel("s5.found." + i + ".compare." + c.id, [["", "-"], ["same", "같음"], ["similar", "비슷함"], ["none", "없음"]], { rr: 1, label: c.name + " 비교" }) + "</label>";
       }).join("");
       return '<div class="found"><div class="grid2">' + F("s5.found." + i + ".no", "출원·등록번호", { ph: "예: 10-2020-0012345" }) + F("s5.found." + i + ".title", "발명의 명칭") + "</div>" +
-        F("s5.found." + i + ".memo", "어떤 내용인가요?", { rows: 2 }) +
+        '<div class="row"><label class="cmp">특허 상태 ' + sel("s5.found." + i + ".status", [["", "모름"], ["published", "공개"], ["registered", "등록"], ["rejected", "거절"], ["withdrawn", "취하·포기"], ["expired", "소멸"]], { label: "특허 상태" }) + "</label>" +
+        '<label class="cmp">내 발명과 관련도 ' + sel("s5.found." + i + ".relevance", [["", "-"], ["4", "75~100 매우 비슷"], ["3", "50~75 비슷"], ["2", "25~50 일부 비슷"], ["1", "0~25 관련 적음"]], { rr: 1, label: "관련도" }) + "</label></div>" +
+        F("s5.found." + i + ".memo", "핵심 특징 (이 특허는 무엇을 어떻게 해결하나요?)", { rows: 2 }) +
+        '<div class="grid3">' + F("s5.found." + i + ".similar", "유사점", { rows: 3 }) + F("s5.found." + i + ".differ", "차이점", { rows: 3 }) + F("s5.found." + i + ".improve", "보완점 (내 발명에 더할 것)", { rows: 3 }) + "</div>" +
         (core.length ? '<div class="cmps"><span class="mini">내 핵심 부품과 비교:</span>' + cmp + "</div>" : '<p class="mini">4단계에서 부품을 적으면 비교표가 생겨요.</p>') +
         '<button class="x" data-act="del" data-list="s5.found" data-i="' + i + '" aria-label="삭제">✕ 삭제</button></div>';
     }).join("");
-    var same = (P.s5.found || []).some(function (f) { return core.length && core.every(function (c) { return (f.compare || {})[c.id] === "same"; }); });
+    var same = (P.s5.found || []).some(function (f) { return f.relevance === "4" || core.length && core.every(function (c) { return (f.compare || {})[c.id] === "same"; }); });
     var c = card("③ 찾은 특허와 비교하기", (fl || '<p class="empty">찾은 특허를 적어 주세요. 비슷한 것이 없었다면 \'없음\'이라고 적어 두어요.</p>') +
-      '<button class="btn" data-act="addFound">+ 찾은 특허 추가</button>' +
+      '<div class="row"><button class="btn" data-act="addFound">+ 찾은 특허 추가</button><button class="btn ghost" data-act="report">📄 선행기술조사 보고서 보기·인쇄</button></div>' +
       (same ? '<div class="warnbox">핵심 부품이 모두 \'같음\'인 특허가 있어요. 이대로는 새롭지 않을 수 있어요. 아이디어를 고치거나 다른 아이디어를 골라 보세요.</div>' : ""));
     var v = [["go", "✅ 계속 진행", "비슷한 것이 없거나 내 발명이 분명히 달라요."], ["fix", "🛠️ 아이디어 고치기", "비슷한 것이 있어서 다른 점을 더 만들어요."], ["change", "🔁 다른 아이디어로", "거의 같은 것이 이미 있어요."]];
     var d = card("④ 어떻게 할까요?",
@@ -1314,7 +1407,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
 
   // ------------------------------------------------------------ 6. 명세서 쓰기
   var SECTIONS = [
-    ["title", "발명의 명칭", "내 발명의 이름이에요. 무엇인지만 짧고 분명하게 써요.", "'최고의', '신기한' 같은 자랑하는 말은 빼요.", 1],
+    ["title", "발명의 명칭", "내 발명의 이름이에요. 무엇인지만 짧고 분명하게 써요.", "'최고의'·'신기한' 같은 자랑하는 말, '특허'라는 말, 상표나 사람 이름은 쓰지 않아요.", 1],
     ["field", "기술분야", "내 발명이 어떤 분야의 것인지 한 문장으로 써요.", "'본 발명은 ~에 관한 것이다.' 한 문장이면 충분해요. 부품이나 효과는 쓰지 않아요.", 2],
     ["background", "발명의 배경이 되는 기술", "지금까지 쓰던 물건과 그 불편한 점을 써요.", "내 해결 방법은 여기서 미리 말하지 않아요. 기존 방식 → 한계 → '그래서 필요하다' 순서로 써요.", 5],
     ["problem", "해결하려는 과제", "내 발명이 무엇을 해결하려는지(목적) 써요.", "'~을 이용하여'처럼 방법을 쓰지 말고 목적만 써요.", 3],
@@ -1337,9 +1430,9 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
         }).join("");
         body = '<div class="effs">' + rows + '<div class="row"><button class="btn ghost" data-act="addEffect">+ 효과 추가</button><button class="btn ghost" data-act="draft" data-f="effectsText">효과 문장 만들기</button></div></div>';
       }
-      if (s[0] === "title" && deep()) body += F("s6.titleEn", "심화: 영문 명칭 (선택)", { ph: "예: Umbrella with rainwater cup" });
       html += card("【" + label + "】", '<p class="sub">' + s[2] + "</p>" + body +
         F("s6." + s[0], "", { rows: s[0] === "title" ? 0 : s[4], count: s[0] === "abstract" ? 400 : 0 }) +
+        (s[0] === "title" ? F("s6.titleEn", "영문 명칭", { ph: "예: Umbrella with rainwater cup", hint: "명세서에는 '국문 명칭{영문 명칭}' 형태로 들어가요. 어려우면 선생님과 함께 써요." }) : "") +
         '<div class="row"><button class="btn ghost small" data-act="draft" data-f="' + s[0] + '">이 칸 다시 만들기</button></div>' + tip(s[3], s[0] !== "title" && s[0] !== "symbols"), { cls: "sec" });
       if (s[0] === "symbols") html += claimsCard();
     });
@@ -1397,6 +1490,15 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       '<div class="row"><a class="btn primary" href="https://www.patent.go.kr/smart/portal/Main.do" target="_blank" rel="noopener">🏛️ 특허로 열기</a>' +
       '<a class="btn ghost" href="https://www.patent.go.kr/smart/portal/main/firstTimePopup.do" target="_blank" rel="noopener">처음이신가요? 안내</a>' +
       '<a class="btn ghost" href="https://www.kipris.or.kr/khome/main.do" target="_blank" rel="noopener">KIPRIS</a></div>');
+    var feeCard = card("학생 출원 비용과 일정",
+      '<div class="tablewrap"><table class="score fee"><tr><th>항목</th><th>만 6~18세 학생</th></tr>' +
+      "<tr><td>출원료</td><td><b>면제</b></td></tr><tr><td>심사청구료</td><td><b>면제</b> (청구항 30개 이하)</td></tr>" +
+      "<tr><td>등록료 1~3년차</td><td><b>면제</b></td></tr><tr><td>연차료 4년차부터</td><td>50% 감면</td></tr>" +
+      "<tr><td>면제 횟수</td><td>권리별·절차별 1년에 5건까지</td></tr></table></div>" +
+      '<ol class="timeline"><li><b>출원</b> 출원번호와 접수증(PDF)을 보관해요</li><li><b>1년 안</b> 발명을 더 개선했다면 \'국내우선권 주장 출원\'을 할 수 있어요</li>' +
+      "<li><b>1년 6개월 뒤</b> 출원 내용이 공개돼요</li><li><b>3년 안</b> 심사청구를 해야 심사를 받아요</li>" +
+      "<li><b>의견제출통지서</b> 보통 2개월 안에 의견서·보정서로 대응해요 (연장 신청 가능)</li><li><b>등록결정</b> 3개월 안에 등록료를 내면 특허권이 생겨요</li></ol>" +
+      '<p class="mini">수수료 기준은 바뀔 수 있어요. 출원 전에 특허로의 수수료 안내에서 확인하고, 궁금하면 특허청 고객상담센터(1544-8080)에 물어봐요. 19~29세는 85% 감면이에요.</p>');
     var ck = P.s8.checks || {};
     var groups = SC.FILING_CHECKS.map(function (g, gi) {
       var done = g.items.filter(function (it) { return ck[it[0]]; }).length;
@@ -1406,7 +1508,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     var rec = card("출원 기록", '<div class="grid2">' + F("s8.appNo", "출원번호", { ph: "예: 10-2026-0123456" }) + F("s8.appDate", "출원일", { ph: "예: 2026-11-20" }) + "</div>" + F("s8.memo", "메모", { rows: 2 }));
     var all = Math.round(SC.progress(P)[8] * 100);
     var fin = all >= 100 ? '<div class="okbox big">🎉 출원 과정을 모두 마쳤어요! 특허청 심사 결과가 나오면 선생님과 함께 확인해요.</div>' : "";
-    return intro + groups + rec + fin;
+    return intro + feeCard + groups + rec + fin;
   }
 
   // ------------------------------------------------------------ 처음 화면
@@ -1470,17 +1572,17 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     }).join("");
     return '<section class="card tdetail"><h3>' + esc(p.student.name || "") + " — " + esc(p.s6.title || "") + "</h3>" + sum +
       '<div class="grid2"><div><h4>자동 점검</h4>' + checks + '<h4>단계별 코멘트</h4><div class="tcomments">' + comments + "</div>" +
-      '<div class="row"><button class="btn primary" data-act="tSave">💾 코멘트 넣어 파일 저장</button><button class="btn" data-act="tDocx">워드</button><button class="btn" data-act="tHwpx">한글</button></div>' +
+      '<div class="row"><button class="btn primary" data-act="tSave">💾 코멘트 넣어 파일 저장</button><button class="btn" data-act="tDocx">워드</button><button class="btn" data-act="tHwpx">한글</button><button class="btn ghost" data-act="tReport">선행기술조사 보고서</button></div>' +
       '<p class="mini">코멘트를 넣어 저장한 파일을 학생에게 돌려주면, 학생 화면 각 단계 위에 \'선생님 한마디\'로 보여요.</p></div>' +
       '<div><h4>명세서 미리보기</h4><div class="specbox">' + SC.previewHtml(p) + "</div></div></div></section>";
   }
   function guideView() {
     var rows = [
       ["1. 문제 찾기", "누가·어디서·무엇이 불편한지 문제 문장 만들기, 관련 물건 6요소 분석", "문제 문장, 물건 분석", "생활 관찰 과제 제시", "발명 활동지(물건 분석), invention-teacher(문제 발견)"],
-      ["2. 아이디어 내기", "발명 기법 카드 10종으로 아이디어 3개 이상, 심화: 모순·분리 원리", "아이디어 목록", "기법 시범, 아이디어 수 격려", "발명 10기법, TRIZ 분리 원리(triz-engineering-solver)"],
-      ["3. 아이디어 고르기", "신규성·진보성·이용가능성 3질문 점수, PMI, 특허 불가 사유 확인", "선택 아이디어, PMI", "특허 요건 설명", "활동지 PMI, 강의 '특허 요건·받을 수 없는 발명'"],
+      ["2. 아이디어 내기", "발명 기법 카드 10종 + 관점 카드 5종(기계식·센서·앱·학교 제작·3D 프린터)으로 아이디어 3개 이상, 심화: 모순·분리 원리", "아이디어 목록", "기법 시범, 아이디어 수 격려", "발명 기법, AI 발명 레시피 교안(관점), TRIZ 분리 원리(triz-engineering-solver)"],
+      ["3. 아이디어 고르기", "신규성·진보성·이용가능성·명확성·안전/비용 5질문 점수, PMI, 특허 불가 사유 확인", "선택 아이디어, PMI", "특허 요건 설명", "활동지 PMI, 강의 '특허 요건', 교안 '특허적 사고'"],
       ["4. 구성과 도면", "특허/실용신안 선택, 부품·부호(10·20·31…), 청구항 꾸밈말, 도면 그리기, 사용 방법", "구성요소표, 도면", "부호 체계·도면 규칙 지도", "KR_PATENT_SKILL(부호 체계), korean-patent-diagram(흑백 도면 규격)"],
-      ["5. 선행기술 조사", "핵심어·동의어 → 검색식(+, *) → KIPRIS 검색 → 핵심 부품 비교표 → 진행 판단", "검색식, 비교표, 차이점", "KIPRIS 시연, 판단 확인", "patent-search-skill(구성요소 분해·claim chart), 강의 검색식"],
+      ["5. 선행기술 조사", "핵심어·동의어·제외어 → 검색식(+, *, *!) → KIPRIS·Google Patents 검색 → 상태·관련도·유사점·차이점·보완점 기록 → 선행기술조사 보고서 → 진행 판단", "검색식, 선행기술조사 보고서", "KIPRIS 시연, 판단 확인", "patent-search-skill(구성요소×문헌 비교), 금계중 컨설팅(보고서 양식), 선행기술조사 강의안(연산자)"],
       ["6. 명세서 쓰기", "앞 단계 내용으로 특허청 양식 초안 자동 생성 → 학생이 고쳐 쓰기, 청구항 다듬기", "명세서 초안", "청구항 범위 지도", "sodam-ai 초안 스킬(작성 흐름), KR_PATENT_SKILL(문장 규칙)"],
       ["7. 점검하고 보내기", "자동 점검(빈칸·부호·청구항 인용·요약 400자 등), 파일 저장·제출, 워드/한글 출력", "프로젝트 파일, 명세서 파일", "코멘트, Claude 스킬로 검토", "KR_PATENT_SKILL(정합성 점검)"],
       ["8. 출원하기", "보호자 특허고객번호·인증서, 공지 여부, 감면, 특허로 제출, 출원번호 기록, 전자화 확인", "출원번호", "보호자 안내, 출원 지원", "특허출원준비안내장, 상용워드 명세서 사용안내"]
@@ -1495,7 +1597,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       '<li>다듬어진 파일(<code>_교사검토.json</code>)을 이 화면에서 열어 확인하고 학생에게 돌려줘요.</li></ol>' +
       '<p class="mini">학생 화면에는 AI가 없어요. 학생 이름 등은 외부로 전송하지 말고, KIPRIS 검색에는 발명 키워드만 써요.</p>';
     return card("단계 분석 — 아이디어부터 출원까지", table) + card("권장 차시 계획 (예시)", plan) + card("교사용 Claude 스킬 쓰는 법", skill) +
-      card("출원 전에 꼭 확인할 것", '<ul class="plan"><li>대회·전시·SNS로 먼저 공개했다면 공개일부터 12개월 안에 출원하면서 <b>공지예외주장</b>을 해야 해요.</li><li>여러 학생이 함께 발명했다면 모두 발명자(공동출원)로 넣어요.</li><li>학생·미성년자는 수수료 감면 대상인지 특허로에서 확인해요.</li><li>특허는 출원일부터 3년 안에 <b>심사청구</b>를 해야 심사가 시작돼요.</li><li>이 도구의 결과는 법률 자문이 아니에요. 권리 범위가 중요한 발명은 변리사 상담을 권해요.</li></ul>');
+      card("출원 전에 꼭 확인할 것", '<ul class="plan"><li>대회·전시·SNS로 먼저 공개했다면 공개일부터 12개월 안에 출원하면서 <b>공지예외주장</b>을 해야 해요.</li><li>여러 학생이 함께 발명했다면 모두 발명자(공동출원)로 넣어요.</li><li>만 6~18세 학생은 출원료·심사청구료(청구항 30개 이하)·최초 3년분 등록료가 <b>면제</b>예요(권리별·절차별 연 5건). 비용 때문에 심사청구를 미룰 필요가 적어요.</li><li>특허는 출원일부터 3년 안에 <b>심사청구</b>를 해야 심사가 시작돼요.</li><li>출원 뒤 1년 안에 개선한 내용은 <b>국내우선권 주장 출원</b>으로 합칠 수 있어요(대회 준비 중인 발명에 유용).</li><li>이 도구의 결과는 법률 자문이 아니에요. 권리 범위가 중요한 발명은 변리사 상담을 권해요.</li></ul>');
   }
 
   // ------------------------------------------------------------ 미리보기
@@ -1510,6 +1612,28 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       else if (a && a.dataset.mact === "print") { document.body.classList.add("printing"); window.print(); document.body.classList.remove("printing"); }
     });
     if (autoPrint) setTimeout(function () { document.body.classList.add("printing"); window.print(); document.body.classList.remove("printing"); }, 300);
+  }
+
+  function openReport(p) {
+    var r = SC.priorArtReport(p), e = esc;
+    var head = '<table class="rep"><tr><th>발명 이름</th><td>' + e(r.title) + "</td></tr><tr><th>핵심 단어</th><td>" + r.keywords.map(e).join("<br>") + "</td></tr>" +
+      (r.exclude ? "<tr><th>뺀 단어</th><td>" + e(r.exclude) + "</td></tr>" : "") +
+      "<tr><th>검색식</th><td><code>" + e(r.query) + "</code></td></tr><tr><th>판단</th><td>" + e(r.verdict) + "</td></tr><tr><th>내 발명이 다른 점</th><td>" + e(r.diff) + "</td></tr></table>";
+    var rows = r.rows.length ? r.rows.map(function (x) {
+      return '<table class="rep"><tr><th colspan="2">선행기술 ' + x.n + "</th></tr><tr><th>번호 · 명칭</th><td>" + e(x.no) + " " + e(x.title) + "</td></tr>" +
+        "<tr><th>상태 · 관련도</th><td>" + e(x.status || "-") + " · " + e(x.relevance || "-") + "</td></tr><tr><th>핵심 특징</th><td>" + e(x.feature) + "</td></tr>" +
+        "<tr><th>유사점</th><td>" + e(x.similar) + "</td></tr><tr><th>차이점</th><td>" + e(x.differ) + "</td></tr><tr><th>보완점</th><td>" + e(x.improve) + "</td></tr>" +
+        (x.compare.length ? "<tr><th>핵심 부품 비교</th><td>" + x.compare.map(function (c) { return e(c.name) + ": " + c.v; }).join(" · ") + "</td></tr>" : "") + "</table>";
+    }).join("") : '<p class="mini">찾은 특허가 아직 없어요.</p>';
+    var m = document.createElement("div");
+    m.className = "modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "선행기술조사 보고서");
+    m.innerHTML = '<div class="modal-in wide"><div class="modal-h"><b>선행기술조사 보고서 — ' + e(p.student.name || "") + '</b><span class="row"><button class="btn ghost" data-mact="print">🖨️ 인쇄</button><button class="btn" data-mact="close">닫기</button></span></div><div class="specbox reportbox">' + head + rows + "</div></div>";
+    document.body.appendChild(m);
+    m.addEventListener("click", function (ev) {
+      var a = ev.target.closest("[data-mact]");
+      if (ev.target === m || (a && a.dataset.mact === "close")) m.remove();
+      else if (a && a.dataset.mact === "print") { document.body.classList.add("printing"); window.print(); document.body.classList.remove("printing"); }
+    });
   }
 
   // ------------------------------------------------------------ 도면 그림판
@@ -1655,6 +1779,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     if (!Array.isArray(arr)) return;
     arr.splice(i, 1);
     if (path === "s4.drawings" && Number(P.s4.rep) > arr.length) P.s4.rep = Math.max(1, arr.length);
+    if (path === "s5.keywords") P.s5.query = SC.searchQuery(P.s5.keywords, P.s5.exclude);
   }
 
   var ACT = {
@@ -1704,6 +1829,9 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       if (el) { el.classList.add("pick"); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
       toast(TECHS[i].ic + " " + TECHS[i].k + " — " + TECHS[i].q);
     },
+    usePersp: function (b) { var x = PERSPECTIVES[Number(b.dataset.i)]; P.s2.ideas.push({ id: uid("i"), tech: "관점: " + x[1], name: "", desc: "" }); touch(); rerenderMain(); focusLast(".idea input"); },
+    report: function () { openReport(P); },
+    tReport: function () { openReport(TF[tSel]); },
     addIdea: function () { P.s2.ideas.push({ id: uid("i"), tech: "", name: "", desc: "" }); touch(); rerenderMain(); focusLast(".idea input"); },
     triz2idea: function () {
       var c = P.s2.contradiction;
@@ -1734,7 +1862,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       var words = [(P.s1.product || "").trim()].concat(SC.coreList(P).map(function (c) { return c.name; }))
         .filter(function (w, i, a) { return w && have.indexOf(w) < 0 && a.indexOf(w) === i; }).slice(0, Math.max(0, 3 - have.length));
       words.forEach(function (w) { P.s5.keywords.push({ word: w, synonyms: "" }); });
-      P.s5.query = SC.searchQuery(P.s5.keywords); touch(); rerenderMain();
+      P.s5.query = SC.searchQuery(P.s5.keywords, P.s5.exclude); touch(); rerenderMain();
       toast(words.length ? words.length + "개 단어를 가져왔어요. 비슷한 말을 채워 주세요." : "핵심 단어는 2~3개면 충분해요. 더 넣으면 검색 결과가 너무 줄어요.");
     },
     copyQuery: function () {
@@ -1743,7 +1871,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       (navigator.clipboard ? navigator.clipboard.writeText(q) : Promise.reject()).then(function () { toast("검색식을 복사했어요. KIPRIS 검색창에 붙여 넣으세요."); },
         function () { var r = document.createRange(); r.selectNodeContents(document.getElementById("queryOut")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Ctrl+C로 복사하세요."); });
     },
-    addFound: function () { P.s5.found.push({ no: "", title: "", url: "", memo: "", compare: {} }); touch(); rerenderMain(); },
+    addFound: function () { P.s5.found.push({ no: "", title: "", url: "", status: "", relevance: "", memo: "", similar: "", differ: "", improve: "", compare: {} }); touch(); rerenderMain(); },
     draftEmpty: function () { SC.draftAll(P, true); touch(); rerenderMain(); toast("빈 칸을 채웠어요. 꼭 읽어 보고 고쳐요."); },
     draftAllConfirm: function () { if (!confirm("명세서의 모든 칸을 앞 단계 내용으로 다시 만들까요? 내가 고친 문장이 사라져요.")) return; SC.draftAll(P, false); touch(); rerenderMain(); },
     draft: function (b) {
@@ -1795,7 +1923,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     if (!P || !t.dataset || !t.dataset.k) return;
     if (t.type === "checkbox" || t.type === "radio" || t.tagName === "SELECT") return; // change 이벤트에서 처리
     setPath(P, t.dataset.k, t.value);
-    if (t.dataset.q !== undefined) { P.s5.query = SC.searchQuery(P.s5.keywords); var q = document.getElementById("queryOut"); if (q) q.textContent = P.s5.query || "(위에 단어를 적으면 검색식이 생겨요)"; }
+    if (t.dataset.q !== undefined) { P.s5.query = SC.searchQuery(P.s5.keywords, P.s5.exclude); var q = document.getElementById("queryOut"); if (q) q.textContent = P.s5.query || "(위에 단어를 적으면 검색식이 생겨요)"; }
     var cnt = document.querySelector('[data-count="' + t.dataset.k + '"]');
     if (cnt) { cnt.textContent = t.value.length + " / " + cnt.dataset.max + "자"; cnt.classList.toggle("over", t.value.length > Number(cnt.dataset.max)); }
     if (t.classList.contains("cname")) { /* 이름만 바뀌면 다시 그리지 않음 */ }
