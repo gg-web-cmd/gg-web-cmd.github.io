@@ -7,6 +7,8 @@
   (윈도우 설치판 도구의 웹판. 자세한 것은 [tools/README.md](tools/README.md))
 - 발명특허교실: https://gg-web-cmd.github.io/invention/ — 학생 발명 아이디어부터 명세서·특허 출원까지 8단계 안내
   (자세한 것은 [invention/README.md](invention/README.md))
+- 사이언스 퀘스트 · 중2 과학: https://gg-web-cmd.github.io/science-quest/ — 중2 과학 여덟 단원을 연구소로 깨 나가는 픽셀 모험 게임
+  (자세한 것은 [science-quest/README.md](science-quest/README.md))
 - 그 밖의 앱은 별도 저장소의 GitHub Pages로 공개되어 있습니다.
 
 ## 2026-10-09 사용성 개선

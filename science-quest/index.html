@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>사이언스 퀘스트 · 중2 과학</title>
+<meta name="description" content="중학교 2학년 과학을 단원별 연구소로 깨 나가는 픽셀 모험 게임">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 게임 화면 -->
+<main id="stage-wrap">
+  <canvas id="view" width="1152" height="720" aria-label="게임 화면"></canvas>
+
+  <div id="hud" hidden>
+    <div class="hud-left">
+      <div id="hud-place">과학 섬</div>
+      <div id="hud-prog"></div>
+    </div>
+    <div id="hud-keys" title="단원 열쇠"></div>
+    <div class="hud-right">
+      <span id="hud-hearts"></span>
+      <span id="hud-stars">⭐ 0</span>
+    </div>
+  </div>
+
+  <nav id="hud-menu" hidden>
+    <button id="btn-bag" title="가방">🎒<span>가방</span></button>
+    <button id="btn-dex" title="용어 도감">📖<span>도감</span></button>
+    <button id="btn-review" title="복습 노트">📒<span>복습</span></button>
+    <button id="btn-home" title="마을로">🏠<span>마을로</span></button>
+    <button id="btn-set" title="설정">⚙️<span>설정</span></button>
+  </nav>
+
+  <div id="prompt" hidden></div>
+  <div id="fade"></div>
+</main>
+
+<!-- 터치 조작판 -->
+<div id="touch" hidden>
+  <div class="dpad">
+    <button data-dir="up" aria-label="위">▲</button>
+    <button data-dir="left" aria-label="왼쪽">◀</button>
+    <button data-dir="right" aria-label="오른쪽">▶</button>
+    <button data-dir="down" aria-label="아래">▼</button>
+  </div>
+  <button class="abtn" id="btn-a" aria-label="말 걸기">A</button>
+</div>
+
+<!-- 첫 화면 -->
+<section id="screen-title" class="screen">
+  <div class="title-box">
+    <div class="logo"><span>SCIENCE</span><span>QUEST</span></div>
+    <div class="sub">중2 과학 원정대 — 연구소를 하나씩 되찾아라!</div>
+    <canvas id="title-scene" width="320" height="96"></canvas>
+    <div class="title-btns">
+      <button id="btn-continue" class="btn big primary" hidden>▶ 이어하기</button>
+      <button id="btn-new" class="btn big">▶ 새로 시작하기</button>
+      <button id="btn-teacher" class="btn">👩‍🏫 선생님 안내</button>
+    </div>
+    <p class="title-foot">방향키·WASD로 움직이고 Space로 말을 걸어요 · 화면을 눌러서 움직여도 돼요</p>
+  </div>
+</section>
+
+<!-- 캐릭터 만들기 -->
+<section id="screen-make" class="screen" hidden>
+  <div class="panel make">
+    <h2>별명과 캐릭터</h2>
+    <div class="make-grid">
+      <div class="make-preview">
+        <canvas id="make-canvas" width="16" height="16"></canvas>
+        <div id="make-name">별명</div>
+      </div>
+      <div class="make-opts">
+        <label class="row">
+          <span>별명</span>
+          <input id="in-nick" maxlength="8" placeholder="별명 (8글자까지)" autocomplete="off">
+        </label>
+        <p class="note">실명 대신 별명을 써 주세요. 이 기기 안에만 저장돼요.</p>
+        <div class="row"><span>머리</span><div class="choices" id="opt-hair"></div></div>
+        <div class="row"><span>머리 색</span><div class="swatches" id="opt-hairColor"></div></div>
+        <div class="row"><span>옷 색</span><div class="swatches" id="opt-shirt"></div></div>
+        <div class="row"><span>피부색</span><div class="swatches" id="opt-skin"></div></div>
+      </div>
+    </div>
+    <div class="make-foot">
+      <button id="btn-make-back" class="btn">◀ 처음으로</button>
+      <span id="make-msg"></span>
+      <button id="btn-make-go" class="btn primary">출발! ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- 대화창 -->
+<div id="dialog" hidden>
+  <div class="dlg-face"><canvas width="16" height="16"></canvas></div>
+  <div class="dlg-body">
+    <div class="dlg-name"></div>
+    <div class="dlg-text"></div>
+    <div class="dlg-foot">
+      <button class="mini dlg-speak" type="button">🔊 읽어주기</button>
+      <button class="mini dlg-skip" type="button">건너뛰기 ▶▶</button>
+      <span class="dlg-next">▼ 다음 (Space)</span>
+    </div>
+  </div>
+</div>
+
+<!-- 문제·미니게임·메뉴 창 -->
+<div id="modal" hidden></div>
+<div id="toast" aria-live="polite"></div>
+
+<script src="js/stages/index.js"></script>
+<script src="js/stages/stage1.js"></script>
+<script src="js/stages/stage2.js"></script>
+<script src="js/stages/stage3.js"></script>
+<script src="js/stages/stage4.js"></script>
+<script src="js/stages/stage5.js"></script>
+<script src="js/stages/stage6.js"></script>
+<script src="js/stages/stage7.js"></script>
+<script src="js/stages/stage8.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
