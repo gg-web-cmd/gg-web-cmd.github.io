@@ -1395,7 +1395,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     var same = (P.s5.found || []).some(function (f) { return f.relevance === "4" || core.length && core.every(function (c) { return (f.compare || {})[c.id] === "same"; }); });
     var c = card("③ 찾은 특허와 비교하기", (fl || '<p class="empty">찾은 특허를 적어 주세요. 비슷한 것이 없었다면 \'없음\'이라고 적어 두어요.</p>') +
       '<div class="row"><button class="btn" data-act="addFound">+ 찾은 특허 추가</button><button class="btn ghost" data-act="report">📄 선행기술조사 보고서 보기·인쇄</button></div>' +
-      (same ? '<div class="warnbox">핵심 부품이 모두 \'같음\'인 특허가 있어요. 이대로는 새롭지 않을 수 있어요. 아이디어를 고치거나 다른 아이디어를 골라 보세요.</div>' : ""));
+      (same ? '<div class="warnbox">핵심 부품이 모두 \'같음\'이거나 관련도가 75~100(매우 비슷)인 특허가 있어요. 이대로는 새롭지 않을 수 있어요. 아이디어를 고치거나 다른 아이디어를 골라 보세요.</div>' : ""));
     var v = [["go", "✅ 계속 진행", "비슷한 것이 없거나 내 발명이 분명히 달라요."], ["fix", "🛠️ 아이디어 고치기", "비슷한 것이 있어서 다른 점을 더 만들어요."], ["change", "🔁 다른 아이디어로", "거의 같은 것이 이미 있어요."]];
     var d = card("④ 어떻게 할까요?",
       '<div class="choice3">' + v.map(function (x) {
