@@ -347,6 +347,16 @@ ul.aichk li { padding: 2px 0; }
 .copyitem img { display: block; max-width: 220px; margin-top: 8px; border: 1px solid var(--line); }
 #guidedTitle { display: block; width: 100%; box-sizing: border-box; margin: 4px 0 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; background: #fff; }
 .modal-in.wide { max-height: 88vh; overflow: auto; }
+/* 초등 관점 검토 반영: 4단계 문장 재료 · 꼴 고치기 · 추천 낱말 · 넓게 찾기 · 근거 확인 · 복사 창 상태 */
+.framebox { margin: 10px 0; padding: 10px 12px; border: 1px dashed #9fb6e3; border-radius: 10px; background: var(--pri-soft); }
+.framebox-h { margin-bottom: 6px; line-height: 1.5; }
+.row.fixes { gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.row.chips { gap: 6px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+.chipbtn { border: 1px solid #b9c8e8; background: #fff; border-radius: 999px; padding: 4px 12px; font: inherit; font-size: .92rem; cursor: pointer; }
+.chipbtn:hover { background: var(--pri-soft); }
+.widebox { margin: 10px 0; padding: 10px 12px; border: 1px solid #f0d28a; border-radius: 10px; background: var(--warn-soft); }
+.evbar { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: var(--pri-soft); border: 1px solid #c9d6f2; }
+.copyitem .miss { color: #a1361f; font-weight: 600; font-size: .9rem; display: inline-flex; gap: 8px; align-items: center; }
 
 </style>
 </head>
@@ -407,7 +417,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       s5: { keywords: [], exclude: "", query: "", searchDate: "", preparedDate: "", found: [], verdict: "", diff: "", cite: true },
       s6: { title: "", titleEn: "", field: "", background: "", problem: "", solution: "",
             effects: [], effectsText: "", drawingDesc: "", detail: "", symbols: "", claims: [], abstract: "" },
-      s8: { practice: { applicant: "", inventor: "", guardian: "", examination: "", exception: "", feeReason: "", attachments: "", checked: false }, checks: {}, appNo: "", appDate: "", memo: "", discloseDate: "", discloseWhere: "" },
+      s8: { practice: { applicant: "", inventor: "", guardian: "", examination: "", exception: "", feeReason: "", attachments: "", checked: false }, checks: {}, receiptNo: "", appNo: "", appDate: "", memo: "", discloseDate: "", discloseWhere: "" },
       notes: [],
       teacher: { comments: {}, notes: "" }
     };
@@ -524,6 +534,115 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   function okAction(a) { a = String(a || "").trim(); return CLAIM_ACTIONS.indexOf(a) >= 0 || /^[가-힣][가-힣 ]{0,19}는$/.test(a); }
   function okLink(l) { l = String(l || "").trim(); return CLAIM_LINKS.indexOf(l) >= 0 || /^[가-힣][가-힣 ]{0,19}[어여져워려]$/.test(l); }
   function okPosition(x) { x = String(x || "").trim(); return CLAIM_POSITIONS.some(function (q) { return q[0] === x; }) || /^의 [가-힣][가-힣 ]{0,11}에$/.test(x); }
+  // ---------------------------------------------------------------- 낱말 꼴 고치기 제안 (받치다 → 받치는) · 4단계 문장에서 재료 가져오기
+  // 문법 꼴만 바꾼다. 없는 구조나 효과를 지어내지 않고, 학생이 버튼을 눌러야 적용된다.
+  function hj(ch) { var c = String(ch || "").charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? c : -1; }
+  function jongOf(ch) { var c = hj(ch); return c < 0 ? -1 : c % 28; }
+  function vowelOf(ch) { var c = hj(ch); return c < 0 ? -1 : Math.floor((c % 588) / 28); }
+  function withJong(ch, j) { var c = hj(ch); return c < 0 ? ch : String.fromCharCode(0xAC00 + c - (c % 28) + j); }
+  function withVowel(ch, v) { var c = hj(ch); return c < 0 ? ch : String.fromCharCode(0xAC00 + Math.floor(c / 588) * 588 + v * 28 + (c % 28)); }
+  function cleanWord(w) { return String(w || "").replace(/\s+/g, " ").trim().replace(/[.。!?]+$/, "").trim(); }
+  // '모은다·한다·끼운다' → 모으·하·끼우, '담는다' → 담, '받치다' → 받치, '지지해요·지지함' → 지지하
+  function verbStem(w) {
+    w = cleanWord(w).replace(/\s*(것|거)$/, "");
+    if (/는다$/.test(w)) return w.slice(0, -2);
+    if (/(해요|합니다|함)$/.test(w)) return w.replace(/(해요|합니다|함)$/, "하");
+    if (!/다$/.test(w) || w.length < 2) return "";
+    var s = w.slice(0, -1), last = s.slice(-1);
+    if (jongOf(last) === 4) return s.slice(0, -1) + withJong(last, 0);
+    return s;
+  }
+  function toAction(w) {
+    w = cleanWord(w);
+    if (!w || okAction(w)) return "";
+    if (CLAIM_ACTIONS.indexOf(w + "하는") >= 0) return w + "하는";
+    var s = verbStem(w), last = s.slice(-1), out;
+    if (!s) return "";
+    out = jongOf(last) === 8 ? s.slice(0, -1) + withJong(last, 0) + "는" : s + "는";
+    return okAction(out) ? out : "";
+  }
+  function toLink(w) {
+    var w0 = cleanWord(w);
+    if (!w0 || okLink(w0)) return "";
+    w = w0.replace(/\s*(있다|있음|있어요)$/, "").trim();
+    if (okLink(w)) return w;
+    if (CLAIM_LINKS.indexOf(w + "되어") >= 0) return w + "되어";
+    var s = verbStem(w), out = "";
+    if (!s) return "";
+    var last = s.slice(-1), head = s.slice(0, -1), v = vowelOf(last);
+    if (last === "하") out = head + "되어";
+    else if (last === "되") out = s + "어";
+    else if (last === "지") out = head + "져";
+    else if (jongOf(last) > 0) out = (v === 0 || v === 8) ? "" : s + "어";
+    else if (v === 13) out = head + withVowel(last, 14);
+    else if (v === 20) out = head + withVowel(last, 6);
+    return out && okLink(out) ? out : "";
+  }
+  function toPosition(w, targetName) {
+    var s = cleanWord(w);
+    if (!s || okPosition(s)) return "";
+    s = s.replace(/^상기\s+/, "");
+    if (targetName && s.indexOf(targetName) === 0) s = s.slice(targetName.length).trim();
+    s = s.replace(/^의\s*/, "").replace(/(에서|으로|에|로)$/, "").trim();
+    var out = s ? "의 " + s + "에" : "";
+    return out && okPosition(out) ? out : "";
+  }
+  function toObject(w) {
+    var orig = String(w || "").trim(), s = cleanWord(orig);
+    if (s.length >= 3 && /[을를]$/.test(s)) s = s.slice(0, -1);
+    return s && s !== orig && !/[.!?。\n]/.test(s) ? s : "";
+  }
+  // 꼴이 틀린 낱말마다 바꿀 말 제안: [{ field, from, to }]
+  function frameFixes(c, p) {
+    var out = [];
+    if (!c || !c.claimGuided) return out;
+    function add(field, from, to) { if (to && to !== from) out.push({ field: field, from: from, to: to }); }
+    var o = String(c.claimObject || "").trim(); if (o) add("claimObject", o, toObject(o));
+    var a = String(c.claimAction || "").trim(); if (a && !okAction(a)) add("claimAction", a, toAction(a));
+    if (c.claimTarget) {
+      var t = coreList(p).filter(function (x) { return x.id === c.claimTarget; })[0];
+      var l = String(c.claimLink || "").trim(); if (l && !okLink(l)) add("claimLink", l, toLink(l));
+      var q = String(c.claimPosition || "").trim(); if (q && !okPosition(q)) add("claimPosition", q, toPosition(q, t && t.name));
+    }
+    return out;
+  }
+  // 4단계 '하는 일'·'연결' 문장에서 빈 재료 칸 후보를 찾는다 (빈 칸만, 학생이 확인 후 고침)
+  function suggestFrame(c, p) {
+    var patch = {};
+    if (!c) return patch;
+    var me = String(c.name || "").trim();
+    function plain(t) {
+      t = String(t || "").split(/[.。\n]/)[0].replace(/\(\d+\)/g, "").replace(/\s+/g, " ").trim();
+      if (me && t.indexOf(me) === 0 && /^(은|는|이|가)\s/.test(t.slice(me.length))) t = t.slice(me.length + 1).trim();
+      return t;
+    }
+    var role = plain(c.role);
+    var m = role.match(/^(.+)(?:을|를)\s+(.+)$/);
+    if (m) {
+      var obj = m[1].trim(), act = okAction(m[2].trim()) ? m[2].trim() : toAction(m[2]);
+      if (!String(c.claimObject || "").trim() && obj && obj.length <= 30) patch.claimObject = obj;
+      if (!String(c.claimAction || "").trim() && act) patch.claimAction = act;
+    }
+    var rel = plain(c.relation).replace(/^상기\s+/, "");
+    var cs = coreList(p), before = cs.slice(0, Math.max(0, cs.indexOf(c)));
+    if (rel && !c.claimTarget) {
+      var names = before.slice().sort(function (a, b) { return String(b.name || "").length - String(a.name || "").length; });
+      for (var i = 0; i < names.length; i++) {
+        var nm = String(names[i].name || "").trim();
+        if (!nm || rel.indexOf(nm) !== 0) continue;
+        var rest = rel.slice(nm.length), mm = rest.match(/^(의\s+[가-힣 ]+?에|에)\s+(.+)$/) || rest.match(/^\s+([가-힣 ]+?에)\s+(.+)$/);
+        if (!mm) break;
+        var pos = /^(의|에)/.test(mm[1]) ? mm[1].replace(/^의\s+/, "의 ") : "의 " + mm[1].trim();
+        var lk = okLink(mm[2].trim()) ? mm[2].trim() : toLink(mm[2]);
+        if (!lk || !okPosition(pos)) break;
+        patch.claimTarget = names[i].id;
+        if (!String(c.claimPosition || "").trim()) patch.claimPosition = pos;
+        if (!String(c.claimLink || "").trim()) patch.claimLink = lk;
+        break;
+      }
+    }
+    return patch;
+  }
   // 앞에서 나온 부품·대상을 다시 부르면 '상기'를 붙인다
   function withSanggi(object, earlier) {
     if (/^상기\s/.test(object)) return object;
@@ -567,12 +686,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if(guidedPhrase(c,p) && (c.claimGuided || String(c.claimPhrase||c.relation||'').trim())) return;
       if(!c.claimGuided){ missing.push(c.name+': 하는 일과 대상, 연결할 앞 부품을 확인해요.'); return; }
       if(!String(c.claimObject||'').trim()) missing.push(c.name+': 무엇을 다루는지 낱말을 적어요 (예: 빗물, 필기구).');
-      else if(!okAction(c.claimAction)) missing.push(c.name+': 하는 일은 \'~는\'으로 끝나게 적어요 (예: 덮는, 모으는).');
+      else if(!okAction(c.claimAction)) { var fa=toAction(c.claimAction); missing.push(c.name+': 하는 일은 \'~는\'으로 끝나게 적어요 ('+(fa?'\''+cleanWord(c.claimAction)+'\' → \''+fa+'\'':'예: 덮는, 모으는')+').'); }
       else if(c.claimTarget){
         var cs2=coreList(p), before=cs2.slice(0,cs2.indexOf(c));
         if(!before.some(function(x){return x.id===c.claimTarget;})) missing.push(c.name+': 연결할 부품은 이 부품보다 앞에 있는 꼭 필요한 부품이어야 해요.');
-        else if(!okLink(c.claimLink)) missing.push(c.name+': 연결 방법을 \'~어/~져\'로 끝나게 적어요 (예: 결합되어, 끼워져).');
-        else if(!okPosition(c.claimPosition||'에')) missing.push(c.name+': 위치는 \'의 ○○에\' 꼴로 적어요 (예: 의 안쪽에).');
+        else if(!okLink(c.claimLink)) { var fl=toLink(c.claimLink); missing.push(c.name+': 연결 방법을 \'~어/~져\'로 끝나게 적어요 ('+(fl?'\''+cleanWord(c.claimLink)+'\' → \''+fl+'\'':'예: 결합되어, 끼워져')+').'); }
+        else if(!okPosition(c.claimPosition||'에')) { var tg=before.filter(function(x){return x.id===c.claimTarget;})[0], fp=toPosition(c.claimPosition,tg&&tg.name); missing.push(c.name+': 위치는 \'의 ○○에\' 꼴로 적어요 ('+(fp?'\''+cleanWord(c.claimPosition)+'\' → \''+fp+'\'':'예: 의 안쪽에')+').'); }
       }
     });
     return missing;
@@ -759,6 +878,56 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return q;
   }
 
+  // 처음에는 쉬운 낱말 2개로 넓게: 따옴표 없이, 띄어 쓴 말은 마지막 낱말만
+  function broadQuery(keywords) {
+    var g = (keywords || []).filter(function (k) { return String(k.word || "").trim(); }).slice(0, 2).map(function (k) {
+      var words = [k.word].concat(String(k.synonyms || "").split(/[,，\n]/)).map(function (w) {
+        var parts = String(w || "").trim().split(/\s+/); return parts[parts.length - 1];
+      }).filter(Boolean);
+      words = words.filter(function (w, i) { return words.indexOf(w) === i; });
+      return words.length > 1 ? "(" + words.join("+") + ")" : (words[0] || "");
+    }).filter(Boolean);
+    return g.join("*");
+  }
+  // 추천 낱말: 관련된 물건('책상과 연필' → 책상, 연필) + 꼭 필요한 부품 이름('고정 집게' → 고정 집게, 집게)
+  function kwParts(p) {
+    var prod = [], core = [];
+    function push(a, w) { w = String(w || "").trim(); if (w && w.length <= 20 && ["및", "등", "것", "때"].indexOf(w) < 0 && a.indexOf(w) < 0) a.push(w); }
+    String((p.s1 && p.s1.product) || "").split(/[\s,，·\/]+/).forEach(function (t) {
+      push(prod, t.length >= 3 ? t.replace(/(에서|으로|과|와|및|의|을|를|에|로)$/, "") : t);
+    });
+    coreList(p).forEach(function (c) {
+      var n = String(c.name || "").trim(), parts = n.split(/\s+/);
+      push(core, n); if (parts.length > 1) push(core, parts[parts.length - 1]);
+    });
+    return { prod: prod, core: core };
+  }
+  function keywordCandidates(p) {
+    var k = kwParts(p);
+    return k.prod.concat(k.core.filter(function (w) { return k.prod.indexOf(w) < 0; }));
+  }
+  // 처음 검색 낱말 2개: 관련 물건 하나 + 겹치지 않는 부품 이름(띄어 쓴 이름은 마지막 낱말)
+  function startKeywords(p) {
+    var k = kwParts(p), a = k.prod[0] || "";
+    var heads = k.core.filter(function (w) { return !/\s/.test(w); });
+    var b = heads.filter(function (w) { return !a || (a.indexOf(w) < 0 && w.indexOf(a) < 0); })[0] || "";
+    return [a, b].filter(Boolean);
+  }
+  // 선행기술 원문 근거 확인 정도: 문헌 × 꼭 필요한 부품 칸 중 '있음·비슷함·없음' + 근거가 적힌 칸
+  function researchEvidence(p) {
+    var core = coreList(p), docs = (p.s5.found || []).filter(function (f) { return filled(f.no) || filled(f.title); });
+    var r = { docs: docs.length, total: 0, ok: 0, unknown: 0, noEvidence: 0, dated: filled(p.s5.searchDate) };
+    docs.forEach(function (f) {
+      core.forEach(function (c) {
+        var v = (f.compare || {})[c.id], e = (f.evidence || {})[c.id];
+        r.total++;
+        if (v === "unknown") r.unknown++;
+        else if (v && filled(e)) r.ok++;
+        else if (v) r.noEvidence++;
+      });
+    });
+    return r;
+  }
   // Google Patents용 영어 검색어: 핵심 단어·비슷한 말 가운데 영어만 모아 (a OR b) (c) 꼴로
   function gpQuery(keywords) {
     var groups = (keywords || []).map(function (k) {
@@ -809,7 +978,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     r[3] = p.learningMode === "ready" ? (chosenIdea(p) ? 1 : 0) : (p.s3.chosen ? 0.5 : 0) + ([p.s3.pmi.p, p.s3.pmi.m, p.s3.pmi.i].filter(filled).length / 3) * 0.5;
     var cs = components(p).filter(function (c) { return filled(c.name); }).length, ds = (p.s4.drawings || []).filter(function(d) { return !!d.img; }).length;
     r[4] = Math.min(1, (cs >= 2 ? 0.5 : cs * 0.25) + (ds ? 0.3 : 0) + (filled(p.s4.usage) ? 0.2 : 0));
-    r[5] = (filled(p.s5.query) ? 0.4 : 0) + ((p.s5.found || []).length ? 0.3 : 0) + (p.s5.verdict ? 0.3 : 0);
+    var ev = researchEvidence(p), v5 = p.s5.verdict ? 1 : 0, d5 = ev.dated ? 1 : 0;
+    r[5] = (filled(p.s5.query) ? 0.25 : 0) + (ev.docs || (d5 && v5) ? 0.15 : 0) + v5 * 0.2 + d5 * 0.1 + 0.3 * (ev.total ? ev.ok / ev.total : d5);
     var s6 = p.s6, keys = [s6.title, s6.field, s6.background, s6.problem, s6.solution, s6.effectsText, s6.detail, s6.abstract,
       (s6.claims || []).some(function (c) { return filled(c.text); }) ? "x" : ""];
     r[6] = keys.filter(filled).length / keys.length;
@@ -852,7 +1022,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       ["form", "출원서에 출원인(학생)·법정대리인(보호자)·발명자를 입력했어요"],
       ["attach", "명세서·요약서·도면 파일을 첨부했어요"],
       ["fee", "수수료 면제(감면) 사유를 적고 증명서류를 준비했어요 (만 6~18세는 출원료·심사청구료·최초 3년분 등록료 면제, 권리별·절차별 연 5건)"],
-      ["submit", "제출하고 출원번호(접수번호)를 기록했어요"],
+      ["submit", "제출하고 접수번호와 출원번호를 따로 기록했어요 (접수증·출원번호 통지서 보관)"],
       ["receipt", "접수증(PDF)을 내려받아 보관했어요"]
     ] },
     { group: "제출한 뒤에", items: [
@@ -1032,6 +1202,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     (p.s5.found || []).forEach(function(f,i) {
       cs.forEach(function(c) { if ((f.compare || {})[c.id] && !(f.evidence || {})[c.id]) add("info", 5, "문헌 " + (i+1) + "의 '" + c.name + "' 비교 근거·확인 위치를 적어요.", "found"); });
     });
+    var ev5 = researchEvidence(p);
+    if (ev5.unknown) add("warn", 5, "선행기술 비교에 '확인 못 함'이 " + ev5.unknown + "칸 있어요. 원문(청구항·도면·설명)을 더 보거나 선생님과 함께 확인해요. 조사 진행률은 확인한 만큼만 올라가요.", "found");
+    if (ev5.docs && !ev5.dated) add("warn", 5, "검색 결과를 직접 확인한 날을 5단계에 적어요.", "searchDate");
     var seen2 = {};
     return out.filter(function (c) { var k = c.level + c.msg; if (seen2[k]) return false; seen2[k] = 1; return true; });
   }
@@ -1256,7 +1429,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     josa: josa, pick: pick, toAdnominal: toAdnominal, renumber: renumber, topLevel: topLevel, childrenOf: childrenOf,
     coreList: coreList, drafts: drafts, draftAll: draftAll, searchQuery: searchQuery, progress: progress, filingProgress: filingProgress, runChecks: runChecks,
     FILING_CHECKS: FILING_CHECKS, specBlocks: specBlocks, previewHtml: previewHtml, buildDocx: buildDocx, buildHwpx: buildHwpx,
-    CLAIM_ACTIONS: CLAIM_ACTIONS, CLAIM_LINKS: CLAIM_LINKS, CLAIM_POSITIONS: CLAIM_POSITIONS, okAction: okAction, okLink: okLink, okPosition: okPosition,
+    CLAIM_ACTIONS: CLAIM_ACTIONS, CLAIM_LINKS: CLAIM_LINKS, CLAIM_POSITIONS: CLAIM_POSITIONS, okAction: okAction, okLink: okLink, okPosition: okPosition, toAction: toAction, toLink: toLink, toPosition: toPosition, frameFixes: frameFixes, suggestFrame: suggestFrame,
+    broadQuery: broadQuery, keywordCandidates: keywordCandidates, startKeywords: startKeywords, researchEvidence: researchEvidence,
     AUDIENCES: AUDIENCES, isMinor: isMinor, whoAmI: whoAmI, feeInfo: feeInfo, guidedPhrase: guidedPhrase, claimReadiness: claimReadiness, PROMPT_TASKS: PROMPT_TASKS, personalPrompt: personalPrompt,
     chosenIdea: chosenIdea, inv: inv, fileBase: fileBase, priorArtReport: priorArtReport, PA_STATUS: PA_STATUS, PA_RELEVANCE: PA_RELEVANCE, claimRefs: claimRefs, gpQuery: gpQuery, SEEN: SEEN, CMP: CMP, addMonths: addMonths, ymd: ymd
   };
@@ -1337,8 +1511,10 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
   // ------------------------------------------------------------ 데이터
   var STEPS = [
     { n: 1, t: "문제 찾기", ic: "🔎", goal: "생활 속에서 불편한 점을 찾아 '문제 문장'으로 써요.", todo: ["누가, 어디서, 무엇이 불편한지 골라요", "관련된 물건을 자세히 살펴봐요", "불편한 점과 바꾸고 싶은 점을 써요"] },
-    { n: 2, t: "아이디어 내기", ic: "💡", goal: "발명 기법 카드를 써서 해결 아이디어를 적어요. 6차시 경로는 1개, 확장 경로는 3개 이상을 비교해요.", todo: ["발명 기법 카드를 하나 골라요", "카드의 질문에 답하듯 아이디어를 적어요", "다른 카드로 2~3개 더 만들어요"] },
-    { n: 3, t: "아이디어 고르기", ic: "⚖️", goal: "아이디어를 비교해 하나를 고르고, PMI로 좋은 점·아쉬운 점을 따져 봐요.", todo: ["다섯 가지 질문에 점수를 매겨요", "가장 좋은 아이디어를 골라요", "PMI 표를 채워요"] },
+    { n: 2, t: "아이디어 내기", ic: "💡", goal: "발명 기법 카드를 써서 해결 아이디어를 적어요. 6차시 경로는 1개, 확장 경로는 3개 이상을 비교해요.", todo: ["발명 기법 카드를 하나 골라요", "카드의 질문에 답하듯 아이디어를 적어요", "다른 카드로 2~3개 더 만들어요"],
+      ready: { goal: "내 아이디어 1개를 적어요. 발명 기법 카드는 아이디어를 더 분명하게 할 때 써요.", todo: ["내 아이디어의 이름과 작동 방법을 적어요", "(선택) 발명 기법 카드로 다듬어 봐요", "(선택) 다른 아이디어가 떠오르면 더 적어요"] } },
+    { n: 3, t: "아이디어 고르기", ic: "⚖️", goal: "아이디어를 비교해 하나를 고르고, PMI로 좋은 점·아쉬운 점을 따져 봐요.", todo: ["다섯 가지 질문에 점수를 매겨요", "가장 좋은 아이디어를 골라요", "PMI 표를 채워요"],
+      ready: { goal: "이번 수업에서 쓸 아이디어 하나를 확인하고 골라요. 점수·PMI는 선택 활동이에요.", todo: ["쓸 아이디어 하나를 골라요", "특허를 받기 어려운 경우인지 확인해요", "(선택) 점수·PMI로 따져 봐요"] } },
     { n: 4, t: "구성과 도면", ic: "🧩", goal: "발명을 부품(구성요소)으로 나누고 번호(부호)를 붙여 그림(도면)을 그려요.", todo: ["특허·실용신안 중 무엇으로 낼지 골라요", "부품을 적고 하는 일을 써요", "도면을 그리고 부호를 붙여요", "사용 방법을 순서대로 써요"] },
     { n: 5, t: "선행기술 조사", ic: "🗂️", goal: "KIPRIS에서 비슷한 특허가 이미 있는지 찾아 내 발명과 비교해요.", todo: ["핵심 단어와 비슷한 말을 적어요", "만들어진 검색식으로 KIPRIS에서 검색해요", "찾은 특허를 적고 내 발명과 비교해요", "계속할지, 고칠지 정해요"] },
     { n: 6, t: "명세서 쓰기", ic: "📝", goal: "명세서 양식에 맞춰 내 발명을 글로 정리해요. 앞 단계의 정보 카드·구성요소 표·비교표가 재료예요.", todo: ["'빈 칸 자동 채우기'로 초안을 만들어요", "칸마다 읽어 보며 내 말로 고쳐요", "청구항(내 권리의 울타리)을 확인해요"] },
@@ -1467,7 +1643,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     var lp=document.getElementById("lessonProgress"); if(lp) lp.textContent="수업 길잡이 · 학습 "+learningTotal(P)+"% (실제 출원 제외)";
   }
   function stepHead() {
-    var s = STEPS[step - 1], cm = (P.teacher && P.teacher.comments && P.teacher.comments[step]) || "";
+    var s0 = STEPS[step - 1], s = P.learningMode === "ready" && s0.ready ? Object.assign({}, s0, s0.ready) : s0, cm = (P.teacher && P.teacher.comments && P.teacher.comments[step]) || "";
     return '<div class="stephead"><div class="badge">' + step + '단계</div><h2>' + s.ic + " " + s.t + "</h2><p class=\"goal\">" + s.goal + "</p>" +
       '<ol class="todo">' + s.todo.map(function (t) { return "<li>" + t + "</li>"; }).join("") + "</ol>" +
       (cm.trim() ? '<div class="tcomment"><b>👩‍🏫 선생님 한마디</b><p>' + esc(cm).replace(/\n/g, "<br>") + "</p></div>" : "") + "</div>";
@@ -1528,7 +1704,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       return '<button class="tech" data-act="usePersp" data-i="' + i + '"><span class="ic">' + x[0] + "</span><b>" + x[1] + '</b><span class="q">' + x[2] + "</span></button>";
     }).join("") + "</div>", { sub: "같은 문제를 다른 방법으로 풀어 보면 더 좋은 아이디어가 나와요." });
     var b = card("③ 내 아이디어 (" + n + "개)", (ideas || '<p class="empty">아직 아이디어가 없어요. 위의 카드를 눌러 시작해요.</p>') +
-      '<button class="btn" data-act="addIdea">+ 아이디어 추가</button>' + (n && n < 3 ? '<p class="mini">3개 이상 떠올리면 더 좋은 아이디어를 고를 수 있어요.</p>' : ""));
+      '<button class="btn" data-act="addIdea">+ 아이디어 추가</button>' + (n && n < 3 && P.learningMode !== "ready" ? '<p class="mini">3개 이상 떠올리면 더 좋은 아이디어를 고를 수 있어요.</p>' : ""));
     var c = "";
     if (deep()) {
       c = card("④ 심화: 모순 풀기 (TRIZ 맛보기)",
@@ -1594,12 +1770,12 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
         '<span class="ctl"><button class="x" data-act="moveComp" data-i="' + i + '" data-d="-1" aria-label="위로">↑</button><button class="x" data-act="moveComp" data-i="' + i + '" data-d="1" aria-label="아래로">↓</button><button class="x" data-act="delComp" data-i="' + i + '" aria-label="삭제">✕</button></span></div>' +
         '<div class="grid2">' + F("s4.components." + i + ".role", "하는 일 (언제·어떻게 작동하나요?)", { rows: 2, ph: "예: 우산 천에서 흘러내린 빗물을 담는다." }) +
         F("s4.components." + i + ".relation", "어디에 있고, 무엇과 어떻게 연결되나요?", { rows: 2, ph: "예: 우산대의 아래쪽 끝에 끼워진다." }) + "</div>" +
-        (c.core ? F("s4.components." + i + ".claimPhrase", "청구항에 쓸 꾸밈말", { hint: "어떤 " + esc(c.name || "부품") + "인지 '~하는'으로 꾸며요. 청구항 1에 그대로 들어가요.", ph: "예: 우산대의 아래쪽 끝에 결합되어 빗물을 모으는" }) : "") +
+        (c.core ? frameBlock4(c, i) : "") +
         F("s4.components." + i + ".features", "더 자세한 특징 (한 줄에 하나)", { rows: 2, hint: "'~한', '~인'으로 끝나게 써요. 종속항(청구항 2, 3…)이 돼요.", ph: "예: 접을 수 있는 실리콘으로 만들어진" }) + "</div>";
     }).join("");
     var comp = card("② 부품(구성요소)과 번호(부호)",
-      '<p class="sub">큰 부품은 10, 20, 30…, 그 안의 작은 부품은 31, 32…처럼 번호가 저절로 붙어요. <b>꼭 필요한 부분</b>에 체크한 부품은 청구항 1에 들어가요.</p>' +
-      (list || '<p class="empty">부품을 추가해 주세요.</p>') + '<button class="btn" data-act="addComp">+ 부품 추가</button>' +
+      '<p class="sub">큰 부품은 10, 20, 30…, 그 안의 작은 부품은 31, 32…처럼 번호가 저절로 붙어요. <b>꼭 필요한 부분</b>에 체크한 부품은 청구항 1에 들어가요. 체크하면 <b>청구항 문장 재료</b> 칸이 생겨요. 여기서 한 번 쓰면 6단계로 그대로 이어져요.</p>' +
+      claimDatalists() + (list || '<p class="empty">부품을 추가해 주세요.</p>') + '<button class="btn" data-act="addComp">+ 부품 추가</button>' +
       tip("청구항 1에는 꼭 필요한 부품만 넣어야 권리 범위가 넓어져요. 재료·크기 같은 세부 내용은 '더 자세한 특징'으로 빼세요.", true) +
       tip("부품 이름은 넓은 뜻의 말로 써요. 예: 'LCD 화면'보다 '디스플레이', '고무줄'보다 '탄성 부재'. 그래야 비슷하게 바꾼 물건도 내 권리에 들어가요.", true));
     var ds = P.s4.drawings || [];
@@ -1660,13 +1836,13 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
         '<button class="x" data-act="del" data-list="s5.keywords" data-i="' + i + '" aria-label="삭제">✕</button></div>';
     }).join("");
     var a = card("① 핵심 단어와 비슷한 말",
-      '<p class="sub">내 발명을 설명하는 단어 2~3개와, 같은 뜻의 다른 말(영어, 줄임말, 띄어쓰기 다른 말)을 적어요.</p>' + kl +
+      '<p class="sub">처음에는 <b>쉬운 낱말 2개</b>로 넓게 찾아요. 결과를 본 뒤 한 단어씩 더해요(*). 단어마다 같은 뜻의 다른 말(영어, 줄임말, 띄어쓰기 다른 말)도 적어요.</p>' + kl + kwChips() +
       F("s5.exclude", "빼고 싶은 단어 (선택, 쉼표로 구분)", { attr: "data-q", ph: "예: 우산꽂이, 거치대", hint: "검색 결과에 자꾸 섞이는 다른 물건의 이름을 적으면 검색식에 *!로 들어가 빠져요." }) +
-      '<div class="row"><button class="btn ghost" data-act="addKw">+ 단어 추가</button><button class="btn ghost" data-act="kwFromComp">부품 이름에서 가져오기</button></div>');
+      '<div class="row"><button class="btn ghost" data-act="addKw">+ 단어 추가</button><button class="btn ghost" data-act="kwFromComp">쉬운 낱말 2개로 시작하기</button></div>');
     var b = card("② 검색식 만들고 KIPRIS에서 찾기",
       '<div class="query"><code id="queryOut">' + esc(P.s5.query || "(위에 단어를 적으면 검색식이 생겨요)") + "</code></div>" +
       '<div class="row"><button class="btn" data-act="copyQuery">📋 검색식 복사</button><a class="btn primary" data-act="openSearch" href="https://www.kipris.or.kr/khome/main.do" target="_blank" rel="noopener">🔎 KIPRIS 열기</a></div>' +
-      gpBlock() +
+      wideBox() + gpBlock() +
       F("s5.searchDate", "검색 결과를 직접 확인한 날", { ph: "예: 2026-11-04", hint: "실제로 검색 결과를 읽은 날짜를 직접 적어요. 복사·사이트 열기만으로는 확인일이 바뀌지 않아요." }) +
       '<table class="ops"><tr><th>기호</th><th>뜻</th><th>예</th></tr><tr><td><b>+</b></td><td>또는 (넓게)</td><td>휴대폰+핸드폰</td></tr><tr><td><b>*</b></td><td>그리고 (좁게)</td><td>휴대폰*케이스</td></tr>' +
       '<tr><td><b>*!</b></td><td>빼기</td><td>스피커*!블루투스</td></tr><tr><td><b>( )</b></td><td>묶기</td><td>(휴대폰+핸드폰)*케이스</td></tr><tr><td><b>"…"</b></td><td>붙어 있는 말</td><td>"phone case"</td></tr><tr><td><b>^숫자</b></td><td>가까이 있는 말</td><td>자동차^2각도</td></tr></table>' +
@@ -1687,7 +1863,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
         '<button class="x" data-act="del" data-list="s5.found" data-i="' + i + '" aria-label="삭제">✕ 삭제</button></div>';
     }).join("");
     var same = (P.s5.found || []).some(function (f) { return f.relevance === "4" || core.length && core.every(function (c) { return (f.compare || {})[c.id] === "same"; }); });
-    var c = card("③ 찾은 특허와 비교하기", (fl || '<p class="empty">찾은 특허를 적어 주세요. 비슷한 것이 없었다면 \'없음\'이라고 적어 두어요.</p>') +
+    var c = card("③ 찾은 특허와 비교하기", evBar() + (fl || '<p class="empty">찾은 특허를 적어 주세요. 비슷한 것이 없었다면 \'없음\'이라고 적어 두어요.</p>') +
       '<div class="row"><button class="btn" data-act="addFound">+ 찾은 특허 추가</button><button class="btn ghost" data-act="report">📄 선행기술조사 보고서 보기·인쇄</button></div>' +
       (same ? '<div class="warnbox">핵심 부품이 모두 \'있음\'이거나 관련도가 75~100(매우 비슷)인 특허가 있어요. 이대로는 새롭지 않을 수 있어요. 아이디어를 고치거나 다른 아이디어를 골라 보세요.</div>' : ""));
     var v = [["go", "✅ 계속 진행", "비슷한 것이 없거나 내 발명이 분명히 달라요."], ["fix", "🛠️ 아이디어 고치기", "비슷한 것이 있어서 다른 점을 더 만들어요."], ["change", "🔁 다른 아이디어로", "거의 같은 것이 이미 있어요."]];
@@ -1760,10 +1936,10 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
 
   // ------------------------------------------------------------ 7. 점검하고 보내기
   function s7() {
-    var pr = SC.progress(P), checks = SC.runChecks(P);
+    var pr = SC.progress(P), checks = SC.runChecks(P), ev7 = SC.researchEvidence(P);
     var bars = '<div class="bars">' + STEPS.map(function (s) {
       var pct = Math.round(pr[s.n] * 100);
-      return '<button class="barrow" data-act="go" data-n="' + s.n + '"><span>' + s.n + ". " + s.t + '</span><span class="bar big"><i style="width:' + pct + '%"></i></span><b>' + pct + "%</b></button>";
+      return '<button class="barrow" data-act="go" data-n="' + s.n + '"><span>' + s.n + ". " + s.t + (s.n === 5 && ev7.docs ? ' <i class="mini">(원문 근거 ' + ev7.ok + "/" + ev7.total + ")</i>" : "") + '</span><span class="bar big"><i style="width:' + pct + '%"></i></span><b>' + pct + "%</b></button>";
     }).join("") + "</div>";
     var groups = { error: [], warn: [], info: [] };
     checks.forEach(function (c) { groups[c.level].push(c); });
@@ -1829,7 +2005,7 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       return card((gi + 1) + ". " + g.group + ' <span class="mini">' + done + "/" + g.items.length + "</span>",
         g.items.map(function (it) { return '<label class="check big"><input type="checkbox" data-k="s8.checks.' + it[0] + '" data-rr' + (ck[it[0]] ? " checked" : "") + "> " + esc(it[1]) + "</label>"; }).join(""));
     }).join("");
-    var rec = card("출원 기록", '<div class="grid2">' + F("s8.appNo", "출원번호", { ph: "예: 10-2026-0123456" }) + F("s8.appDate", "출원일", { ph: "예: 2026-11-20" }) + "</div>" + F("s8.memo", "메모", { rows: 2 }));
+    var rec = card("출원 기록", '<div class="grid2">' + F("s8.receiptNo", "접수번호", { ph: "접수증에 적힌 번호" }) + F("s8.appNo", "출원번호", { ph: "예: 10-2026-0123456" }) + F("s8.appDate", "출원일", { ph: "예: 2026-11-20" }) + "</div>" + F("s8.memo", "메모", { rows: 2 }));
     var all = Math.round(SC.filingProgress(P) * 100);
     var fin = all >= 100 ? '<div class="okbox big">🎉 출원 과정을 모두 마쳤어요! 심사 결과가 나오면 선생님과 함께 확인해요.</div>' : "";
     return practiceForm() + people + filingHelper() + '<details><summary>실제 출원 안내와 기록 (선택)</summary>' + intro + disclose + feeCard + groups + rec + fin + "</details>";
@@ -2249,6 +2425,12 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     docx: function () { persist(); exportDocx(P); },
     hwpx: function () { persist(); exportHwpx(P); },
     chip: function (b) { setPath(P, b.dataset.k, b.dataset.v); touch(); rerenderMain(); },
+    frameFromRole: function (b) {
+      var c = P.s4.components[Number(b.dataset.i)]; if (!c) return;
+      var sug = SC.suggestFrame(c, P), ks = Object.keys(sug);
+      ks.forEach(function (k) { c[k] = sug[k]; }); touch(); rerenderMain();
+      toast(ks.length ? "빈칸 " + ks.length + "개를 채웠어요. 읽어 보고 내 발명에 맞게 고쳐요." : "가져올 수 있는 낱말이 없어요. 직접 적어요.");
+    },
     makeSentence: function () {
       var s = P.s1, who = (s.who || "").trim(), where = (s.where || "").trim(), what = (s.what || "").trim();
       if (!who || !where || !what) { toast("누가, 어디서, 무엇이 불편한지 먼저 골라요.", "bad"); return; }
@@ -2303,13 +2485,20 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     photo: function (b) { openDrawer(Number(b.dataset.i), true); },
     addKw: function () { P.s5.keywords.push({ word: "", synonyms: "" }); touch(); rerenderMain(); focusLast(".kw input"); },
     kwFromComp: function () {
-      var have = P.s5.keywords.map(function (k) { return k.word; });
-      var words = [(P.s1.product || "").trim()].concat(SC.coreList(P).map(function (c) { return c.name; }))
-        .filter(function (w, i, a) { return w && have.indexOf(w) < 0 && a.indexOf(w) === i; }).slice(0, Math.max(0, 3 - have.length));
+      var have = P.s5.keywords.map(function (k) { return String(k.word || "").trim(); }).filter(Boolean);
+      var words = SC.startKeywords(P).filter(function (w) { return !have.some(function (h) { return h.indexOf(w) >= 0 || w.indexOf(h) >= 0; }); }).slice(0, Math.max(0, 2 - have.length));
       words.forEach(function (w) { P.s5.keywords.push({ word: w, synonyms: "" }); });
       P.s5.query = SC.searchQuery(P.s5.keywords, P.s5.exclude); touch(); rerenderMain();
-      toast(words.length ? words.length + "개 단어를 가져왔어요. 비슷한 말을 채워 주세요." : "핵심 단어는 2~3개면 충분해요. 더 넣으면 검색 결과가 너무 줄어요.");
+      toast(words.length ? "쉬운 낱말 " + words.length + "개로 넓게 시작해요. 비슷한 말을 채우고, 결과를 본 뒤 한 단어씩 더해요." : "처음엔 낱말 2개면 충분해요. 결과를 본 뒤 아래 추천 낱말을 하나씩 더해요.");
     },
+    addKwWord: function (b) {
+      var w = b.dataset.v;
+      if (!w || P.s5.keywords.some(function (k) { return k.word === w; })) return;
+      P.s5.keywords.push({ word: w, synonyms: "" });
+      P.s5.query = SC.searchQuery(P.s5.keywords, P.s5.exclude); touch(); rerenderMain();
+      if (P.s5.keywords.length > 3) toast("낱말이 많으면 검색 결과가 너무 줄어요. 2~3개면 충분해요.");
+    },
+    copyBroad: function () { copyText(SC.broadQuery(P.s5.keywords), "넓은 검색식"); },
     copyQuery: function () {
       var q = P.s5.query || "";
       if (!q) { toast("검색식이 비어 있어요.", "bad"); return; }
@@ -2455,6 +2644,59 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     m.innerHTML='<div class="modal-in wide"><div class="modal-h"><b>출원서 연습지 · 제출되지 않음</b><button data-close class="btn">닫기</button><button data-print class="btn">인쇄</button></div><div class="specbox"><h2>출원서 연습지 (가상 정보)</h2><p>발명의 명칭: '+esc(P.s6.title)+' / '+esc(P.s6.titleEn)+'</p><table class="rep">'+[['출원인','applicant'],['발명자','inventor'],['법정대리인','guardian'],['심사청구','examination'],['공지예외','exception'],['감면 사유','feeReason'],['첨부서류','attachments']].map(function(x){return '<tr><th>'+x[0]+'</th><td>'+esc(P.s8.practice[x[1]])+'</td></tr>';}).join('')+'</table><p>제도와 절차는 특허로 공식 안내에서 확인하세요.</p></div></div>';
     document.body.appendChild(m); m.querySelector('[data-close]').onclick=function(){m.remove();}; m.querySelector('[data-print]').onclick=function(){document.body.classList.add('printing'); window.print(); document.body.classList.remove('printing');};
   }
+  // ------------------------------------------------------------ 청구항 문장 재료 (4단계·6단계 같은 칸)
+  function frameFields(c) {
+    var cs = SC.coreList(P), i = cs.indexOf(c), n = P.s4.components.indexOf(c), base = "s4.components." + n + ".";
+    var targets = [["", "직접 연결을 적지 않음"]].concat(cs.slice(0, Math.max(0, i)).map(function (x) { return [x.id, x.name]; }));
+    var fx = SC.frameFixes(c, P).map(function (f) {
+      return '<button class="btn small" data-act="chip" data-k="' + base + f.field + '" data-v="' + esc(f.to) + '">‘' + esc(f.from) + "’ → ‘" + esc(f.to) + "’ 바꾸기</button>";
+    }).join("");
+    var canSug = !String(c.claimObject || "").trim() || !String(c.claimAction || "").trim() || (i > 0 && !c.claimTarget);
+    return '<div class="grid2">' +
+      F(base + "claimObject", "무엇을 다루나요? (단어)", { ph: "예: 빗물, 우산대, 연필", hint: "문장 대신 이름만 적어요." }) +
+      F(base + "claimAction", "무엇을 하나요? (~는)", { attr: 'list="dlAct" data-rr', ph: "예: 덮는, 모으는", hint: "목록에서 고르거나 내 낱말을 써요. '받치다'처럼 써도 바꾸기 버튼이 나와요." }) + "</div>" +
+      (i > 0 ? '<div class="grid2"><label>어느 앞 부품에 연결되나요? ' + sel(base + "claimTarget", targets, { rr: 1, label: c.name + " 연결 부품" }) + "</label>" +
+        F(base + "claimPosition", "어느 위치인가요? (의 ○○에)", { attr: 'list="dlPos" data-rr', ph: "예: 의 아래쪽 끝에", hint: "비워 두면 앞 부품에 바로 붙어요." }) +
+        F(base + "claimLink", "어떻게 연결되나요? (~어/~져)", { attr: 'list="dlLink" data-rr', ph: "예: 결합되어, 끼워져" }) + "</div>" : "") +
+      (fx ? '<div class="row fixes"><span class="mini">꼴 고치기:</span>' + fx + "</div>" : "") +
+      (canSug ? '<div class="row"><button class="btn ghost small" data-act="frameFromRole" data-i="' + n + '">↙ 4단계 ‘하는 일·연결’ 문장에서 빈칸 가져오기</button><span class="mini">가져온 뒤 꼭 읽고 고쳐요.</span></div>' : "");
+  }
+  function framePreview(c) {
+    var ph = SC.guidedPhrase(c, P);
+    return '<p class="mini">완성될 부품 표현: ' + (ph ? "<b>" + esc(ph + " " + c.name) + "</b>" : "하는 일과 대상을 채우면 문장이 만들어져요.") + "</p>";
+  }
+  function frameBlock4(c, i) {
+    var k = "s4.components." + i + ".";
+    if (!c.claimGuided) return F(k + "claimPhrase", "청구항에 쓸 꾸밈말", { hint: "어떤 " + esc(c.name || "부품") + "인지 '~하는'으로 꾸며요. 청구항 1에 그대로 들어가요.", ph: "예: 우산대의 아래쪽 끝에 결합되어 빗물을 모으는" }) +
+      '<label class="check"><input type="checkbox" data-k="' + k + 'claimGuided" data-rr> 쉬운 문장 틀로 바꾸기 (낱말만 넣어요)</label>';
+    return '<div class="framebox"><div class="framebox-h"><b>✍️ 청구항 문장 재료</b> <span class="mini">여기에 넣은 낱말이 6단계 청구항 1로 그대로 이어져요. 6단계에서 다시 쓰지 않아도 돼요.</span></div>' +
+      frameFields(c) + framePreview(c) +
+      '<label class="check"><input type="checkbox" data-k="' + k + 'claimGuided" data-rr checked> 쉬운 문장 틀 사용 (끄면 꾸밈말을 직접 써요)</label></div>';
+  }
+  // ------------------------------------------------------------ 5단계 도우미: 추천 낱말 · 넓게 찾기 · 근거 확인
+  function kwChips() {
+    var have = (P.s5.keywords || []).map(function (k) { return String(k.word || "").trim(); });
+    var c = SC.keywordCandidates(P).filter(function (w) { return have.indexOf(w) < 0; });
+    return c.length ? '<div class="row chips"><span class="mini">추천 낱말 (눌러서 넣어요):</span>' + c.map(function (w) { return '<button class="chipbtn" data-act="addKwWord" data-v="' + esc(w) + '">+ ' + esc(w) + "</button>"; }).join("") + "</div>" : "";
+  }
+  function wideBox() {
+    var q = P.s5.query || "", bq = SC.broadQuery(P.s5.keywords);
+    var quote = /"/.test(q) ? '<p class="mini">따옴표 "…" 안의 말은 <b>붙어 있는 그대로만</b> 찾아요. 결과가 적으면 따옴표를 빼고 낱말을 나눠요.</p>' : "";
+    return quote + (bq && bq !== q ? '<div class="widebox"><b>검색 결과가 0건이거나 너무 적으면 — 더 넓게 찾기</b><p class="mini">결과가 없다고 새로운 것은 아니에요. 낱말 2개로 줄이고 따옴표를 빼서 다시 찾아요.</p><div class="query"><code>' + esc(bq) + '</code></div><div class="row"><button class="btn ghost small" data-act="copyBroad">📋 넓은 검색식 복사</button><span class="mini">관련 문헌을 찾으면 세 번째 낱말을 더해 좁혀요.</span></div></div>' : "");
+  }
+  function evBar() {
+    var ev = SC.researchEvidence(P);
+    if (!ev.docs) return "";
+    var pct = Math.round(SC.progress(P)[5] * 100);
+    return '<div class="evbar"><span>5단계 진행 <b>' + pct + '%</b></span><span>원문 근거 확인 <b>' + ev.ok + "/" + ev.total + "</b></span><span>확인한 날 <b>" + (ev.dated ? "✓" : "아직") + "</b></span></div>" +
+      (ev.unknown ? '<div class="warnbox">‘확인 못 함’ ' + ev.unknown + "칸 → <b>선생님과 더 확인하기</b>. 원문(청구항·도면·설명)을 열어 근거를 적으면 확인한 칸이 늘어요. 모르는 것을 ‘확인 못 함’으로 둔 것은 좋은 기록이에요.</div>" : "") +
+      (ev.noEvidence ? '<p class="mini">비교는 골랐지만 근거·확인 위치가 빈 칸이 ' + ev.noEvidence + "개 있어요.</p>" : "");
+  }
+  function copySummary(items) {
+    var todo = items.filter(function (it) { return !it.group && !it.img && !it.lines.join("").trim(); });
+    return todo.length ? '<div class="warnbox"><b>복사하기 전에 채울 항목 ' + todo.length + "개</b>: " + todo.map(function (it) { return esc(it.label); }).join(", ") + ' <button class="btn small" data-ci-go="6">6단계에서 쓰기 →</button></div>'
+      : '<div class="okbox">비어 있는 항목이 없어요. 붙여 넣은 뒤 처음부터 끝까지 다시 읽어요.</div>';
+  }
   function claimDatalists() {
     function dl(id, list) { return '<datalist id="' + id + '">' + list.map(function (x) { return '<option value="' + esc(x) + '"></option>'; }).join("") + "</datalist>"; }
     return dl("dlAct", SC.CLAIM_ACTIONS) + dl("dlLink", SC.CLAIM_LINKS) + dl("dlPos", SC.CLAIM_POSITIONS.map(function (x) { return x[0]; }).filter(function (x) { return x !== "에"; }));
@@ -2468,9 +2710,9 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
       ["로그인 수단 등록", (minor ? "보호자의 " : "") + "인증서를 '인증서관리'에서 등록해요. 쓸 수 있는 인증 방법은 특허로 안내를 따라요."],
       ["연습해 보기 (선택)", "특허로 '처음이신가요' 창에 모의출원·전자출원따라하기 메뉴가 있어요."],
       ["명세서 옮기기", "아래 '📋 항목별 복사'로 특허로에서 받은 공식 명세서 양식(한글·워드)이나 웹작성 화면에 한 항목씩 붙여 넣어요. 도면은 그림 파일로 저장해 넣어요."],
-      ["출원서 쓰고 제출하기", "특허로 '웹작성/제출'에서 출원서를 써요. 발명의 명칭은 복사 창의 값과 똑같이 쓰고, 출원인·발명자 정보는 그 자리에서 직접 입력해요 (이 앱에는 저장하지 않아요)."],
-      ["비용 감면 받기", f.proof || "위에서 나이대를 고르면 안내가 나와요."],
-      ["접수 확인", "접수번호를 아래 '출원 기록'에 적고, 전자화 결과가 원본과 같은지 확인해요 (다르면 확인한 날부터 30일 안에 정정신청)."]
+      ["비용 감면 준비하기", (f.proof ? f.proof + ". " : "위에서 나이대를 고르면 안내가 나와요. ") + "제출 전에 준비하고, 출원서를 쓸 때 감면 사유를 적어요."],
+      ["최종 확인 후 제출하기", "특허로 '웹작성/제출'에서 출원서를 써요. 발명의 명칭은 복사 창의 값과 똑같이 쓰고, 출원인·발명자 정보는 그 자리에서 직접 입력해요 (이 앱에는 저장하지 않아요). 제출 전에 보호자와 처음부터 끝까지 다시 읽어요."],
+      ["접수 확인", "제출하면 접수번호와 출원번호를 받아요. 아래 '출원 기록'에 따로 적고, 접수증과 출원번호 통지서를 각각 보관해요. 수수료 면제·감면이 처리됐는지, 전자화 결과가 원본과 같은지도 확인해요 (다르면 확인한 날부터 30일 안에 정정신청)."]
     ];
     return card("🏛️ 실제로 출원하려면 (선택 · 누구나)",
       "<p>출원은 나이와 관계없이 누구나 할 수 있어요. 출원했다고 바로 특허가 되는 것은 아니고, 심사를 거쳐 등록되면 권리가 생겨요.</p>" +
@@ -2485,9 +2727,9 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
   function copyItemsList(p) {
     var items = [{ label: "출원서 · 발명의 국문명칭", lines: [(p.s6.title || "").trim()] }, { label: "출원서 · 발명의 영문명칭", lines: [(p.s6.titleEn || "").trim()] }], cur = null;
     SC.specBlocks(p).forEach(function (x) {
-      if (x.kind === "h2") { cur = { label: x.text, lines: [] }; items.push(cur); }
-      else if (x.kind === "p" && cur) { if (x.text) cur.lines.push(x.text); }
-      else if (x.kind === "img" && cur) { cur.img = x.img; cur.name = x.name; }
+      if (x.kind === "h2") { cur = { label: x.text, lines: [], group: true }; items.push(cur); }
+      else if (x.kind === "p" && cur) { cur.group = false; if (x.text) cur.lines.push(x.text); }
+      else if (x.kind === "img" && cur) { cur.group = false; cur.img = x.img; cur.name = x.name; }
     });
     return items;
   }
@@ -2497,16 +2739,17 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
     m.className = "modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-label", "항목별 복사");
     m.innerHTML = '<div class="modal-in wide"><div class="modal-h"><b>📋 항목별 복사 · 공식 양식에 옮기기</b><button class="btn" data-ci-close>닫기</button></div>' +
       '<p class="mini">특허로에서 받은 공식 명세서 양식이나 웹작성 화면을 열고, 같은 이름의 【항목】에 하나씩 붙여 넣어요. 【 】 항목 이름은 양식에 이미 있으니 내용만 붙여요. 붙여 넣은 뒤 처음부터 끝까지 다시 읽어요.</p>' +
-      items.map(function (it, i) {
+      copySummary(items) + items.map(function (it, i) {
         var text = it.lines.join("\n");
         return '<div class="copyitem"><div class="copyitem-h"><b>' + esc(it.label) + "</b>" +
-          (it.img ? '<button class="btn small" data-ci-img="' + i + '">🖼️ 그림 저장</button>' : (text ? '<button class="btn small" data-ci="' + i + '">복사</button>' : '<span class="mini">(비어 있음 · 제목 항목)</span>')) + "</div>" +
+          (it.img ? '<button class="btn small" data-ci-img="' + i + '">🖼️ 그림 저장</button>' : (text ? '<button class="btn small" data-ci="' + i + '">복사</button>' : (it.group ? '<span class="mini">묶음 제목 · 내용 없이 제목만 둬요</span>' : '<span class="miss">아직 안 씀' + (/영문/.test(it.label) ? " · 출원서에 영문 명칭 칸이 있어요" : "") + ' <button class="btn small" data-ci-go="6">6단계에서 쓰기 →</button></span>'))) + "</div>" +
           (it.img ? '<img src="' + it.img + '" alt="' + esc(it.name || "") + '">' : (text ? '<pre class="prompt">' + esc(text) + "</pre>" : "")) + "</div>";
       }).join("") + "</div>";
     document.body.appendChild(m);
     m.addEventListener("click", function (e) {
       var b = e.target.closest("button"); if (!b && e.target !== m) return;
       if (e.target === m || b.hasAttribute("data-ci-close")) { m.remove(); return; }
+      if (b.dataset.ciGo) { m.remove(); goStep(Number(b.dataset.ciGo)); return; }
       if (b.dataset.ci != null) { var it = items[Number(b.dataset.ci)]; copyText(it.lines.join("\n"), it.label); }
       if (b.dataset.ciImg != null) {
         var it2 = items[Number(b.dataset.ciImg)], parts = String(it2.img).split(","), bin = atob(parts[1] || ""), arr = new Uint8Array(bin.length);
@@ -2547,11 +2790,11 @@ window.EXAMPLE_PROJECT = {"app": "발명특허교실", "schema": 1, "id": "pmv2l
   }
   function guidedClaimsBox() {
     var cs=SC.coreList(P), all=P.s4.components;
-    var rows=cs.map(function(c,i){var n=all.indexOf(c),base='s4.components.'+n+'.';
-      return '<div class="comp"><h4>'+esc(c.name)+' 문장 재료</h4><label class="check"><input type="checkbox" data-k="'+base+'claimGuided" data-rr'+(c.claimGuided?' checked':'')+'> 쉬운 문장 틀 사용</label>'+(c.claimGuided?'<div class="grid2">'+F(base+'claimObject','무엇을 다루나요? (단어)',{ph:'예: 빗물, 우산대, 연필',hint:'문장 대신 이름만 적어요.'})+F(base+'claimAction','무엇을 하나요? (~는)',{attr:'list="dlAct" data-rr',ph:'예: 덮는, 모으는',hint:'목록에서 고르거나 내 낱말을 써요.'})+'</div><div class="grid2"><label>어느 앞 부품에 연결되나요? '+sel(base+'claimTarget',[['','직접 연결을 적지 않음']].concat(cs.slice(0,i).map(function(x){return [x.id,x.name];})),{rr:1,label:c.name+' 연결 부품'})+'</label>'+F(base+'claimPosition','어느 위치인가요? (의 ○○에)',{attr:'list="dlPos" data-rr',ph:'예: 의 아래쪽 끝에',hint:'비워 두면 앞 부품에 바로 붙어요.'})+F(base+'claimLink','어떻게 연결되나요? (~어/~져)',{attr:'list="dlLink" data-rr',ph:'예: 결합되어, 끼워져'})+'</div>':'<p class="mini">기존에 쓴 꾸밈말·연결 문장을 사용해요. 위 항목을 켜면 아래 쉬운 문장 틀로 바꿀 수 있어요.</p>')+'<div class="grid2"><label>더 자세한 특징 (선택) '+sel(base+'claimExtraType',[['','추가하지 않음'],['material','재료'],['shape','모양']],{rr:1,label:c.name+' 추가 특징 종류'})+'</label>'+F(base+'claimExtraValue','재료·모양 이름만',{ph:'예: 실리콘 / 원통'})+'</div><p class="mini">완성될 부품 표현: '+esc(SC.guidedPhrase(c,P)||'하는 일과 대상을 채우면 문장이 만들어져요.')+' '+esc(c.name)+'</p></div>';
+    var rows=cs.map(function(c){var n=all.indexOf(c),base='s4.components.'+n+'.';
+      return '<div class="comp"><h4>'+esc(c.name)+' 문장 재료</h4><label class="check"><input type="checkbox" data-k="'+base+'claimGuided" data-rr'+(c.claimGuided?' checked':'')+'> 쉬운 문장 틀 사용</label>'+(c.claimGuided?frameFields(c):'<p class="mini">기존에 쓴 꾸밈말·연결 문장을 사용해요. 위 항목을 켜면 쉬운 문장 틀로 바꿀 수 있어요.</p>')+'<div class="grid2"><label>더 자세한 특징 (선택) '+sel(base+'claimExtraType',[['','추가하지 않음'],['material','재료'],['shape','모양']],{rr:1,label:c.name+' 추가 특징 종류'})+'</label>'+F(base+'claimExtraValue','재료·모양 이름만',{ph:'예: 실리콘 / 원통'})+'</div>'+framePreview(c)+'</div>';
     }).join('');
     var missing=SC.claimReadiness(P), preview=SC.drafts.claims(P);
-    return '<div class="infobox"><h4>단어와 선택으로 청구항 만들기</h4><p>① 발명 이름 → ② 꼭 필요한 부품과 하는 일 → ③ 연결 → ④ 추가 특징 순서예요. 부품이 없으면 4단계에서 먼저 추가해요.</p><p class="mini"><b>문장 틀은 그대로, 낱말만 바꿔요.</b> 목록에 없는 낱말도 꼴만 맞으면 써요: 하는 일은 ‘~는’(예: 덮는), 연결은 ‘~어/~져’(예: 끼워져), 위치는 ‘의 ○○에’(예: 의 바닥 가운데에). 앞에서 나온 부품을 다시 쓰면 ‘상기’가 저절로 붙어요.</p>' + claimDatalists() + ''+'<label for="guidedTitle">문장 틀에 넣을 발명 이름</label><input id="guidedTitle" data-k="s6.title" value="'+esc(P.s6.title)+'" placeholder="예: 빗물받이 컵이 달린 우산">'+'<p>고정 문장: <b>[부품과 연결]; 및 [마지막 부품]을/를 포함하는 [발명 이름].</b><br>추가 문장: <b>청구항 1에 있어서, 상기 [부품]은/는 [추가 특징]인 것을 특징으로 하는 [발명 이름].</b></p>'+rows+(missing.length?'<p role="status">아직 필요한 것: '+esc(missing.join(' / '))+'</p>':'')+'<details><summary>현재 단어로 만든 청구항 미리 보기</summary><pre class="prompt">'+esc(preview.map(function(c,i){return '【청구항 '+(i+1)+'】\n'+c.text;}).join('\n\n')||'위 빈칸을 먼저 채워요.')+'</pre></details><button class="btn" data-act="draftClaims">이 단어로 청구항 만들기</button><p class="mini">물건·장치 발명을 위한 연습 틀이에요. 실제 모양과 연결도 4단계와 구체적인 설명에 적어요. 이 문구만 쓰면 등록되는 것은 아니며, 모든 발명에 같은 표현이 필수인 것도 아니에요.</p></div>';
+    return '<div class="infobox"><h4>단어와 선택으로 청구항 만들기</h4><p>① 발명 이름 → ② 꼭 필요한 부품과 하는 일 → ③ 연결 → ④ 추가 특징 순서예요. 부품이 없으면 4단계에서 먼저 추가해요. <b>4단계에서 넣은 낱말이 여기에 그대로 보여요.</b> 어느 쪽에서 고쳐도 같아요.</p><p class="mini"><b>문장 틀은 그대로, 낱말만 바꿔요.</b> 목록에 없는 낱말도 꼴만 맞으면 써요: 하는 일은 ‘~는’(예: 덮는), 연결은 ‘~어/~져’(예: 끼워져), 위치는 ‘의 ○○에’(예: 의 바닥 가운데에). 앞에서 나온 부품을 다시 쓰면 ‘상기’가 저절로 붙어요.</p>' + claimDatalists() + ''+'<label for="guidedTitle">문장 틀에 넣을 발명 이름</label><input id="guidedTitle" data-k="s6.title" value="'+esc(P.s6.title)+'" placeholder="예: 빗물받이 컵이 달린 우산">'+'<p>고정 문장: <b>[부품과 연결]; 및 [마지막 부품]을/를 포함하는 [발명 이름].</b><br>추가 문장: <b>청구항 1에 있어서, 상기 [부품]은/는 [추가 특징]인 것을 특징으로 하는 [발명 이름].</b></p>'+rows+(missing.length?'<p role="status">아직 필요한 것: '+esc(missing.join(' / '))+'</p>':'')+'<details><summary>현재 단어로 만든 청구항 미리 보기</summary><pre class="prompt">'+esc(preview.map(function(c,i){return '【청구항 '+(i+1)+'】\n'+c.text;}).join('\n\n')||'위 빈칸을 먼저 채워요.')+'</pre></details><button class="btn" data-act="draftClaims">이 단어로 청구항 만들기</button><p class="mini">물건·장치 발명을 위한 연습 틀이에요. 실제 모양과 연결도 4단계와 구체적인 설명에 적어요. 이 문구만 쓰면 등록되는 것은 아니며, 모든 발명에 같은 표현이 필수인 것도 아니에요.</p></div>';
   }
 
 
