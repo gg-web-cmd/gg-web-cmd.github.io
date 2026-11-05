@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>교실 도구함</title>
-<meta name="description" content="PDF 편집·사진 변환·증명사진·명단 합치기·상장·QR 을 설치 없이 브라우저에서. 파일은 어디로도 올라가지 않습니다.">
+<meta name="description" content="PDF 편집·사진 변환·문서 → MD 변환·증명사진·명단 합치기·상장·QR 을 설치 없이 브라우저에서. 파일은 어디로도 올라가지 않습니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧰</text></svg>">
 <script src="common/theme.js"></script>
 <style>
@@ -126,6 +126,9 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
       desc: '한글(hwpx)·워드·엑셀·CSV 문서 속 주민번호·전화번호·계좌번호를 검산으로 찾아내고, 가린 사본을 ZIP 으로 받습니다.' },
     { group: '문서', id: 'ppt', icon: '🎨', name: 'PPT 리스타일러', short: '디자인 입혀 새 PPTX',
       desc: '작업해 둔 .pptx 를 올리고 디자인 카드를 누르면, 배치는 그대로 두고 색·글꼴·배경만 바꾼 새 PPTX 를 받습니다.' },
+    { group: '문서', id: 'md', icon: '📝', name: '문서 → MD 변환기', short: 'AI가 읽기 좋은 마크다운',
+      allow: 'clipboard-write *',
+      desc: '한글(hwpx)·PDF·워드·PPT·엑셀 문서를 AI 에 올리기 좋은 마크다운(.md)으로 바꾸고, 쪽마다 얼마나 잘 옮겨졌는지 진단합니다. 표·수식·각주도 살립니다.' },
     { group: '학생', id: 'idphoto', icon: '🪪', name: '증명사진 만들기', short: '얼굴 찾아 3:4 · 용량 맞춤',
       desc: '학생 사진을 얼굴 중심으로 나이스 규격(3:4 · 폭 640 · 100KB)에 맞춰 자르고, 명단으로 학번_이름을 붙입니다.' },
     { group: '학생', id: 'roster', icon: '📋', name: '명단 합치기', short: '엑셀 여러 개 → 한 표',

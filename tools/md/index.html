@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>문서 MD 변환기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 왼쪽 열: 파일 넣기·옵션·변환 목록 / 오른쪽 열: 고른 문서의 결과(마크다운·미리보기·진단) */
+  --bg: #f1f3f7;
+  --surface: #ffffff;
+  --surface-2: #f6f7fa;
+  --ink: #17202c;
+  --muted: #5d6877;
+  --line: #d8dee6;
+  --accent: #2753bd;
+  --accent-ink: #ffffff;
+  --accent-soft: #e4ebf9;
+  --good: #1b7650;
+  --good-soft: #e0f1e8;
+  --warn: #965804;
+  --warn-soft: #faeed6;
+  --bad: #ad352d;
+  --bad-soft: #f7e1de;
+  --code-bg: #f8f9fb;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "D2Coding", "Consolas", ui-monospace, "IBM Plex Sans KR", "Malgun Gothic", monospace;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1319;
+    --surface: #151b23;
+    --surface-2: #1b222c;
+    --ink: #e4e9ef;
+    --muted: #99a4b2;
+    --line: #2a3441;
+    --accent: #84a0f4;
+    --accent-ink: #0e1319;
+    --accent-soft: #1d2942;
+    --good: #5fc79b;
+    --good-soft: #15302a;
+    --warn: #e5b15f;
+    --warn-soft: #382a13;
+    --bad: #ef8b81;
+    --bad-soft: #3a1e1c;
+    --code-bg: #121820;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1319;
+  --surface: #151b23;
+  --surface-2: #1b222c;
+  --ink: #e4e9ef;
+  --muted: #99a4b2;
+  --line: #2a3441;
+  --accent: #84a0f4;
+  --accent-ink: #0e1319;
+  --accent-soft: #1d2942;
+  --good: #5fc79b;
+  --good-soft: #15302a;
+  --warn: #e5b15f;
+  --warn-soft: #382a13;
+  --bad: #ef8b81;
+  --bad-soft: #3a1e1c;
+  --code-bg: #121820;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+button, input { font: inherit; color: inherit; }
+button:focus-visible, .tabs button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 22px 20px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.brand { display: flex; gap: 14px; align-items: center; min-width: 0; }
+.mark { width: 44px; height: 44px; border-radius: 11px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-family: var(--font-mono); font-weight: 500; font-size: 22px; flex: none; letter-spacing: -0.04em; }
+h1 { font-size: 22px; line-height: 1.25; margin: 0; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.brand p { margin: 3px 0 0; color: var(--muted); max-width: 64ch; font-size: 14px; }
+.privacy { margin: 0; font-size: 13px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.privacy::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
+
+.layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .side { display: contents; }
+  .main { order: 1; }
+  .notes { order: 2; }
+}
+.side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+
+.drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 26px 18px 22px; border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: var(--radius); background: var(--surface); cursor: pointer; transition: background .15s, border-color .15s; }
+.drop:hover, .drop.over { background: var(--accent-soft); border-color: var(--accent); }
+.drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.drop strong { font-size: 16px; font-weight: 600; }
+.drop .sub { color: var(--muted); font-size: 13px; }
+.fmts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px; }
+.fmts b { font-family: var(--font-mono); font-weight: 500; font-size: 11.5px; padding: 2px 7px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--line); }
+
+.opts { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 10px 14px 12px; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.opts legend { font-size: 12.5px; color: var(--muted); padding: 0 4px; }
+.opts label { display: flex; gap: 9px; align-items: center; font-size: 14px; cursor: pointer; }
+.opts input { accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+
+.list { display: flex; flex-direction: column; }
+.list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 12px 14px 4px; }
+.list-head h2 { font-size: 14px; margin: 0; font-weight: 600; }
+.list-head span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.files { list-style: none; margin: 0; padding: 4px 6px 6px; display: flex; flex-direction: column; gap: 2px; max-height: 430px; overflow: auto; }
+.file { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 10px; border: 1px solid transparent; border-radius: 8px; background: none; text-align: left; cursor: pointer; }
+.file:hover { background: var(--surface-2); }
+.file.sel { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.fmt { font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; padding: 3px 0; border-radius: 5px; width: 44px; text-align: center; background: var(--surface-2); border: 1px solid var(--line); }
+.fname { font-size: 14px; word-break: break-all; line-height: 1.4; }
+.chip { font-style: normal; font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: 4px; padding: 0 5px; margin-left: 4px; white-space: nowrap; }
+.empty-list { padding: 14px 10px 12px; color: var(--muted); font-size: 13.5px; }
+.bulk { display: flex; gap: 8px; padding: 8px 12px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.idle { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.spin { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } .drop { transition: none; } }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); color: var(--accent-ink); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.notes { margin: 0; padding: 12px 14px 12px 30px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+
+.main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.summary div { padding: 12px 16px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--line); }
+.summary div:first-child { border-left: 0; }
+.summary .k { font-size: 12.5px; color: var(--muted); }
+.summary .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .summary div:nth-child(3) { border-left: 0; } .summary div:nth-child(n+3) { border-top: 1px solid var(--line); } }
+
+.viewer { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.v-head { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; justify-content: space-between; padding: 16px 18px 14px; border-bottom: 1px solid var(--line); }
+.v-title { display: flex; gap: 16px; align-items: center; min-width: 0; flex: 1 1 320px; }
+.score { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex: none; }
+.score b { font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.v-name { font-size: 16.5px; margin: 0; font-weight: 600; word-break: break-all; line-height: 1.35; }
+.v-meta { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.v-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { border: 0; background: none; padding: 10px 12px 9px; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.panel { min-height: 440px; }
+.status-line { margin: 0; padding: 8px 18px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); min-height: 36px; }
+
+pre.md { margin: 0; padding: 16px 18px 20px; font-family: var(--font-mono); font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; max-height: 72vh; overflow: auto; background: var(--code-bg); tab-size: 4; }
+.hl-h { color: var(--accent); font-weight: 600; }
+.hl-c, .hl-meta { color: var(--muted); }
+.hl-t { color: color-mix(in srgb, var(--ink) 88%, var(--accent)); }
+.hl-q { color: color-mix(in srgb, var(--ink) 75%, var(--good)); }
+
+.prose { padding: 18px 22px 26px; max-height: 72vh; overflow: auto; line-height: 1.7; }
+.prose > * { max-width: 78ch; }
+.prose h1, .prose h2, .prose h3, .prose h4 { line-height: 1.35; text-wrap: balance; margin: 1.3em 0 .5em; }
+.prose h1 { font-size: 21px; } .prose h2 { font-size: 18px; } .prose h3 { font-size: 16px; } .prose h4 { font-size: 15px; }
+.prose p { margin: .6em 0; }
+.prose blockquote { margin: .8em 0; padding: 6px 14px; border-left: 3px solid var(--line); color: var(--muted); background: var(--surface-2); border-radius: 0 6px 6px 0; }
+.prose .tbl { max-width: none; overflow-x: auto; margin: .8em 0; }
+.prose table { border-collapse: collapse; font-size: 13.5px; min-width: 50%; }
+.prose th, .prose td { border: 1px solid var(--line); padding: 5px 9px; vertical-align: top; text-align: left; }
+.prose th { background: var(--surface-2); font-weight: 600; }
+.prose img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.prose code { font-family: var(--font-mono); font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+.prose a { color: var(--accent); }
+
+.diag { padding: 16px 18px 22px; display: flex; flex-direction: column; gap: 18px; max-height: 72vh; overflow: auto; }
+.diag h3 { margin: 0 0 8px; font-size: 14.5px; }
+.diag ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+.diag .ok { margin: 0; font-size: 14px; color: var(--good); }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table.pages { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+table.pages th, table.pages td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+table.pages tr:last-child td { border-bottom: 0; }
+table.pages th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+table.pages td.num { white-space: nowrap; }
+.bar { display: inline-block; width: 64px; height: 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); vertical-align: middle; margin-right: 6px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--good); }
+.bar.warn i { background: var(--warn); } .bar.bad i { background: var(--bad); }
+.legend { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+.message { padding: 40px 24px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 62ch; }
+.message h3 { margin: 0; font-size: 16px; }
+.message p { margin: 0; color: var(--muted); }
+
+/* 교실 도구함 메뉴 안(iframe)에서는 메뉴가 이름을 보여 주므로 머리줄을 숨긴다 */
+html.embedded .top { display: none; }
+html.embedded .wrap { padding-top: 16px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+<script src="../common/theme.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">#</div>
+      <div>
+        <h1>문서 MD 변환기</h1>
+        <p>한글(HWPX)·PDF·워드·PPT·엑셀 문서를 AI가 읽기 좋은 마크다운(.md)으로 바꾸고, 쪽마다 얼마나 잘 옮겨졌는지 진단합니다.</p>
+      </div>
+    </div>
+    <p class="privacy">파일은 이 브라우저 안에서만 변환되고 어디에도 올라가지 않습니다</p>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <label class="drop" id="drop">
+        <input type="file" id="file-input" multiple accept=".hwpx,.pdf,.docx,.pptx,.xlsx,.xls,.hwp" aria-label="변환할 파일 고르기">
+        <strong>파일을 여기에 끌어다 놓으세요</strong>
+        <span class="sub">또는 눌러서 고르기 · 여러 개를 한꺼번에 넣어도 됩니다</span>
+        <span class="fmts" aria-label="지원 형식"><b>HWPX</b><b>PDF</b><b>DOCX</b><b>PPTX</b><b>XLSX</b><b>XLS</b></span>
+      </label>
+
+      <fieldset class="opts">
+        <legend>결과 파일에 넣을 내용</legend>
+        <label for="opt-header"><input type="checkbox" id="opt-header" checked> 맨 위에 변환 진단 정보</label>
+        <label for="opt-markers"><input type="checkbox" id="opt-markers" checked> 쪽·슬라이드 구분 표시</label>
+      </fieldset>
+
+      <section class="card list" aria-labelledby="list-title">
+        <div class="list-head"><h2 id="list-title">변환 목록</h2><span id="list-count"></span></div>
+        <ul class="files" id="files"></ul>
+        <div class="bulk">
+          <button type="button" class="btn primary" id="zip-btn" hidden>전체 ZIP 저장</button>
+          <button type="button" class="btn" id="clear-btn">목록 비우기</button>
+        </div>
+      </section>
+
+      <ul class="notes card">
+        <li>옛 한글 파일(.hwp)은 한글에서 [다른 이름으로 저장] → HWPX로 저장한 뒤 넣어 주세요.</li>
+        <li>스캔하거나 사진으로 만든 PDF는 읽을 글자가 없어 거의 빈 결과가 나옵니다.</li>
+        <li>수학·과학 자료는 PDF보다 HWPX가 정확합니다. 수식이 LaTeX로 옮겨집니다.</li>
+        <li>전환율은 그림·도표·병합 셀·스캔 쪽을 보고 추정한 값입니다.</li>
+      </ul>
+    </aside>
+
+    <section class="main">
+      <div class="summary card" id="summary" aria-live="polite"></div>
+      <article class="viewer card">
+        <div class="v-head">
+          <div class="v-title" id="v-title"></div>
+          <div class="v-actions">
+            <button type="button" class="btn" id="copy-btn">마크다운 복사</button>
+            <button type="button" class="btn" id="save-btn" hidden>.md 저장</button>
+          </div>
+        </div>
+        <div class="tabs" role="tablist" aria-label="결과 보기">
+          <button type="button" role="tab" id="tab-md" data-tab="md" aria-selected="true" aria-controls="panel">마크다운</button>
+          <button type="button" role="tab" id="tab-preview" data-tab="preview" aria-selected="false" aria-controls="panel">미리보기</button>
+          <button type="button" role="tab" id="tab-diag" data-tab="diag" aria-selected="false" aria-controls="panel">진단</button>
+        </div>
+        <div class="panel" id="panel" role="tabpanel"></div>
+        <p class="status-line" id="status-line" aria-live="polite"></p>
+      </article>
+    </section>
+  </div>
+</div>
+
+<script>
+"use strict";
+(() => {
+// ======================================================================
+// 0. 공통 도구
+// ======================================================================
+const LIB = {
+  pdf: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+  pdfWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  xlsx: "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
+  mammoth: "https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js",
+  marked: "https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js",
+  purify: "https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js",
+};
+const CMAP_URL = new URL("cmaps/", document.baseURI).href;
+const CO = "<" + "!--", CC = "--" + ">";
+const REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const SAMPLE_NAME = "md변환기_사용설명서.hwpx";
+const SAMPLE_B64 = "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";
+
+const scriptPromises = {};
+function loadScript(url) {
+  if (!scriptPromises[url]) {
+    scriptPromises[url] = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = url;
+      s.onload = () => resolve();
+      s.onerror = () => { delete scriptPromises[url]; reject(new UserError("변환에 필요한 구성 요소를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.")); };
+      document.head.appendChild(s);
+    });
+  }
+  return scriptPromises[url];
+}
+class UserError extends Error {}
+const tick = () => new Promise(r => setTimeout(r, 0));
+const pad3 = n => String(n).padStart(3, "0");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtNum = n => Number(n || 0).toLocaleString("ko-KR");
+const plainLen = s => String(s || "").replace(/<br>/g, " ").replace(/\\(.)/g, "$1").length;
+const numOf = s => parseInt((String(s).match(/(\d+)\.xml$/i) || [0, "0"])[1], 10);
+function stemOf(name) { return name.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]/g, "_").trim() || "문서"; }
+function extOf(name) { const m = name.toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ""; }
+function assetSafe(stem) { return stem.replace(/[^\w\-가-힣]/g, "_"); }
+function b64ToBytes(b64) { const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+const MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", bmp: "image/bmp", svg: "image/svg+xml", webp: "image/webp", tif: "image/tiff", tiff: "image/tiff" };
+
+function parseXml(str, label) {
+  if (str == null) throw new UserError(`${label || "문서"} 내용을 찾지 못했습니다.`);
+  const d = new DOMParser().parseFromString(str, "application/xml");
+  if (d.getElementsByTagName("parsererror").length) throw new UserError(`${label || "문서"} 내용을 읽지 못했습니다. 파일이 손상됐거나 암호가 걸려 있을 수 있습니다.`);
+  return d;
+}
+function kids(el, name) { const r = []; if (!el) return r; for (const c of el.children) if (!name || c.localName === name) r.push(c); return r; }
+function kid(el, name) { if (!el) return null; for (const c of el.children) if (c.localName === name) return c; return null; }
+function desc(el, name) { return el ? Array.from(el.getElementsByTagNameNS("*", name)) : []; }
+function descOne(el, name) { return el ? el.getElementsByTagNameNS("*", name)[0] || null : null; }
+function relId(el, local) { return el ? (el.getAttributeNS(REL_NS, local) || el.getAttribute("r:" + local) || "") : ""; }
+
+// ---------- 한컴 수식 글꼴(PUA) 복원 표 ----------
+const PUA_MAP = new Map();
+for (let i = 0; i < 26; i++) { PUA_MAP.set(String.fromCharCode(0xE000 + i), String.fromCharCode(65 + i)); PUA_MAP.set(String.fromCharCode(0xE0E5 + i), String.fromCharCode(97 + i)); }
+Array.from("1234567890").forEach((d, i) => PUA_MAP.set(String.fromCharCode(0xE034 + i), d));
+Array.from("ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ").forEach((g, i) => PUA_MAP.set(String.fromCharCode(0xE085 + i), g));
+Array.from("αβγδεζηθικλμνξοπρστυφχψω").forEach((g, i) => PUA_MAP.set(String.fromCharCode(0xE09D + i), g));
+Object.entries({
+  "\ue044": "(", "\ue045": ")", "\ue046": "−", "\ue047": "=", "\ue048": "+", "\ue04b": "{", "\ue04c": "}", "\ue04d": "|",
+  "\ue04f": ":", "\ue052": ",", "\ue053": ".", "\ue054": "⊄", "\ue055": "<", "\ue056": ">", "\ue05c": "√", "\ue06d": "/",
+  "\ue101": "|", "\uf000": "▪", "\ue03e": "!", "\ue049": "[", "\ue04a": "]", "\ue05b": "∫", "\ue05f": "˙", "\ue063": "^",
+  "\ue065": "⌒", "\ue067": "Σ", "\ue06c": "←", "\ue06e": "→", "\ue0c8": "°", "\ue042": "%",
+  "\ue078": "⎧", "\ue079": "⎨", "\ue07a": "⎩", "\ue07b": "⎪",
+}).forEach(([k, v]) => PUA_MAP.set(k, v));
+const PUA_SEQ = [["\ue054\ue054", "∥"], ["\ue06d\ue06e", "→"]];
+function restorePua(text) {
+  let fixed = 0, unknown = 0; const codes = [];
+  for (const [k, v] of PUA_SEQ) { const parts = text.split(k); if (parts.length > 1) { fixed += parts.length - 1; text = parts.join(v); } }
+  let out = "";
+  for (const ch of text) {
+    const c = ch.codePointAt(0);
+    if (c >= 0xE000 && c <= 0xF8FF) {
+      if (PUA_MAP.has(ch)) { out += PUA_MAP.get(ch); fixed++; }
+      else { out += "□"; unknown++; const hex = "U+" + c.toString(16).toUpperCase().padStart(4, "0"); if (!codes.includes(hex)) codes.push(hex); }
+    } else out += ch;
+  }
+  return { text: out, fixed, unknown, codes };
+}
+
+// ---------- 마크다운 안전 처리 ----------
+const WORDCH = /[A-Za-z0-9가-힣]/;
+function mdInline(text, inTable) {
+  if (!text) return "";
+  text = text.replace(/\u{F0854}/gu, "『").replace(/\u{F0855}/gu, "』");
+  text = text.replace(/<(?=[A-Za-z\/!?])/g, "\\<");
+  text = text.replace(/\*/g, "\\*").replace(/`/g, "\\`");
+  text = text.replace(/_/g, (m, off, s) => (WORDCH.test(s[off - 1] || "") && WORDCH.test(s[off + 1] || "")) ? "_" : "\\_");
+  text = text.replace(/\]\(/g, "]\\(");
+  if (inTable) text = text.replace(/\|/g, "\\|");
+  return text;
+}
+function mdLineStart(line) {
+  if (!line) return line;
+  return line
+    .replace(/^(\s*)(#{1,6})(?=\s|$)/, "$1\\$2")
+    .replace(/^(\s*)>/, "$1\\>")
+    .replace(/^(\s*)(?=([-=+])(?:\s*\2){2,}\s*$)/, "$1\\");
+}
+function cellMd(s) { return String(s ?? "").replace(/\r?\n/g, "<br>").replace(/(?<!\\)\|/g, "\\|"); }
+function mdTable(rows) {
+  const n = Math.max(...rows.map(r => r.length));
+  const norm = rows.map(r => { const a = r.slice(); while (a.length < n) a.push(""); return a; });
+  const out = ["| " + norm[0].join(" | ") + " |", "|" + "---|".repeat(n)];
+  for (const r of norm.slice(1)) out.push("| " + r.join(" | ") + " |");
+  return out.join("\n");
+}
+// 합친 칸 채우기 규칙: 세로로 합친 칸은 짧은 값이면 아래 행에도 반복하고, 가로로 합친 칸은 첫 칸에만 둔다(머리글 첫 행의 짧은 제목만 반복).
+function fillSpans(nR, nC, anchors) {
+  const grid = Array.from({ length: nR }, () => new Array(nC).fill(""));
+  for (const a of anchors) {
+    const L = plainLen(a.text); const full = a.c === 0 && a.c + a.cs >= nC;
+    for (let dr = 0; dr < a.rs; dr++) for (let dc = 0; dc < a.cs; dc++) {
+      const r = a.r + dr, c = a.c + dc; if (r >= nR || c >= nC) continue;
+      let v;
+      if (!dr && !dc) v = a.text;
+      else if (!dc) v = L <= 35 ? a.text : "";
+      else v = (a.r === 0 && !dr && L <= 15 && !full) ? a.text : "";
+      grid[r][c] = v;
+    }
+  }
+  return grid;
+}
+// 빈 행·빈 열을 걷어 내고 표 / 한 줄 상자 / 한 칸 상자 중 알맞은 모양으로 바꾼다.
+function finishGrid(rows) {
+  rows = rows.map(r => r.map(c => String(c ?? "").trim()));
+  rows = rows.filter(r => r.some(Boolean));
+  if (!rows.length) return null;
+  const nC0 = Math.max(...rows.map(r => r.length));
+  rows = rows.map(r => { const a = r.slice(); while (a.length < nC0) a.push(""); return a; });
+  const keep = []; for (let c = 0; c < nC0; c++) if (rows.some(r => r[c])) keep.push(c);
+  rows = rows.map(r => keep.map(c => r[c]));
+  const nC = keep.length;
+  if (nC === 1) {
+    const seen = new Set(); const paras = [];
+    for (const r of rows) { if (seen.has(r[0])) continue; seen.add(r[0]); for (const seg of r[0].split("<br>")) if (seg.trim()) paras.push("> " + seg.trim()); }
+    return { kind: "quote", md: paras.join("\n>\n"), rows, nC: 1 };
+  }
+  if (rows.length === 1) return { kind: "row", md: "> " + rows[0].filter(Boolean).join(" | "), rows, nC };
+  return { kind: "table", md: mdTable(rows), rows, nC };
+}
+
+// ---------- OOXML 차트(워드·PPT·엑셀·한글 공통) → 표 ----------
+const CHART_KO = { barChart: "막대형", bar3DChart: "3차원 막대형", lineChart: "꺾은선형", line3DChart: "3차원 꺾은선형", pieChart: "원형", pie3DChart: "3차원 원형", doughnutChart: "도넛형", areaChart: "영역형", area3DChart: "3차원 영역형", scatterChart: "분산형", radarChart: "방사형", bubbleChart: "거품형", stockChart: "주식형", surfaceChart: "표면형", ofPieChart: "원형 대 원형" };
+function chartXmlToMd(xmlStr) {
+  let d; try { d = parseXml(xmlStr, "차트"); } catch (e) { return null; }
+  const root = d.documentElement; const plot = descOne(root, "plotArea"); if (!plot) return null;
+  const chartEl = descOne(root, "chart"); const titleEl = chartEl ? kid(chartEl, "title") : null;
+  const title = titleEl ? desc(titleEl, "t").map(t => t.textContent).join("").trim() : "";
+  let type = ""; for (const c of plot.children) if (/Chart$/.test(c.localName)) { type = c.localName; break; }
+  const sers = desc(plot, "ser"); if (!sers.length) return null;
+  const pts = el => { const arr = []; if (!el) return arr; for (const p of desc(el, "pt")) { const i = parseInt(p.getAttribute("idx") || "0", 10); const v = kid(p, "v"); arr[i] = v ? v.textContent : ""; } return arr; };
+  const series = sers.map((s, i) => {
+    const tx = kid(s, "tx"); let name = "";
+    if (tx) name = desc(tx, "v").map(v => v.textContent).join("") || desc(tx, "t").map(t => t.textContent).join("");
+    return { name: name || `계열 ${i + 1}`, cats: pts(kid(s, "cat") || kid(s, "xVal")), vals: pts(kid(s, "val") || kid(s, "yVal")) };
+  });
+  const cats = (series.find(s => s.cats.length) || { cats: [] }).cats;
+  const n = Math.max(cats.length, ...series.map(s => s.vals.length));
+  if (!n) return null;
+  const head = `**[차트${type ? " · " + (CHART_KO[type] || type) : ""}]${title ? " " + mdInline(title) : ""}**`;
+  const rows = [["항목", ...series.map(s => cellMd(mdInline(s.name)))]];
+  for (let i = 0; i < n; i++) rows.push([cellMd(mdInline(cats[i] ?? String(i + 1))), ...series.map(s => cellMd(s.vals[i] ?? ""))]);
+  return head + "\n\n" + mdTable(rows);
+}
+
+// ======================================================================
+// 1. 한글 수식 → LaTeX (원본 hwpx2md.py 이식)
+// ======================================================================
+const EQ = (() => {
+  const KEY = new Map(Object.entries({
+    inf: "\\infty", INF: "\\infty", infinity: "\\infty", times: "\\times", TIMES: "\\times", cdot: "\\cdot", CDOT: "\\cdot",
+    div: "\\div", DIV: "\\div", le: "\\le", leq: "\\le", LEQ: "\\le", ge: "\\ge", geq: "\\ge", GEQ: "\\ge",
+    pm: "\\pm", PM: "\\pm", mp: "\\mp", MP: "\\mp", cdots: "\\cdots", CDOTS: "\\cdots", ldots: "\\ldots", LDOTS: "\\ldots",
+    vdots: "\\vdots", VDOTS: "\\vdots", ddots: "\\ddots", DDOTS: "\\ddots", prime: "'", dprime: "''",
+    sum: "\\sum", SUM: "\\sum", prod: "\\prod", PROD: "\\prod", int: "\\int", INT: "\\int", oint: "\\oint", OINT: "\\oint",
+    dint: "\\iint", DINT: "\\iint", tint: "\\iiint", TINT: "\\iiint", lim: "\\lim", Lim: "\\lim", LIM: "\\lim",
+    sin: "\\sin", cos: "\\cos", tan: "\\tan", sec: "\\sec", csc: "\\csc", cot: "\\cot",
+    arcsin: "\\arcsin", arccos: "\\arccos", arctan: "\\arctan", sinh: "\\sinh", cosh: "\\cosh", tanh: "\\tanh",
+    log: "\\log", ln: "\\ln", exp: "\\exp", max: "\\max", min: "\\min",
+    angle: "\\angle", ANGLE: "\\angle", triangle: "\\triangle", TRIANGLE: "\\triangle", deg: "^\\circ", DEG: "^\\circ",
+    bot: "\\perp", BOT: "\\perp", perp: "\\perp", parallel: "\\parallel",
+    equiv: "\\equiv", sim: "\\sim", approx: "\\approx", simeq: "\\simeq", cong: "\\cong", propto: "\\propto",
+    rarrow: "\\rightarrow", rightarrow: "\\rightarrow", RIGHTARROW: "\\rightarrow",
+    larrow: "\\leftarrow", leftarrow: "\\leftarrow", LEFTARROW: "\\leftarrow",
+    harrow: "\\leftrightarrow", HARROW: "\\leftrightarrow", leftrightarrow: "\\leftrightarrow", LEFTRIGHTARROW: "\\leftrightarrow",
+    Rightarrow: "\\Rightarrow", rArrow: "\\Rightarrow", RARROW: "\\Rightarrow",
+    Leftarrow: "\\Leftarrow", lArrow: "\\Leftarrow", LARROW: "\\Leftarrow",
+    Leftrightarrow: "\\Leftrightarrow", hArrow: "\\Leftrightarrow", LRARROW: "\\Leftrightarrow",
+    uparrow: "\\uparrow", downarrow: "\\downarrow", updownarrow: "\\updownarrow",
+    iff: "\\iff", IFF: "\\iff", therefore: "\\therefore", THEREFORE: "\\therefore", because: "\\because", BECAUSE: "\\because",
+    inter: "\\cap", INTER: "\\cap", smallinter: "\\cap", SMALLINTER: "\\cap", cap: "\\cap",
+    union: "\\cup", UNION: "\\cup", smallunion: "\\cup", SMALLUNION: "\\cup", cup: "\\cup",
+    in: "\\in", IN: "\\in", notin: "\\notin", NOTIN: "\\notin", ni: "\\ni", ow: "\\ni",
+    forall: "\\forall", FORALL: "\\forall", exists: "\\exists", EXISTS: "\\exists",
+    subset: "\\subset", SUBSET: "\\subset", supset: "\\supset", SUPSET: "\\supset",
+    subseteq: "\\subseteq", SUBSETEQ: "\\subseteq", supseteq: "\\supseteq", SUPSETEQ: "\\supseteq",
+    emptyset: "\\emptyset", EMPTYSET: "\\emptyset", varnothing: "\\varnothing",
+    partial: "\\partial", nabla: "\\nabla", neq: "\\ne", ne: "\\ne", NEQ: "\\ne",
+    aleph: "\\aleph", hbar: "\\hbar", ell: "\\ell", bullet: "\\bullet", circ: "\\circ", ast: "\\ast", star: "\\star",
+    oplus: "\\oplus", ominus: "\\ominus", otimes: "\\otimes", odot: "\\odot",
+  }));
+  const GREEK = "alpha beta gamma delta epsilon varepsilon zeta eta theta vartheta iota kappa lambda mu nu xi omicron pi varpi rho varrho sigma varsigma tau upsilon phi varphi chi psi omega".split(" ");
+  const cap = s => s[0].toUpperCase() + s.slice(1);
+  for (const g of GREEK) { KEY.set(g, "\\" + g); if (!g.startsWith("var")) { KEY.set(g.toUpperCase(), "\\" + cap(g)); KEY.set(cap(g), "\\" + cap(g)); } }
+  const UNARY = new Map(Object.entries({
+    sqrt: "\\sqrt", SQRT: "\\sqrt", bar: "\\overline", BAR: "\\overline", overline: "\\overline", OVERLINE: "\\overline",
+    under: "\\underline", UNDER: "\\underline", underline: "\\underline", UNDERLINE: "\\underline", vec: "\\vec", VEC: "\\vec",
+    dyad: "\\overleftrightarrow", DYAD: "\\overleftrightarrow", hat: "\\hat", HAT: "\\hat", widehat: "\\widehat",
+    dot: "\\dot", DOT: "\\dot", ddot: "\\ddot", DDOT: "\\ddot", tilde: "\\tilde", TILDE: "\\tilde", widetilde: "\\widetilde",
+    acute: "\\acute", grave: "\\grave", check: "\\check", breve: "\\breve", arch: "\\overparen", arc: "\\overparen",
+  }));
+  const SKIP = new Set(["rm", "it", "bold", "RM", "IT", "BOLD", "left", "right", "LEFT", "RIGHT", "big", "BIG", "bigg", "BIGG", "Big", "Bigg", "eqalign", "pile", "lpile", "rpile"]);
+  const SPECIAL = new Set(["over", "OVER", "atop", "ATOP", "choose", "CHOOSE", "binom", "BINOM", "root", "ROOT", "of", "OF", "from", "FROM", "to", "TO", "cases", "CASES", "matrix", "MATRIX", "pmatrix", "PMATRIX", "bmatrix", "BMATRIX", "dmatrix", "DMATRIX"]);
+  const ALL = new Set([...KEY.keys(), ...UNARY.keys(), ...SKIP, ...SPECIAL]);
+  const WORDS = [...ALL].filter(k => k.length >= 2).sort((a, b) => b.length - a.length);
+  const SAFE = new Set([...GREEK, ...GREEK.filter(g => !g.startsWith("var")).map(g => g.toUpperCase()), ...GREEK.filter(g => !g.startsWith("var")).map(cap),
+    "sin", "cos", "tan", "sec", "csc", "cot", "log", "ln", "exp", "lim", "Lim", "sqrt", "SQRT", "times", "cdot", "div", "pm", "mp", "partial", "nabla"]);
+  const SAFE_SORTED = [...SAFE].sort((a, b) => b.length - a.length);
+  const SYM = { "<->": "\\leftrightarrow", "<=>": "\\Leftrightarrow", "->": "\\to", "<-": "\\leftarrow", "=>": "\\Rightarrow", "<=": "\\le", ">=": "\\ge", "!=": "\\ne", "<>": "\\ne", "+-": "\\pm", "-+": "\\mp", "==": "\\equiv", "~=": "\\approx" };
+  const SYM_KEYS = Object.keys(SYM).sort((a, b) => b.length - a.length);
+  const STOP = new Set([" ", "&", "#", ",", "over", "OVER", "atop", "ATOP", "choose", "CHOOSE", "of", "OF", "from", "FROM", "to", "TO"]);
+  const SCRIPTS = new Set(["^", "_", "from", "FROM", "to", "TO"]);
+  const FRACS = new Set(["over", "OVER", "atop", "ATOP", "choose", "CHOOSE"]);
+  const MATS = { matrix: "matrix", pmatrix: "pmatrix", bmatrix: "bmatrix", dmatrix: "vmatrix" };
+  const isObj = t => typeof t === "object" && t !== null;
+  const isG = t => isObj(t) && t.k === "g";
+
+  function segmentAll(w) {
+    const n = w.length; const dp = new Array(n + 1).fill(null); dp[0] = [];
+    for (let i = 0; i < n; i++) {
+      if (!dp[i]) continue;
+      for (const k of WORDS) if (w.startsWith(k, i)) { const nx = i + k.length; if (!dp[nx] || dp[i].length + 1 < dp[nx].length) dp[nx] = dp[i].concat([k]); }
+    }
+    return dp[n];
+  }
+  function splitIdent(w) {
+    if (ALL.has(w)) return [w];
+    const seg = segmentAll(w); if (seg) return seg;
+    for (const k of SAFE_SORTED) if (w.startsWith(k) && w.length === k.length + 1 && /[A-Za-z]/.test(w[w.length - 1])) return [k, w[w.length - 1]];
+    return [w];
+  }
+  function tokens(s) {
+    s = s.replace(/[`~\r\n]/g, " ");
+    const toks = []; let i = 0;
+    while (i < s.length) {
+      const c = s[i];
+      if (c === '"') { const e = s.indexOf('"', i + 1); if (e !== -1) { toks.push({ k: "text", v: s.slice(i + 1, e) }); i = e + 1; } else i++; continue; }
+      if (/\s/.test(c)) { if (toks.length && toks[toks.length - 1] !== " ") toks.push(" "); i++; continue; }
+      if ("{}^_&#".includes(c)) { toks.push(c); i++; continue; }
+      const m = /^[A-Za-z]+/.exec(s.slice(i));
+      if (m) { toks.push(...splitIdent(m[0])); i += m[0].length; continue; }
+      let hit = false;
+      for (const sy of SYM_KEYS) if (s.startsWith(sy, i)) { toks.push(SYM[sy]); i += sy.length; hit = true; break; }
+      if (hit) continue;
+      const nm = /^[0-9.]+/.exec(s.slice(i));
+      if (nm) { toks.push(nm[0]); i += nm[0].length; } else { toks.push(c); i++; }
+    }
+    return toks;
+  }
+  function parse(toks, i, depth) {
+    const seq = [];
+    while (i < toks.length) {
+      const t = toks[i];
+      if (t === "{") { const [sub, ni] = parse(toks, i + 1, depth + 1); seq.push({ k: "g", v: sub }); i = ni; continue; }
+      if (t === "}") { if (depth === 0) { i++; continue; } return [seq, i + 1]; }
+      seq.push(t); i++;
+    }
+    return [seq, i];
+  }
+  function operand(seq, i, scripts = true) {
+    while (i < seq.length && seq[i] === " ") i++;
+    if (i < seq.length && isG(seq[i]) && !scripts) return [[seq[i]], i + 1];
+    let j = i, depth = 0;
+    while (j < seq.length) {
+      const t = seq[j];
+      if (typeof t === "string") {
+        if (STOP.has(t)) break;
+        if (!scripts && SCRIPTS.has(t)) break;
+        if (t === "(") depth++;
+        else if (t === ")") { if (depth === 0) break; depth--; }
+      }
+      j++;
+    }
+    return [seq.slice(i, j), j];
+  }
+  const unwrap = op => (op.length === 1 && isG(op[0])) ? op[0].v : op;
+  function render(seq) {
+    const out = []; let i = 0;
+    while (i < seq.length) {
+      const t = seq[i];
+      if (isObj(t)) { out.push(t.k === "g" ? render(t.v) : "\\text{" + t.v + "}"); i++; continue; }
+      if (SCRIPTS.has(t)) {
+        const ch = (t === "_" || t === "from" || t === "FROM") ? "_" : "^";
+        let op; [op, i] = operand(seq, i + 1, false);
+        out.push(ch + "{" + render(unwrap(op)).trim() + "}"); continue;
+      }
+      if (FRACS.has(t)) {
+        while (out.length && out[out.length - 1] === " ") out.pop();
+        const num = []; while (out.length && out[out.length - 1] !== " ") num.unshift(out.pop());
+        let den; [den, i] = operand(seq, i + 1);
+        const n = num.join("").trim(), d = render(unwrap(den)).trim(), tl = t.toLowerCase();
+        out.push(tl === "over" ? `\\frac{${n}}{${d}}` : tl === "atop" ? `{${n} \\atop ${d}}` : `\\binom{${n}}{${d}}`); continue;
+      }
+      if (t === "binom" || t === "BINOM") {
+        let a, b; [a, i] = operand(seq, i + 1); [b, i] = operand(seq, i);
+        out.push(`\\binom{${render(unwrap(a)).trim()}}{${render(unwrap(b)).trim()}}`); continue;
+      }
+      if (t === "root" || t === "ROOT") {
+        let deg; [deg, i] = operand(seq, i + 1);
+        while (i < seq.length && seq[i] === " ") i++;
+        if (i < seq.length && (seq[i] === "of" || seq[i] === "OF")) i++;
+        let rad; [rad, i] = operand(seq, i);
+        out.push(`\\sqrt[${render(unwrap(deg)).trim()}]{${render(unwrap(rad)).trim()}}`); continue;
+      }
+      if (UNARY.has(t)) { let op; [op, i] = operand(seq, i + 1); out.push(UNARY.get(t) + "{" + render(unwrap(op)).trim() + "}"); continue; }
+      if (t === "cases" || t === "CASES") {
+        let k = i + 1; while (k < seq.length && seq[k] === " ") k++;
+        if (k < seq.length && isG(seq[k])) { out.push("\\begin{cases}" + render(seq[k].v).trim() + "\\end{cases}"); i = k + 1; continue; }
+      }
+      if (typeof t === "string" && MATS[t.toLowerCase()] && /^(matrix|pmatrix|bmatrix|dmatrix)$/i.test(t) && (t === t.toLowerCase() || t === t.toUpperCase())) {
+        let k = i + 1; while (k < seq.length && seq[k] === " ") k++;
+        if (k < seq.length && isG(seq[k])) { const env = MATS[t.toLowerCase()]; out.push(`\\begin{${env}}` + render(seq[k].v).trim() + `\\end{${env}}`); i = k + 1; continue; }
+      }
+      if (t === "eqalign" || t === "pile" || t === "lpile" || t === "rpile") {
+        let k = i + 1; while (k < seq.length && seq[k] === " ") k++;
+        if (k < seq.length && isG(seq[k])) { const g = seq[k].v.slice(); while (g.length && (g[0] === "#" || g[0] === " ")) g.shift(); out.push(render(g)); i = k + 1; continue; }
+      }
+      if (SKIP.has(t) || t === "of" || t === "OF") { i++; continue; }
+      if (t === "#") { out.push(" \\\\ "); i++; continue; }
+      if (KEY.has(t)) {
+        let v = KEY.get(t); const nx = seq[i + 1];
+        if (/^\\[A-Za-z]+$/.test(v) && typeof nx === "string" && !STOP.has(nx) && /^[A-Za-z0-9]/.test(nx)) v += " ";
+        out.push(v); i++; continue;
+      }
+      out.push(String(t)); i++;
+    }
+    let s = "";
+    for (const p of out) { if (p && /\\[A-Za-z]+$/.test(s) && /^[A-Za-z0-9]/.test(p)) s += " "; s += p; }
+    return s.replace(/ {2,}/g, " ");
+  }
+  return {
+    toLatex(script) {
+      try { const raw = (script || "").trim(); if (!raw) return ""; const [seq] = parse(tokens(raw), 0, 0); return render(seq).trim(); }
+      catch (e) { return (script || "").trim(); }
+    },
+  };
+})();
+
+// ======================================================================
+// 2. 한글(HWPX) → 마크다운 (원본 hwpx2md.py 이식 + 보완)
+// ======================================================================
+const HWPX = (() => {
+  const DRAW = new Set(["rect", "ellipse", "polygon", "container", "curve", "connectLine", "arc", "line"]);
+  const CTRL = new Set(["ctrl", "fieldBegin", "fieldEnd", "footNote", "endNote"]);
+  function runChildren(run) {
+    const out = [];
+    for (const c of run.children) {
+      if (c.localName === "switch") { const br = kid(c, "default") || kid(c, "case"); if (br) out.push(...br.children); }
+      else out.push(c);
+    }
+    return out;
+  }
+
+  class Ctx {
+    constructor(files, srcName, prefix) {
+      this.files = files; this.srcName = srcName; this.prefix = prefix;
+      this.styleOutline = new Map(); this.paraHeading = new Map(); this.charProps = new Map(); this.binManifest = new Map(); this.numCounters = new Map();
+      this.n = { eq: 0, pic: 0, picExtracted: 0, picInTable: 0, ole: 0, drawBox: 0, tables: 0, merged: 0, nested: 0, oneRow: 0, headings: 0, footnotes: 0, links: 0, lists: 0, charts: 0 };
+      this.footnotes = []; this.headersFooters = []; this.assets = [];
+      this.page = 1; this.sectionTitle = "문서 시작"; this.visual = 0; this.lastVert = -1; this.pages = new Map();
+      this.hasOutline = false;
+      this.initPage(1); this.parseManifest(); this.parseHeader();
+    }
+    initPage(p) {
+      if (!this.pages.has(p)) this.pages.set(p, { page: p, section_title: this.sectionTitle, has_own_heading: false, chars: 0, pics: 0, pics_extracted: 0, charts_shapes: 0, tables: 0, merged_tables: 0, equations: 0, issues: new Map() });
+      return this.pages.get(p);
+    }
+    cur() { return this.initPage(this.page); }
+    addIssue(key, msg) { this.cur().issues.set(key, msg); }
+    advance(np) { if (np != null && np > this.page) this.page = np; else this.page++; this.visual = 0; this.initPage(this.page); }
+    track(lines, chars = 0) { this.cur().chars += chars; this.visual += lines; if (this.lastVert === -1 && this.visual >= 42) this.advance(); }
+    parseManifest() {
+      const names = this.files.names;
+      if (this.files.hpf) {
+        try {
+          const d = parseXml(this.files.hpf);
+          for (const it of desc(d.documentElement, "item")) {
+            const id = it.getAttribute("id"), href = it.getAttribute("href");
+            if (!id || !href) continue;
+            if (names.has(href)) this.binManifest.set(id, href); else if (names.has("Contents/" + href)) this.binManifest.set(id, "Contents/" + href);
+          }
+        } catch (e) { /* 목록이 없어도 BinData 이름으로 찾는다 */ }
+      }
+      for (const n of names) if (/^BinData\//i.test(n) && !n.endsWith("/")) { const stem = n.split("/").pop().replace(/\.[^.]+$/, ""); if (!this.binManifest.has(stem)) this.binManifest.set(stem, n); }
+    }
+    parseHeader() {
+      if (!this.files.header) return;
+      let d; try { d = parseXml(this.files.header); } catch (e) { return; }
+      const root = d.documentElement;
+      for (const st of desc(root, "style")) {
+        const id = st.getAttribute("id"), name = st.getAttribute("name") || "", eng = st.getAttribute("engName") || "";
+        const mk = /^개요\s*(\d+)/.exec(name), me = /^Outline\s*(\d+)/i.exec(eng);
+        if (mk) this.styleOutline.set(id, Math.min(6, Math.max(1, +mk[1]))); else if (me) this.styleOutline.set(id, Math.min(6, Math.max(1, +me[1])));
+      }
+      for (const pp of desc(root, "paraPr")) {
+        const id = pp.getAttribute("id");
+        for (const hd of desc(pp, "heading")) { const type = hd.getAttribute("type") || "NONE"; if (type !== "NONE") { this.paraHeading.set(id, [type, hd.getAttribute("idRef") || "0", parseInt(hd.getAttribute("level") || "0", 10)]); break; } }
+      }
+      for (const cp of desc(root, "charPr")) this.charProps.set(cp.getAttribute("id"), { height: parseInt(cp.getAttribute("height") || "1000", 10), bold: !!kid(cp, "bold") });
+    }
+  }
+
+  function cleanUrl(raw) {
+    let s = (raw || "").trim().replace(/\\:/g, ":").replace(/\\\?/g, "?");
+    s = s.split(/[;|]\d/)[0].replace(/[;| ]+$/, "");
+    if (s.startsWith("www.")) s = "https://" + s;
+    return s;
+  }
+  function hyperlinkUrl(f) {
+    for (const a of ["command", "Command", "url", "href", "path"]) { const v = f.getAttribute(a); if (v) return cleanUrl(v); }
+    for (const sub of f.getElementsByTagName("*")) {
+      if (sub.localName !== "stringParam" && sub.localName !== "param") continue;
+      const name = (sub.getAttribute("name") || "").toLowerCase(), txt = (sub.textContent || "").trim();
+      if (["command", "path", "url", "href"].includes(name) && txt) return cleanUrl(txt);
+      if (txt && /https?:\/\/|mailto:|www\./.test(txt)) return cleanUrl(txt);
+    }
+    return null;
+  }
+
+  function tText(t, inTable) {
+    let s = "";
+    for (const n of t.childNodes) {
+      if (n.nodeType === 3 || n.nodeType === 4) s += mdInline(n.nodeValue, inTable);
+      else if (n.nodeType === 1) {
+        const nm = n.localName;
+        if (nm === "nbSpace" || nm === "fwSpace" || nm === "tab") s += " ";
+        else if (nm === "hyphen") s += "-";
+        else if (nm === "lineBreak") s += inTable ? "<br>" : "  \n";
+      }
+    }
+    return s;
+  }
+  function isInside(node, tag, stop) { let p = node.parentNode; while (p && p !== stop) { if (p.localName === tag) return true; p = p.parentNode; } return false; }
+
+  function picMd(pic, ctx, inTable) {
+    ctx.n.pic++; if (inTable) ctx.n.picInTable++;
+    const st = ctx.cur(); st.pics++;
+    const comments = [];
+    for (const sc of desc(pic, "shapeComment")) {
+      const t = (sc.textContent || "").trim();
+      // 한글이 자동으로 넣는 "그림입니다. 원본 그림의 이름: …" 설명은 빼고 사람이 쓴 설명만 남긴다.
+      if (t && !/^그림입니다/.test(t)) comments.push(t.replace(/\s+/g, " "));
+    }
+    for (const capEl of desc(pic, "caption")) { const parts = []; for (const cp of desc(capEl, "p")) { const t = renderInline(cp, ctx, true); if (t) parts.push(t); } if (parts.length) comments.push(parts.join(" ")); }
+    const d = comments.join(" / ").replace(/<br>/g, " ").replace(/[\[\]]/g, "").trim();
+    const label = d ? `[그림: ${d}]` : "[그림]";
+    let binId = null;
+    for (const img of desc(pic, "img")) { binId = img.getAttribute("binaryItemIDRef"); if (binId) break; }
+    if (!binId) for (const sub of pic.getElementsByTagName("*")) { const v = sub.getAttribute("binaryItemIDRef"); if (v) { binId = v; break; } }
+    let rel = null;
+    if (binId && ctx.binManifest.has(binId)) {
+      const member = ctx.binManifest.get(binId); const data = ctx.files.bin.get(member);
+      if (data) {
+        const ext = ((member.match(/\.[^./]+$/) || [".png"])[0]).toLowerCase();
+        const name = `${ctx.prefix}_pic_${pad3(ctx.n.pic)}${ext}`;
+        ctx.assets.push({ name, data }); rel = "assets/" + name; ctx.n.picExtracted++; st.pics_extracted++;
+      }
+    }
+    if (rel) { ctx.addIssue("pic", `그림 ${st.pics}개 포함 (그림 파일은 assets 폴더로 꺼냈지만 그림 속 글자·도식은 원본 확인 필요)`); return `!${label}(${rel})`; }
+    ctx.addIssue("pic", `그림 ${st.pics}개 포함 (${label} 자리만 표시됨 — 그림 속 글자·시각 정보는 옮겨지지 않음)`);
+    return label;
+  }
+
+  function noteText(note, ctx) {
+    const parts = [];
+    for (const p of desc(note, "p")) { const t = renderInline(p, ctx, false); if (t) parts.push(t.replace(/ {2}\n/g, " ").replace(/\n/g, " ")); }
+    return parts.join(" ").trim();
+  }
+
+  class Inline {
+    constructor(ctx) { this.ctx = ctx; this.buf = []; this.url = null; this.lbuf = []; }
+    append(piece) { if (this.url !== null) this.lbuf.push(piece.replace(/\\([\[\]_*])/g, "$1")); else this.buf.push(piece); }
+    flushLink() { if (this.url !== null) { const t = this.lbuf.join("").trim() || this.url; this.buf.push(`[${t}](${this.url})`); this.ctx.n.links++; this.url = null; this.lbuf = []; } }
+    ctrl(el) {
+      const targets = el.localName === "ctrl" ? Array.from(el.children) : [el];
+      for (const c of targets) {
+        const ct = c.localName;
+        if (ct === "fieldBegin") { if ((c.getAttribute("type") || "").toUpperCase().includes("HYPERLINK")) { const u = hyperlinkUrl(c); if (u) { this.flushLink(); this.url = u; } } }
+        else if (ct === "fieldEnd") { if (this.url !== null) this.flushLink(); }
+        else if (ct === "footNote" || ct === "endNote") { const t = noteText(c, this.ctx); if (t) { const i = ++this.ctx.n.footnotes; this.ctx.footnotes.push([i, t]); this.append(`[^${i}]`); } }
+        else if (ct === "header" || ct === "footer") { const t = noteText(c, this.ctx); if (t && !this.ctx.headersFooters.includes(t)) this.ctx.headersFooters.push(t); }
+      }
+    }
+    take() { this.flushLink(); const s = this.buf.join(""); this.buf = []; return s; }
+  }
+
+  function equationPiece(el, ctx) {
+    const sc = kid(el, "script"); const txt = sc ? sc.textContent : "";
+    if (!txt || !txt.trim()) return "";
+    ctx.n.eq++; ctx.cur().equations++;
+    return ` $${EQ.toLatex(txt)}$ `;
+  }
+
+  function renderInline(p, ctx, inTable) {
+    const ib = new Inline(ctx);
+    for (const run of kids(p, "run")) for (const el of runChildren(run)) {
+      const tag = el.localName;
+      if (tag === "t") ib.append(tText(el, inTable));
+      else if (tag === "equation") ib.append(equationPiece(el, ctx));
+      else if (CTRL.has(tag)) ib.ctrl(el);
+      else if (tag === "textart") { const tx = el.getAttribute("text"); if (tx) ib.append(mdInline(tx, inTable)); }
+      else if (!inTable) continue;
+      else if (tag === "pic") ib.append(" " + picMd(el, ctx, true) + " ");
+      else if (tag === "tbl") {
+        ctx.n.nested++; ctx.addIssue("nested", "표 안에 표가 있어 안쪽 표는 한 줄 글로 풀어 씀");
+        const rows = [];
+        for (const tr of kids(el, "tr")) { const cells = kids(tr, "tc").map(tc => cellParas(tc, ctx).join(" ")); if (cells.some(Boolean)) rows.push(cells.filter(Boolean).join(" / ")); }
+        if (rows.length) ib.append(" [안쪽 표: " + rows.join(" <br> ") + "] ");
+      } else if (DRAW.has(tag)) {
+        const txt = drawTexts(el, ctx).join(" "); if (txt) ib.append(` [글상자: ${txt}] `);
+        for (const pc of desc(el, "pic")) if (!isInside(pc, "drawText", el)) ib.append(" " + picMd(pc, ctx, true) + " ");
+      } else if (tag === "chart" || tag === "ole" || tag === "video") ib.append(" " + objLabel(el, tag, ctx) + " ");
+    }
+    const raw = ib.take();
+    const rawLines = raw.split("\n"); const cleaned = [];
+    rawLines.forEach((rl, idx) => {
+      const br = rl.endsWith("  ");
+      let c = rl.replace(/[ \t]{2,}/g, " ").trim();
+      if (!inTable) c = mdLineStart(c);
+      if (br && idx < rawLines.length - 1 && c) c += "  ";
+      if (c) cleaned.push(c);
+    });
+    return inTable ? cleaned.join("<br>").trim() : cleaned.join("\n").trim();
+  }
+
+  function drawTexts(el, ctx) {
+    const out = [];
+    for (const dt of desc(el, "drawText")) for (const q of desc(dt, "p")) { if (isInside(q, "tbl", dt)) continue; const t = renderInline(q, ctx, true); if (t) out.push(t); }
+    return out;
+  }
+
+  function cellParas(tc, ctx) {
+    const sub = kid(tc, "subList");
+    const paras = sub ? kids(sub, "p") : desc(tc, "p");
+    const parts = [];
+    for (const p of paras) { const t = renderInline(p, ctx, true); if (t) parts.push(t); }
+    if (!paras.length) for (const pic of desc(tc, "pic")) parts.push(picMd(pic, ctx, true));
+    return parts;
+  }
+
+  function table(tbl, lines, ctx) {
+    const trs = kids(tbl, "tr"); if (!trs.length) return;
+    let maxR = parseInt(tbl.getAttribute("rowCnt") || "0", 10) || 0;
+    let maxC = parseInt(tbl.getAttribute("colCnt") || "0", 10) || 0;
+    let merged = false;
+    const parsed = trs.map(tr => kids(tr, "tc").map(tc => {
+      const addr = kid(tc, "cellAddr"), span = kid(tc, "cellSpan");
+      const ca = addr && addr.hasAttribute("colAddr") ? parseInt(addr.getAttribute("colAddr"), 10) : null;
+      const ra = addr && addr.hasAttribute("rowAddr") ? parseInt(addr.getAttribute("rowAddr"), 10) : null;
+      const cs = Math.max(1, span ? (parseInt(span.getAttribute("colSpan") || "1", 10) || 1) : 1);
+      const rs = Math.max(1, span ? (parseInt(span.getAttribute("rowSpan") || "1", 10) || 1) : 1);
+      if (cs > 1 || rs > 1) merged = true;
+      if (ra !== null) maxR = Math.max(maxR, ra + rs);
+      if (ca !== null) maxC = Math.max(maxC, ca + cs);
+      return { ra, ca, rs, cs, text: cellParas(tc, ctx).join("<br>") };
+    }));
+    if (!maxR) maxR = parsed.length;
+    if (!maxC) maxC = Math.max(0, ...parsed.map(r => r.reduce((a, c) => a + c.cs, 0)));
+    if (!maxR || !maxC) return;
+    const occ = Array.from({ length: maxR }, () => new Array(maxC).fill(false));
+    const anchors = [];
+    parsed.forEach((row, rIdx) => {
+      const curR = Math.min(rIdx, maxR - 1); let curC = 0;
+      for (const cell of row) {
+        let r, c;
+        if (cell.ra !== null && cell.ca !== null && cell.ra >= 0 && cell.ra < maxR && cell.ca >= 0 && cell.ca < maxC) { r = cell.ra; c = cell.ca; }
+        else { while (curC < maxC && occ[curR][curC]) curC++; r = curR; c = curC >= maxC ? maxC - 1 : curC; }
+        for (let dr = 0; dr < cell.rs; dr++) for (let dc = 0; dc < cell.cs; dc++) if (r + dr < maxR && c + dc < maxC) occ[r + dr][c + dc] = true;
+        anchors.push({ r, c, rs: cell.rs, cs: cell.cs, text: cell.text });
+      }
+    });
+    const fin = finishGrid(fillSpans(maxR, maxC, anchors));
+    if (!fin) return;
+    if (lines.length && lines[lines.length - 1] !== "") lines.push("");
+    if (fin.kind === "quote") { lines.push(fin.md, ""); ctx.track(fin.rows.length + 1); return; }
+    if (fin.kind === "row") { ctx.n.oneRow++; lines.push(fin.md, ""); ctx.track(2); return; }
+    ctx.n.tables++; const st = ctx.cur(); st.tables++;
+    if (merged) {
+      ctx.n.merged++; st.merged_tables++;
+      ctx.addIssue("merged", "병합 셀(가로·세로 합치기)이 있는 표 포함 — 원본 표와 대조 권장");
+      lines.push(`${CO} 병합 셀 있음: 세로로 합친 칸은 아래 행에도 값을 채우고, 가로로 합친 칸은 첫 칸에만 둠 ${CC}`);
+    }
+    lines.push(mdTable(fin.rows.map(r => r.map(cellMd))), "");
+    ctx.track(fin.rows.length * 1.3);
+  }
+
+  function paraPrefix(p, ctx, nested) {
+    const sid = p.getAttribute("styleIDRef") || "0", pid = p.getAttribute("paraPrIDRef") || "0";
+    if (!nested && ctx.styleOutline.has(sid)) { ctx.n.headings++; return ["#".repeat(ctx.styleOutline.get(sid)) + " ", true]; }
+    if (ctx.paraHeading.has(pid)) {
+      const [type, idref, lvl] = ctx.paraHeading.get(pid);
+      if (type === "OUTLINE" && !nested) { ctx.n.headings++; return ["#".repeat(Math.min(6, Math.max(1, lvl + 1))) + " ", true]; }
+      if (type === "BULLET") { ctx.n.lists++; return ["  ".repeat(Math.max(0, lvl)) + "- ", false]; }
+      if (type === "NUMBER") {
+        ctx.n.lists++;
+        for (const k of [...ctx.numCounters.keys()]) { const [i, l] = k.split("|"); if (i === idref && +l > lvl) ctx.numCounters.delete(k); }
+        const key = idref + "|" + lvl; ctx.numCounters.set(key, (ctx.numCounters.get(key) || 0) + 1);
+        return ["  ".repeat(Math.max(0, lvl)) + ctx.numCounters.get(key) + ". ", false];
+      }
+    }
+    if (!nested && !ctx.hasOutline) {
+      const runs = kids(p, "run").filter(r => kid(r, "t") && r.textContent.trim());
+      if (runs.length) {
+        const hs = []; let allBold = true;
+        for (const r of runs) { const cp = ctx.charProps.get(r.getAttribute("charPrIDRef") || "0") || { height: 1000, bold: false }; hs.push(cp.height); if (!cp.bold) allBold = false; }
+        const raw = p.textContent.trim();
+        if (allBold && raw.length <= 80 && !raw.includes("\n")) {
+          const mn = Math.min(...hs);
+          if (mn >= 2000) { ctx.n.headings++; return ["# ", true]; }
+          if (mn >= 1350) { ctx.n.headings++; return ["## ", true]; }
+        }
+      }
+    }
+    return ["", false];
+  }
+
+  function pushBlock(lines, md) { if (lines.length && lines[lines.length - 1] !== "") lines.push(""); lines.push(md, ""); }
+
+  function objLabel(el, tag, ctx) {
+    ctx.n.ole++; ctx.cur().charts_shapes++;
+    const lbl = { chart: "[차트/도표]", ole: "[외부 개체(OLE)]", video: "[동영상]" }[tag];
+    ctx.addIssue("obj-" + tag, `${lbl} 개체가 있어 안의 데이터·모양은 옮겨지지 않음`);
+    return lbl;
+  }
+  function objBlock(el, tag, lines, ctx) {
+    if (tag === "chart") {
+      for (const a of Array.from(el.attributes)) {
+        const v = (a.value || "").replace(/^\//, "");
+        const key = [v, "Contents/" + v].find(k => ctx.files.charts.has(k));
+        if (key) { const md = chartXmlToMd(ctx.files.charts.get(key)); if (md) { ctx.n.charts++; ctx.addIssue("chart", "차트의 숫자는 표로 옮겼지만 그래프 모양은 원본 확인 필요"); pushBlock(lines, md); return; } }
+      }
+    }
+    pushBlock(lines, objLabel(el, tag, ctx));
+  }
+
+  function drawBlock(el, lines, ctx) {
+    let has = false;
+    for (const dt of desc(el, "drawText")) {
+      const sub = kid(dt, "subList"); const paras = sub ? kids(sub, "p") : desc(dt, "p");
+      const tmp = [];
+      for (const q of paras) walkParagraph(q, tmp, ctx, true);
+      const body = tmp.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+      if (body) {
+        has = true; ctx.n.drawBox++;
+        pushBlock(lines, body.split("\n").map(l => l ? "> " + l : ">").join("\n"));
+        ctx.track(tmp.length / 2 + 1, body.replace(/\s/g, "").length);
+      }
+    }
+    for (const pc of desc(el, "pic")) if (!isInside(pc, "drawText", el)) { has = true; pushBlock(lines, picMd(pc, ctx, false)); }
+    if (!has) { ctx.n.ole++; ctx.cur().charts_shapes++; ctx.addIssue("shape", "글자 없는 그리기 도형·모식도가 있어 모양은 옮겨지지 않음"); }
+  }
+
+  function walkParagraph(p, lines, ctx, nested = false) {
+    if (!nested) {
+      if (p.getAttribute("pageBreak") === "1" && (lines.length || ctx.visual > 0)) ctx.advance();
+      else {
+        const ls = kid(kid(p, "linesegarray"), "lineseg");
+        if (ls && ls.hasAttribute("vertpos")) { const v = parseInt(ls.getAttribute("vertpos"), 10); if (ctx.lastVert >= 0 && v < ctx.lastVert && ctx.visual > 2) ctx.advance(); ctx.lastVert = v; }
+      }
+    }
+    const [prefix, isHeading] = paraPrefix(p, ctx, nested);
+    let used = false;
+    const ib = new Inline(ctx);
+    const flush = () => {
+      const raw = ib.take(); if (!raw) return;
+      const rawLines = raw.split("\n"); const cleaned = [];
+      rawLines.forEach((rl, idx) => {
+        const br = rl.endsWith("  ");
+        let c = rl.replace(/[ \t]{2,}/g, " ").trim();
+        if (!isHeading && !(prefix && !used)) c = mdLineStart(c);
+        if (br && idx < rawLines.length - 1 && c && !isHeading) c += "  ";
+        if (c) cleaned.push(c);
+      });
+      let text = (isHeading ? cleaned.join(" ") : cleaned.join("\n")).trim();
+      if (!text) return;
+      if (prefix && !used) {
+        text = prefix + text; used = true;
+        if (isHeading) { ctx.sectionTitle = text.replace(/^#+\s*/, "").trim(); const st = ctx.cur(); if (!st.has_own_heading) { st.section_title = ctx.sectionTitle; st.has_own_heading = true; } }
+      }
+      if (lines.length && lines[lines.length - 1] !== "") lines.push("");
+      lines.push(text, "");
+      if (!nested) ctx.track(Math.max(1, text.length / 45), text.replace(/\s/g, "").length);
+    };
+    for (const run of kids(p, "run")) for (const el of runChildren(run)) {
+      const tag = el.localName;
+      if (tag === "t") ib.append(tText(el, false));
+      else if (tag === "equation") ib.append(equationPiece(el, ctx));
+      else if (CTRL.has(tag)) ib.ctrl(el);
+      else if (tag === "textart") { const tx = el.getAttribute("text"); if (tx) ib.append(mdInline(tx)); }
+      else if (tag === "tbl") { flush(); table(el, lines, ctx); }
+      else if (tag === "pic") { flush(); pushBlock(lines, picMd(el, ctx, false)); ctx.track(5); }
+      else if (DRAW.has(tag)) { flush(); drawBlock(el, lines, ctx); }
+      else if (tag === "chart" || tag === "ole" || tag === "video") { flush(); objBlock(el, tag, lines, ctx); }
+    }
+    flush();
+  }
+
+  function diagnose(ctx, text) {
+    const pages = [], incomplete = [];
+    const totalChars = text.replace(/[ \n]/g, "").length;
+    for (const pno of [...ctx.pages.keys()].sort((a, b) => a - b)) {
+      const st = ctx.pages.get(pno);
+      if (pno > 1 && !st.chars && !st.pics && !st.tables && !st.charts_shapes) continue;
+      let score = 100; const reasons = [...st.issues.values()];
+      if (st.pics) score -= Math.min(40, st.pics * (st.pics_extracted === st.pics ? 12 : 20));
+      if (st.charts_shapes) score -= Math.min(30, st.charts_shapes * 15);
+      if (st.merged_tables) score -= Math.min(20, st.merged_tables * 10);
+      if (!st.chars && (st.pics || st.charts_shapes)) { score = Math.min(score, 25); reasons.unshift("본문 글자 없이 그림·도표로만 된 구간입니다 (전환 불완전)"); }
+      score = Math.max(5, Math.min(100, score));
+      const status = score >= 90 && !reasons.length ? "완전" : (score >= 50 ? "검증 필요" : "불완전");
+      if (status !== "완전") incomplete.push(pno);
+      pages.push({ page: pno, section_title: st.section_title, score, status, chars: st.chars, pics: st.pics, tables: st.tables, merged_tables: st.merged_tables, charts_shapes: st.charts_shapes, issues: reasons });
+    }
+    let overall = pages.length ? Math.round(pages.reduce((a, p) => a + p.score, 0) / pages.length) : (totalChars ? 100 : 0);
+    if (!totalChars) overall = 0;
+    const status = overall >= 90 && !incomplete.length && totalChars ? "완료" : (overall >= 50 && totalChars ? "검증 필요" : "불완전 전환");
+    const warnings = [];
+    if (!totalChars) warnings.push("본문 글자가 추출되지 않았습니다 (빈 문서이거나 통그림 문서일 수 있음).");
+    if (ctx.n.pic) warnings.push(ctx.n.picExtracted
+      ? `그림 ${ctx.n.pic}개 중 ${ctx.n.picExtracted}개의 원본 이미지를 assets 폴더로 꺼냈습니다. 그림 속 글자·수치·도식은 마크다운 글로 옮겨지지 않으므로 원본 대조가 필요합니다.`
+      : `그림 ${ctx.n.pic}개는 [그림] 자리만 표시했고 그림 속 글자·도식은 옮기지 못했습니다.`);
+    if (ctx.n.ole) warnings.push(`차트·외부 개체·도형 모식도 ${ctx.n.ole}개는 모양만 있어 마크다운 글로 옮겨지지 않았습니다.`);
+    if (ctx.n.charts) warnings.push(`차트 ${ctx.n.charts}개의 숫자를 표로 옮겼습니다. 그래프 모양은 원본에서 확인하세요.`);
+    if (ctx.n.merged) warnings.push(`표 ${ctx.n.tables}개 중 병합 셀(가로·세로 합치기)이 있는 표가 ${ctx.n.merged}개 있습니다. 원본 표와 대조해 주세요.`);
+    if (ctx.n.nested) warnings.push(`표 칸 안의 표 ${ctx.n.nested}개는 마크다운 한계로 한 줄 글로 풀어 썼습니다.`);
+    return {
+      source_type: "hwpx", overall_score: overall, status, total_chars: totalChars, estimated_pages: pages.length || 1, incomplete_pages: incomplete,
+      n_headings: ctx.n.headings, n_tables: ctx.n.tables, n_merged_tables: ctx.n.merged, n_eq: ctx.n.eq, n_pic: ctx.n.pic, n_pic_extracted: ctx.n.picExtracted,
+      n_ole_chart: ctx.n.ole, n_footnotes: ctx.n.footnotes, n_links: ctx.n.links, page_diagnostics: pages, summary_warnings: warnings,
+    };
+  }
+
+  async function convert(buf, name, prefix) {
+    let zip;
+    try { zip = await JSZip.loadAsync(buf); } catch (e) { throw new UserError("HWPX 파일을 열지 못했습니다. 파일이 손상됐거나 암호가 걸려 있을 수 있습니다."); }
+    const names = new Set(Object.keys(zip.files));
+    const read = p => zip.file(p) ? zip.file(p).async("string") : Promise.resolve(null);
+    const sections = [...names].filter(n => /^Contents\/section\d+\.xml$/i.test(n)).sort((a, b) => numOf(a) - numOf(b));
+    if (!sections.length) throw new UserError("HWPX 본문을 찾지 못했습니다. 한글에서 HWPX로 다시 저장해 보세요.");
+    const files = { names, header: await read("Contents/header.xml"), hpf: await read("Contents/content.hpf"), bin: new Map(), charts: new Map() };
+    for (const n of names) {
+      if (n.endsWith("/")) continue;
+      if (/^BinData\//i.test(n)) files.bin.set(n, await zip.file(n).async("uint8array"));
+      else if (/(^|\/)charts?\/[^/]+\.xml$/i.test(n)) files.charts.set(n, await zip.file(n).async("string"));
+    }
+    const ctx = new Ctx(files, name, prefix);
+    const docs = [];
+    for (const n of sections) docs.push(parseXml(await read(n), "HWPX 본문"));
+    for (const d of docs) {
+      for (const p of kids(d.documentElement, "p")) {
+        const sid = p.getAttribute("styleIDRef") || "0", pid = p.getAttribute("paraPrIDRef") || "0";
+        if (ctx.styleOutline.has(sid) || (ctx.paraHeading.has(pid) && ctx.paraHeading.get(pid)[0] === "OUTLINE")) { ctx.hasOutline = true; break; }
+      }
+    }
+    const lines = [];
+    docs.forEach((d, si) => {
+      if (si > 0) ctx.advance();
+      for (const p of kids(d.documentElement, "p")) walkParagraph(p, lines, ctx);
+      lines.push("");
+    });
+    if (ctx.headersFooters.length) lines.unshift(`${CO} 문서 머리말/꼬리말: ${ctx.headersFooters.join(" / ").replace(/--/g, "—")} ${CC}`, "");
+    if (ctx.footnotes.length) { lines.push(""); for (const [i, t] of ctx.footnotes) lines.push(`[^${i}]: ${t}`); lines.push(""); }
+    const text = lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+    return { body: text, report: diagnose(ctx, text), assets: ctx.assets };
+  }
+  return { convert };
+})();
+
+// ======================================================================
+// 3. PDF → 마크다운 (pdf.js 기반: 선으로 그린 표 복원, 문단 잇기, 2단 분리, 머리말 제거)
+// ======================================================================
+const PDFC = (() => {
+  const BULLET_RE = /^(?:[•◦▪▫○●◎□■◆◇▶▷►❍❏✓✔※☞\-–—·∙*]|ㅇ\s|[①-⑳⑴-⒇❶-❿]|\(?\d{1,2}[.)](?:\s|$)|\([가-힣A-Za-z]\)|[가-하][.)]\s|[ⅰ-ⅹⅠ-Ⅹ][.)]?\s)/;
+  const HEAD_EXCL = /^[•◦▪\-※①②③④⑤○●□■ㅇ·]/;
+  const HANGUL = /[\u3131-\u318E\uAC00-\uD7A3]/;
+  const normHF = s => (s || "").trim().replace(/\s+/g, " ").replace(/\d+/g, "#");
+  const isPageNum = s => { s = (s || "").trim(); return /^[-–—\s]*\d+[-–—\s]*$/.test(s) || /^\d+\s*\/\s*\d+$/.test(s) || /^(?:page|p\.?|쪽)\s*\d+$/i.test(s) || /^\d+\s*쪽$/.test(s); };
+
+  function parseColor(a) {
+    if (!a) return null;
+    if (typeof a[0] === "string") { const h = a[0].replace("#", ""); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+    return [a[0], a[1], a[2]];
+  }
+  const isShade = c => c && !(c[0] > 245 && c[1] > 245 && c[2] > 245) && !(c[0] < 40 && c[1] < 40 && c[2] < 40);
+
+  function parseOps(ol, vp, pdfjs) {
+    const OPS = pdfjs.OPS, U = pdfjs.Util;
+    const W = vp.width, H = vp.height;
+    const hs = [], vs = [], shaded = [], images = [], marks = [];
+    let ctm = [1, 0, 0, 1, 0, 0], fill = [0, 0, 0]; const stack = [];
+    let pending = null, annot = 0;
+    const toVP = (x, y) => U.applyTransform(U.applyTransform([x, y], ctm), vp.transform);
+    const IMG = new Set([OPS.paintImageXObject, OPS.paintInlineImageXObject, OPS.paintJpegXObject, OPS.paintImageMaskXObject, OPS.paintImageXObjectRepeat, OPS.paintImageMaskXObjectRepeat, OPS.paintInlineImageXObjectGroup, OPS.paintImageMaskXObjectGroup, OPS.paintSolidColorImageMask].filter(v => v !== undefined));
+    function build(a) {
+      const ops = a[0], co = a[1]; let k = 0, cx = 0, cy = 0, sx = 0, sy = 0;
+      const rects = [], segs = []; let curves = 0; let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+      const grow = (x, y) => { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; };
+      for (const op of ops) {
+        if (op === OPS.moveTo) { cx = co[k++]; cy = co[k++]; sx = cx; sy = cy; const p = toVP(cx, cy); grow(p[0], p[1]); }
+        else if (op === OPS.lineTo) { const x = co[k++], y = co[k++]; const p = toVP(cx, cy), q = toVP(x, y); segs.push([p[0], p[1], q[0], q[1]]); grow(q[0], q[1]); cx = x; cy = y; }
+        else if (op === OPS.curveTo) { k += 4; cx = co[k++]; cy = co[k++]; curves++; const p = toVP(cx, cy); grow(p[0], p[1]); }
+        else if (op === OPS.curveTo2 || op === OPS.curveTo3) { k += 2; cx = co[k++]; cy = co[k++]; curves++; const p = toVP(cx, cy); grow(p[0], p[1]); }
+        else if (op === OPS.closePath) { if (cx !== sx || cy !== sy) { const p = toVP(cx, cy), q = toVP(sx, sy); segs.push([p[0], p[1], q[0], q[1]]); } cx = sx; cy = sy; }
+        else if (op === OPS.rectangle) {
+          const x = co[k++], y = co[k++], w = co[k++], h = co[k++];
+          const ps = [toVP(x, y), toVP(x + w, y), toVP(x, y + h), toVP(x + w, y + h)];
+          const xs = ps.map(p => p[0]), ys = ps.map(p => p[1]);
+          const r = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+          rects.push(r); grow(r[0], r[1]); grow(r[2], r[3]); cx = x; cy = y; sx = x; sy = y;
+        }
+      }
+      return { rects, segs, curves, box: [bx0, by0, bx1, by1] };
+    }
+    function commit(path, filled, stroked) {
+      if (!path) return;
+      const [bx0, by0, bx1, by1] = path.box;
+      if (!isFinite(bx0)) return;
+      if ((bx1 - bx0) * (by1 - by0) > W * H * 0.6) return; // 쪽 전체 테두리·배경은 무시
+      if (path.rects.length && !path.segs.length && !path.curves) for (const r of path.rects) marks.push(r); else marks.push(path.box);
+      for (const [x0, y0, x1, y1] of path.rects) {
+        const w = x1 - x0, h = y1 - y0;
+        if (h <= 2.5 && w > 1) hs.push({ pos: (y0 + y1) / 2, s: x0, e: x1 });
+        else if (w <= 2.5 && h > 1) vs.push({ pos: (x0 + x1) / 2, s: y0, e: y1 });
+        else {
+          if (stroked) { hs.push({ pos: y0, s: x0, e: x1 }, { pos: y1, s: x0, e: x1 }); vs.push({ pos: x0, s: y0, e: y1 }, { pos: x1, s: y0, e: y1 }); }
+          if (filled && w > 3 && h > 3 && isShade(fill)) shaded.push({ x0, y0, x1, y1 });
+        }
+      }
+      if (path.segs.length) {
+        const thin = (bx1 - bx0 <= 2.5) || (by1 - by0 <= 2.5);
+        if (stroked) {
+          for (const [ax, ay, bx, by] of path.segs) {
+            if (Math.abs(ay - by) <= 1 && Math.abs(ax - bx) > 1) hs.push({ pos: (ay + by) / 2, s: Math.min(ax, bx), e: Math.max(ax, bx) });
+            else if (Math.abs(ax - bx) <= 1 && Math.abs(ay - by) > 1) vs.push({ pos: (ax + bx) / 2, s: Math.min(ay, by), e: Math.max(ay, by) });
+          }
+        } else if (filled && thin) {
+          if (by1 - by0 <= 2.5) hs.push({ pos: (by0 + by1) / 2, s: bx0, e: bx1 }); else vs.push({ pos: (bx0 + bx1) / 2, s: by0, e: by1 });
+        } else if (filled && !path.curves && path.segs.length <= 5 && isShade(fill) && (bx1 - bx0) > 3 && (by1 - by0) > 3) {
+          shaded.push({ x0: bx0, y0: by0, x1: bx1, y1: by1 });
+        }
+      }
+    }
+    for (let i = 0; i < ol.fnArray.length; i++) {
+      const fn = ol.fnArray[i], a = ol.argsArray[i];
+      switch (fn) {
+        case OPS.save: stack.push([ctm, fill]); break;
+        case OPS.restore: if (stack.length) [ctm, fill] = stack.pop(); break;
+        case OPS.transform: ctm = U.transform(ctm, a); break;
+        case OPS.paintFormXObjectBegin: stack.push([ctm, fill]); if (a && Array.isArray(a[0]) && a[0].length === 6) ctm = U.transform(ctm, a[0]); break;
+        case OPS.paintFormXObjectEnd: if (stack.length) [ctm, fill] = stack.pop(); break;
+        case OPS.beginAnnotation: annot++; break;
+        case OPS.endAnnotation: annot = Math.max(0, annot - 1); break;
+        case OPS.setFillRGBColor: fill = parseColor(a) || fill; break;
+        case OPS.constructPath: pending = annot ? null : build(a); break;
+        case OPS.stroke: case OPS.closeStroke: commit(pending, false, true); pending = null; break;
+        case OPS.fill: case OPS.eoFill: commit(pending, true, false); pending = null; break;
+        case OPS.fillStroke: case OPS.eoFillStroke: case OPS.closeFillStroke: case OPS.closeEOFillStroke: commit(pending, true, true); pending = null; break;
+        case OPS.endPath: pending = null; break;
+        default:
+          if (IMG.has(fn) && !annot) {
+            const ps = [toVP(0, 0), toVP(1, 0), toVP(0, 1), toVP(1, 1)];
+            const xs = ps.map(p => p[0]), ys = ps.map(p => p[1]);
+            images.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) });
+          }
+      }
+    }
+    return { hs, vs, shaded, images, marks };
+  }
+
+  async function readPage(page, pdfjs) {
+    const vp = page.getViewport({ scale: 1 });
+    let geo = { hs: [], vs: [], shaded: [], images: [], marks: [] };
+    try { geo = parseOps(await page.getOperatorList(), vp, pdfjs); } catch (e) { /* 도형 정보 없이 글자만 읽는다 */ }
+    const tc = await page.getTextContent();
+    const items = [];
+    for (const it of tc.items) {
+      if (typeof it.str !== "string" || !it.str.trim()) continue;
+      const m = pdfjs.Util.transform(vp.transform, it.transform);
+      let fs = Math.hypot(m[2], m[3]); if (!fs || !isFinite(fs)) fs = Math.abs(it.height) || 10;
+      const horiz = Math.abs(m[0]) >= Math.abs(m[1]);
+      let x0, x1, top, bottom, base;
+      if (horiz) { x0 = m[4]; x1 = m[4] + Math.max(it.width || 0, fs * 0.3); base = m[5]; top = base - fs * 0.82; bottom = base + fs * 0.2; }
+      else { const w = it.width || fs; x0 = m[4] - fs * 0.6; x1 = m[4] + fs * 0.4; top = Math.min(m[5], m[5] - w); bottom = Math.max(m[5], m[5] - w); base = bottom; }
+      let bold = false;
+      try { if (page.commonObjs.has(it.fontName)) { const f = page.commonObjs.get(it.fontName); bold = !!(f && (f.bold || f.black || /bold|black|heavy|semibold|demibold|extrabold/i.test(f.name || ""))); } } catch (e) { /* 글꼴 정보가 없으면 굵기 판단 생략 */ }
+      items.push({ str: it.str, x0, x1, top, bottom, base, fs, bold });
+    }
+    let links = [];
+    try { links = (await page.getAnnotations()).filter(a => a.subtype === "Link" && a.url).map(a => a.url); } catch (e) { /* 링크 없음 */ }
+    return { W: vp.width, H: vp.height, items, geo, links };
+  }
+
+  // ---------- 줄 묶기 ----------
+  function finalizeLine(l) {
+    const its = l.items.slice().sort((a, b) => a.x0 - b.x0);
+    const kept = []; let text = "";
+    its.forEach((it, i) => {
+      const p = kept[kept.length - 1];
+      if (p && it.str === p.str && Math.abs(it.x0 - p.x0) < Math.min(it.fs, p.fs) * 0.5) return; // 굵게 보이려고 두 번 찍은 글자
+      if (p) { const gap = it.x0 - p.x1, f = Math.min(it.fs, p.fs); if (gap > f * 0.15 && !/\s$/.test(text) && !/^\s/.test(it.str)) text += " "; }
+      text += it.str; kept.push(it);
+    });
+    text = text.replace(/\s+/g, " ").trim();
+    let n = 0, fsum = 0; for (const it of kept) { const c = it.str.replace(/\s/g, "").length; n += c; fsum += it.fs * c; }
+    return {
+      text, items: kept, base: l.base, fs: n ? fsum / n : kept[0].fs,
+      x0: Math.min(...kept.map(i => i.x0)), x1: Math.max(...kept.map(i => i.x1)), top: Math.min(...kept.map(i => i.top)), bottom: Math.max(...kept.map(i => i.bottom)),
+      bold: kept.every(i => i.bold || !i.str.trim()),
+    };
+  }
+  function groupLines(items) {
+    const its = items.slice().sort((a, b) => a.base - b.base || a.x0 - b.x0);
+    const lines = [];
+    for (const it of its) {
+      const last = lines[lines.length - 1];
+      if (last && Math.abs(it.base - last.base) <= Math.max(1.5, Math.min(it.fs, last.fs0) * 0.45)) last.items.push(it);
+      else lines.push({ base: it.base, fs0: it.fs, items: [it] });
+    }
+    return lines.map(finalizeLine).filter(l => l.text);
+  }
+
+  // ---------- 선으로 그린 표 찾기 ----------
+  function mergeSegs(segs) {
+    segs = segs.slice().sort((p, q) => p.pos - q.pos || p.s - q.s);
+    const groups = [];
+    for (const s of segs) { const g = groups[groups.length - 1]; if (g && Math.abs(s.pos - g.pos) <= 2) g.items.push(s); else groups.push({ pos: s.pos, items: [s] }); }
+    const out = [];
+    for (const g of groups) {
+      const its = g.items.sort((p, q) => p.s - q.s); const pos = its.reduce((a, x) => a + x.pos, 0) / its.length;
+      let cur = null;
+      for (const x of its) { if (cur && x.s <= cur.e + 3) cur.e = Math.max(cur.e, x.e); else { if (cur) out.push(cur); cur = { pos, s: x.s, e: x.e }; } }
+      if (cur) out.push(cur);
+    }
+    return out;
+  }
+  function cluster(vals, tol) { const s = vals.slice().sort((a, b) => a - b); const out = []; for (const v of s) { if (out.length && v - out[out.length - 1].last <= tol) { const g = out[out.length - 1]; g.sum += v; g.n++; g.last = v; } else out.push({ sum: v, n: 1, last: v }); } return out.map(g => g.sum / g.n); }
+  function findTables(geo, W, H) {
+    const hs = mergeSegs(geo.hs).filter(s => s.e - s.s >= 6), vs = mergeSegs(geo.vs).filter(s => s.e - s.s >= 6);
+    if (hs.length < 2 || !vs.length) return [];
+    const n = hs.length + vs.length; const par = Array.from({ length: n }, (_, i) => i);
+    const find = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+    const T = 2.5;
+    for (let i = 0; i < hs.length; i++) for (let j = 0; j < vs.length; j++) {
+      const h = hs[i], v = vs[j];
+      if (v.pos >= h.s - T && v.pos <= h.e + T && h.pos >= v.s - T && h.pos <= v.e + T) { const a = find(i), b = find(hs.length + j); if (a !== b) par[a] = b; }
+    }
+    const comps = new Map();
+    for (let i = 0; i < n; i++) { const r = find(i); if (!comps.has(r)) comps.set(r, { h: [], v: [] }); if (i < hs.length) comps.get(r).h.push(hs[i]); else comps.get(r).v.push(vs[i - hs.length]); }
+    const tables = [];
+    for (const c of comps.values()) {
+      if (c.h.length < 2 || c.v.length < 1) continue;
+      const x0 = Math.min(...c.h.map(s => s.s), ...c.v.map(s => s.pos)), x1 = Math.max(...c.h.map(s => s.e), ...c.v.map(s => s.pos));
+      const y0 = Math.min(...c.v.map(s => s.s), ...c.h.map(s => s.pos)), y1 = Math.max(...c.v.map(s => s.e), ...c.h.map(s => s.pos));
+      if (x1 - x0 < 20 || y1 - y0 < 8) continue;
+      const xs = cluster([x0, x1, ...c.v.map(s => s.pos)], 3.5), ys = cluster([y0, y1, ...c.h.map(s => s.pos)], 3.5);
+      const nR = ys.length - 1, nC = xs.length - 1; if (nR < 1 || nC < 1) continue;
+      if (nR === 1 && nC === 1 && (x1 - x0) * (y1 - y0) > W * H * 0.45) continue;
+      tables.push(buildGrid(c, xs, ys));
+    }
+    return tables;
+  }
+  function buildGrid(c, xs, ys) {
+    const nR = ys.length - 1, nC = xs.length - 1;
+    const covered = (segs, pos, a, b) => {
+      if (b - a <= 0.5) return true;
+      const ivs = segs.filter(s => Math.abs(s.pos - pos) <= 3.5).map(s => [Math.max(a, s.s), Math.min(b, s.e)]).filter(([p, q]) => q > p).sort((p, q) => p[0] - q[0]);
+      let cov = 0, end = a; for (const [p, q] of ivs) { if (q <= end) continue; cov += q - Math.max(p, end); end = q; }
+      return cov >= (b - a) * 0.6;
+    };
+    const par = Array.from({ length: nR * nC }, (_, i) => i);
+    const find = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+    const uni = (a, b) => { a = find(a); b = find(b); if (a !== b) par[Math.max(a, b)] = Math.min(a, b); };
+    for (let r = 0; r < nR; r++) for (let col = 0; col < nC; col++) {
+      if (col < nC - 1 && !covered(c.v, xs[col + 1], ys[r], ys[r + 1])) uni(r * nC + col, r * nC + col + 1);
+      if (r < nR - 1 && !covered(c.h, ys[r + 1], xs[col], xs[col + 1])) uni(r * nC + col, (r + 1) * nC + col);
+    }
+    const regions = new Map(); const cells = []; const cellOf = new Array(nR * nC);
+    for (let r = 0; r < nR; r++) for (let col = 0; col < nC; col++) {
+      const root = find(r * nC + col); let g = regions.get(root);
+      if (!g) { g = { r0: r, r1: r, c0: col, c1: col, items: [] }; regions.set(root, g); cells.push(g); }
+      g.r0 = Math.min(g.r0, r); g.r1 = Math.max(g.r1, r); g.c0 = Math.min(g.c0, col); g.c1 = Math.max(g.c1, col);
+      cellOf[r * nC + col] = cells.indexOf(g);
+    }
+    return { x0: xs[0], x1: xs[nC], y0: ys[0], y1: ys[nR], top: ys[0], xs, ys, nR, nC, cells, cellOf };
+  }
+  const slot = (arr, v) => { let i = 0; while (i < arr.length - 2 && v >= arr[i + 1]) i++; return i; };
+  function splitAcross(it, xs) {
+    const parts = []; let cur = it;
+    for (const b of xs) {
+      if (b <= cur.x0 + cur.fs * 0.6 || b >= cur.x1 - cur.fs * 0.6) continue;
+      const s = cur.str; const k = Math.round((b - cur.x0) / (cur.x1 - cur.x0) * s.length);
+      let at = -1; for (let d = 0; d <= 3; d++) { if (s[k - d] === " ") { at = k - d; break; } if (s[k + d] === " ") { at = k + d; break; } }
+      if (at <= 0 || at >= s.length - 1) continue;
+      const xm = cur.x0 + (cur.x1 - cur.x0) * (at / s.length);
+      parts.push({ ...cur, str: s.slice(0, at), x1: xm }); cur = { ...cur, str: s.slice(at + 1), x0: xm };
+    }
+    parts.push(cur); return parts.filter(p => p.str.trim());
+  }
+
+  // 줄 끝에서 한글과 한글이 만나면 띄어쓸지 아직 모르므로 번호 표시(\u0001번호\u0003)만 해 두고, 문서 전체를 본 뒤 정한다.
+  const PARTICLE = /^(은|는|을|를|의|에|도|와|과|로|만|며|서|께|요|으로|에서|에게|까지|부터|보다|처럼|마다|에는|에도|로서|로써|으로서|으로써|이나|와의|과의|이며|이고|이다|이라|이었다|였다)$/;
+  const STANDALONE = new Set("이 그 저 한 두 세 네 및 등 더 또 잘 각 총 약 매 새 온 첫 몇".split(" "));
+  const ENDING = /[의는은을를에와과로도가고며면서어여다게한된할될던인적께만야요]$/;
+  const DEP_NOUN = new Set(["데", "수", "것", "때", "등", "중", "뿐", "바", "줄", "듯", "점"]);
+  const ADNOMINAL = /[는은을할한된될던]$/;
+  const MARK_RE = /\u0001([0-9a-z]+)\u0003/g;
+  const HANGUL_ONLY = /[^ㄱ-ㆎ가-힣A-Za-z0-9]/g;
+  function joinChar(a, b, J) {
+    const last = a.slice(-1), first = b.charAt(0);
+    if (!last || /\s/.test(last)) return "";
+    if (/[A-Za-z]-$/.test(a) && /^[a-z]/.test(b)) return "";
+    if (HANGUL.test(last) && HANGUL.test(first)) {
+      const lt = (a.replace(MARK_RE, "").match(/[^\s]+$/) || [""])[0].replace(HANGUL_ONLY, "");
+      const ft = (b.match(/^[^\s]+/) || [""])[0].replace(HANGUL_ONLY, "");
+      J.push({ L: lt.length + ft.length, lt, ft, particle: PARTICLE.test(ft) });
+      return "\u0001" + (J.length - 1).toString(36) + "\u0003";
+    }
+    if (HANGUL.test(last) && /[)\]」』,.·:;!?%]/.test(first)) return "";
+    if (/[(\[「『]/.test(last)) return "";
+    return " ";
+  }
+  function cellText(items, J) {
+    if (!items.length) return "";
+    const lines = groupLines(items);
+    const maxX1 = Math.max(...lines.map(l => l.x1));
+    const paras = []; let cur = null, prev = null;
+    for (const ln of lines) {
+      const t = mdInline(ln.text, true);
+      const join = cur !== null && prev && !BULLET_RE.test(ln.text) && prev.x1 >= maxX1 - Math.max(prev.fs * (J.hancom ? 1.6 : 3.5), 4) && ln.base - prev.base <= ln.fs * 2.2;
+      if (join) cur += joinChar(cur, t, J) + t; else { if (cur !== null) paras.push(cur); cur = t; }
+      prev = ln;
+    }
+    if (cur !== null) paras.push(cur);
+    return paras.join("<br>");
+  }
+  function formatTable(t, J, inherited, shaded) {
+    const { nR, nC, cells, cellOf, xs, ys } = t;
+    for (const c of cells) c.text = cellText(c.items, J);
+    const shadedAt = (r, c) => { const cx = (xs[c] + xs[c + 1]) / 2, cy = (ys[r] + ys[r + 1]) / 2; return shaded.some(s => cx >= s.x0 - 2 && cx <= s.x1 + 2 && cy >= s.y0 - 2 && cy <= s.y1 + 2); };
+    let merged = false, nShaded = 0;
+    const anchors = cells.map(c => { if (c.r1 > c.r0 || c.c1 > c.c0) merged = true; return { r: c.r0, c: c.c0, rs: c.r1 - c.r0 + 1, cs: c.c1 - c.c0 + 1, text: c.text }; });
+    const grid = fillSpans(nR, nC, anchors);
+    if (shaded.length) {
+      for (let r = 1; r < nR; r++) {
+        if (Array.from({ length: nC }, (_, c) => shadedAt(r, c)).every(Boolean)) continue; // 행 전체 배경색은 표시가 아님
+        for (let c = 0; c < nC; c++) { const cell = cells[cellOf[r * nC + c]]; if (!grid[r][c] && cell.r0 === r && cell.c0 === c && shadedAt(r, c)) { grid[r][c] = "■"; nShaded++; } }
+      }
+    }
+    const fin = finishGrid(grid);
+    if (!fin) return null;
+    if (fin.kind !== "table") return { ...fin, merged: false, nShaded: 0, header: null, isCont: false };
+    let rows = fin.rows, isCont = false;
+    if (inherited && inherited.length === fin.nC && rows[0].join("\u0001") !== inherited.join("\u0001")) {
+      const first = rows[0][0].trim(), empty = rows[0].filter(c => !c.trim()).length;
+      if (/^\d+$/.test(first) || empty >= 1 || rows[0].some(c => c.length > 25)) { isCont = true; rows = [inherited, ...rows]; }
+    }
+    const notes = [];
+    if (isCont) notes.push(`${CO} 이전 쪽 표에서 이어짐: 첫 데이터 행이 머리글로 깨지지 않도록 이전 쪽 표 머리글을 다시 붙임 ${CC}`);
+    if (merged) notes.push(`${CO} 병합 셀 포함 표: 세로로 합친 칸은 값을 이어 쓰고, 가로로 합친 칸은 첫 칸에만 둠 ${CC}`);
+    if (nShaded) notes.push(`${CO} 음영 표시 복원: 색으로 칠한 빈 칸 ${nShaded}개를 ■로 표시함 ${CC}`);
+    return { kind: "table", md: (notes.length ? notes.join("\n") + "\n" : "") + mdTable(rows), merged, nShaded, header: rows[0], isCont, nC: fin.nC };
+  }
+
+  // ---------- 2단 편집 찾기 ----------
+  function findGutter(lines, W) {
+    if (lines.length < 8) return null;
+    const boxes = []; for (const ln of lines) for (const it of ln.items) boxes.push([it.x0, it.x1]);
+    const counts = [];
+    for (let x = W * 0.33; x <= W * 0.67; x += 2) { let cross = 0; for (const [a, b] of boxes) if (a < x - 1 && b > x + 1) cross++; counts.push([x, cross]); }
+    const min = Math.min(...counts.map(c => c[1]));
+    let best = null, run = null;
+    for (const c of counts) { if (c[1] === min) { if (!run) run = [c[0], c[0]]; else run[1] = c[0]; } else if (run) { if (!best || run[1] - run[0] > best[1] - best[0]) best = run; run = null; } }
+    if (run && (!best || run[1] - run[0] > best[1] - best[0])) best = run;
+    if (!best || best[1] - best[0] < 8) return null;
+    const g = (best[0] + best[1]) / 2;
+    const left = [], right = []; let span = 0;
+    for (const ln of lines) {
+      if (ln.items.some(it => it.x0 < g - 1 && it.x1 > g + 1)) { span++; continue; }
+      const L = ln.items.filter(it => it.x1 <= g), R = ln.items.filter(it => it.x0 >= g);
+      if (L.length) left.push({ x1: Math.max(...L.map(i => i.x1)), len: L.map(i => i.str).join("").length });
+      if (R.length) right.push({ x0: Math.min(...R.map(i => i.x0)), len: R.map(i => i.str).join("").length });
+    }
+    if (left.length < 5 || right.length < 5 || span > Math.max(3, (left.length + right.length) * 0.15)) return null;
+    const avg = a => a.reduce((s, x) => s + x.len, 0) / a.length;
+    if (avg(left) < 12 || avg(right) < 12) return null;
+    const rx = right.map(r => r.x0).sort((a, b) => a - b), med = rx[Math.floor(rx.length / 2)];
+    if (right.filter(r => Math.abs(r.x0 - med) <= 8).length < right.length * 0.5) return null;
+    if (left.filter(l => l.x1 >= g - 45).length < left.length * 0.4) return null;
+    return g;
+  }
+
+  function headingLevel(ln, body) {
+    const t = ln.text;
+    if (t.length > 75 || HEAD_EXCL.test(t) || !/[A-Za-z가-힣0-9]/.test(t)) return 0;
+    if (ln.fs >= body * 1.45 && ln.fs >= 13.5) return 1;
+    if (ln.fs >= body * 1.2 && ln.fs >= 11.5) return 2;
+    if (ln.bold && ln.fs >= body * 1.08 && t.length <= 60 && !/[.。]$/.test(t)) return 3;
+    return 0;
+  }
+
+  function build(raw, hancom) {
+    const J = []; J.hancom = hancom;
+    const sizes = [];
+    for (const pg of raw) for (const it of pg.items) { if (it.fs < 5 || it.fs > 40) continue; const c = Math.min(60, it.str.replace(/\s/g, "").length); for (let k = 0; k < c; k++) sizes.push(Math.round(it.fs * 10) / 10); }
+    sizes.sort((a, b) => a - b);
+    const body = sizes.length ? sizes[Math.floor(sizes.length / 2)] : 10;
+    const topC = new Map(), botC = new Map();
+    for (const pg of raw) {
+      pg.tables = findTables(pg.geo, pg.W, pg.H);
+      pg.flow = [];
+      for (const it of pg.items) {
+        const cx = (it.x0 + it.x1) / 2, cy = (it.top + it.bottom) / 2;
+        const t = pg.tables.find(t => cx >= t.x0 - 1 && cx <= t.x1 + 1 && cy >= t.y0 - 1 && cy <= t.y1 + 1);
+        if (!t) { pg.flow.push(it); continue; }
+        for (const part of splitAcross(it, t.xs)) {
+          const px = (part.x0 + part.x1) / 2;
+          t.cells[t.cellOf[slot(t.ys, cy) * t.nC + slot(t.xs, px)]].items.push(part);
+        }
+      }
+      pg.lines = groupLines(pg.flow);
+      const L = pg.lines.slice().sort((a, b) => a.top - b.top);
+      if (L.length) {
+        if (L[0].top < pg.H * 0.1) { const k = normHF(L[0].text); if (k) topC.set(k, (topC.get(k) || 0) + 1); }
+        const l = L[L.length - 1]; if (l.bottom > pg.H * 0.9) { const k = normHF(l.text); if (k) botC.set(k, (botC.get(k) || 0) + 1); }
+      }
+    }
+    const total = raw.length, need = Math.max(2, Math.floor(total * 0.6));
+    const repTop = new Set([...topC].filter(([, c]) => total >= 2 && c >= need).map(([k]) => k));
+    const repBot = new Set([...botC].filter(([, c]) => total >= 2 && c >= need).map(([k]) => k));
+
+    const parts = [], pages = [], incomplete = [], removedHF = [];
+    const tot = { fixed: 0, unknown: 0, codes: [], tables: 0, merged: 0, images: 0, twoCol: 0, headings: 0, links: 0 };
+    let prevHeader = null;
+    raw.forEach((pg, idx) => {
+      const pno = idx + 1;
+      let lines = pg.lines;
+      if (lines.length) {
+        const L = lines.slice().sort((a, b) => a.top - b.top); const drop = new Set();
+        const f = L[0], l = L[L.length - 1];
+        if (f.top < pg.H * 0.1 && (repTop.has(normHF(f.text)) || isPageNum(f.text))) { drop.add(f); if (!removedHF.includes(f.text)) removedHF.push(f.text); }
+        if (l.bottom > pg.H * 0.9 && (repBot.has(normHF(l.text)) || isPageNum(l.text))) { drop.add(l); if (!removedHF.includes(l.text)) removedHF.push(l.text); }
+        lines = lines.filter(x => !drop.has(x));
+      }
+      const gutter = findGutter(lines, pg.W);
+      const blocks = []; let firstColTop = Infinity;
+      if (gutter == null) for (const ln of lines) blocks.push({ kind: "line", sec: 0, top: ln.top, line: ln, grp: 0 });
+      else {
+        tot.twoCol++;
+        const colLines = [], spans = [];
+        for (const ln of lines) {
+          if (ln.items.some(it => it.x0 < gutter - 1 && it.x1 > gutter + 1)) { spans.push(ln); continue; }
+          const Li = ln.items.filter(it => it.x1 <= gutter + 1), Ri = ln.items.filter(it => it.x1 > gutter + 1);
+          if (Li.length) colLines.push({ ln: finalizeLine({ base: ln.base, items: Li }), col: 1 });
+          if (Ri.length) colLines.push({ ln: finalizeLine({ base: ln.base, items: Ri }), col: 2 });
+        }
+        firstColTop = Math.min(Infinity, ...colLines.map(c => c.ln.top));
+        for (const s of spans) blocks.push({ kind: "line", sec: s.top < firstColTop ? 0 : 3, top: s.top, line: s, grp: 0 });
+        for (const c of colLines) blocks.push({ kind: "line", sec: c.col, top: c.ln.top, line: c.ln, grp: c.col });
+      }
+      for (const t of pg.tables) {
+        let sec = 0;
+        if (gutter != null) sec = (t.x0 < gutter - 5 && t.x1 > gutter + 5) ? (t.top < firstColTop ? 0 : 3) : ((t.x0 + t.x1) / 2 < gutter ? 1 : 2);
+        blocks.push({ kind: "table", sec, top: t.top, t });
+      }
+      blocks.sort((a, b) => a.sec - b.sec || a.top - b.top);
+
+      const edges = new Map();
+      for (const g of [0, 1, 2]) {
+        const xs = blocks.filter(b => b.kind === "line" && b.grp === g && b.line.text.length >= 6).map(b => b.line.x1).sort((a, c) => a - c);
+        if (xs.length) edges.set(g, xs[Math.min(xs.length - 1, Math.floor(xs.length * 0.9))]);
+      }
+      const pitches = []; let pl = null;
+      for (const b of blocks) {
+        if (b.kind !== "line") { pl = null; continue; }
+        if (pl && pl.grp === b.grp) { const d = b.line.base - pl.line.base; if (d > 0 && d < b.line.fs * 3 && Math.abs(b.line.fs - pl.line.fs) < 0.6) pitches.push(d / b.line.fs); }
+        pl = b;
+      }
+      pitches.sort((a, b) => a - b);
+      const pitch = pitches.length ? pitches[Math.floor(pitches.length / 2)] : 1.6;
+
+      const out = []; let para = null;
+      const flush = () => {
+        if (!para) return;
+        let t = para.text.replace(/\s+/g, " ").trim();
+        if (t) { t = para.heading ? "#".repeat(para.heading) + " " + t : mdLineStart(t); if (para.heading) tot.headings++; out.push(t); }
+        para = null;
+      };
+      const canJoin = (ln, h, grp) => {
+        const prev = para.last;
+        if (para.grp !== grp) return false;
+        const d = ln.base - prev.base;
+        if (para.heading || h) return !!(para.heading && h === para.heading && Math.abs(prev.fs - ln.fs) < 0.6 && d > 0 && d <= ln.fs * 1.9);
+        if (BULLET_RE.test(ln.text)) return false;
+        if (Math.abs(prev.fs - ln.fs) > Math.max(0.8, prev.fs * 0.08)) return false;
+        if (d <= 0 || d > Math.max(pitch * 1.3, 1.25) * ln.fs) return false;
+        const edge = edges.has(grp) ? edges.get(grp) : prev.x1;
+        return prev.x1 >= edge - Math.max(prev.fs * (hancom ? 1.6 : 3.5), 6);
+      };
+      let firstBlock = true, lastTable = false, lastHeader = null, pageTables = 0, pageMerged = 0, pageShaded = 0, pageCont = 0;
+      const ordered = [];
+      for (const b of blocks) {
+        if (b.kind === "table") {
+          flush();
+          const res = formatTable(b.t, J, firstBlock ? prevHeader : null, pg.geo.shaded);
+          firstBlock = false;
+          if (!res) continue;
+          if (res.kind === "table") { pageTables++; tot.tables++; if (res.merged) { pageMerged++; tot.merged++; } pageShaded += res.nShaded; if (res.isCont) pageCont++; lastTable = true; lastHeader = res.header; }
+          else lastTable = false;
+          out.push(res.md);
+          continue;
+        }
+        firstBlock = false; lastTable = false; ordered.push(b.line);
+        const ln = b.line, txt = mdInline(ln.text), h = headingLevel(ln, body);
+        if (para && canJoin(ln, h, b.grp)) { para.text += joinChar(para.text, txt, J) + txt; para.last = ln; continue; }
+        flush();
+        para = { text: txt, last: ln, heading: h, grp: b.grp };
+      }
+      flush();
+      prevHeader = lastTable ? lastHeader : null;
+
+      let mathSplit = false;
+      for (let i = 0; i < ordered.length - 1; i++) {
+        const a = ordered[i].text.trim(), b = ordered[i + 1].text.trim();
+        if ((a.endsWith("=") && b.length <= 8) || (/^[0-9+\-Δxytab]{1,3}$/.test(a) && b.length <= 15)) { mathSplit = true; break; }
+      }
+      let pageBody = out.join("\n\n").trim();
+      const uris = [...new Set(pg.links)];
+      if (uris.length) { tot.links += uris.length; pageBody = (pageBody + "\n\n" + uris.map(u => `- 링크: <${u}>`).join("\n")).trim(); }
+      const pr = restorePua(pageBody); pageBody = pr.text;
+      tot.fixed += pr.fixed; tot.unknown += pr.unknown; for (const c of pr.codes) if (!tot.codes.includes(c)) tot.codes.push(c);
+
+      const chars = pageBody.replace(MARK_RE, "").replace(/\s/g, "").length;
+      const area = Math.max(1, pg.W * pg.H);
+      let large = 0, small = 0, imgArea = 0;
+      for (const im of pg.geo.images) { const w = im.x1 - im.x0, h = im.y1 - im.y0, a = w * h; imgArea += a; if (a / area >= 0.025 || (w >= 110 && h >= 65)) large++; else if (w >= 8 && h >= 8) small++; }
+      const imgRatio = Math.min(1, imgArea / area);
+      const nImgs = large + small; tot.images += nImgs;
+      const overlaps = (b, t) => !(b[2] < t.x0 - 3 || b[0] > t.x1 + 3 || b[3] < t.y0 - 3 || b[1] > t.y1 + 3);
+      const nShapes = pg.geo.marks.filter(b => !pg.tables.some(t => overlaps(b, t))).length;
+      if (large) pageBody = (pageBody + `\n\n> [원본 ${pno}쪽 그림·도표 이미지 ${large}개 포함 — 그림 속 글자·도표·모식도는 원본 확인 필요]`).trim();
+      else if (small) pageBody = (pageBody + `\n\n> [원본 ${pno}쪽 작은 이미지(서명·직인·아이콘 등) ${small}개 포함]`).trim();
+      if (nShapes >= 12) pageBody = (pageBody + `\n\n> [원본 ${pno}쪽 선·도형으로 그린 도표/모식도(도형 ${nShapes}개) 감지 — 모양은 원본 확인 필요]`).trim();
+
+      let score = 100; const issues = [];
+      if (chars < 20) {
+        if (nImgs || nShapes > 5) { score = 10; issues.push(`글자가 거의 없고(${chars}자) 그림·도표 위주인 쪽입니다 (스캔본이나 통그림 의심 — 전환 불완전)`); }
+        else { score = 15; issues.push(`추출된 글자가 거의 없습니다 (${chars}자 — 스캔 PDF이거나 빈 쪽일 수 있음)`); }
+      } else if (chars < 80 && (large || nShapes >= 12)) { score -= 45; issues.push(`글자 수(${chars}자)에 비해 그림(${large}개)·도형(${nShapes}개) 비중이 높아 시각 정보가 빠졌을 가능성이 큽니다`); }
+      if (large && chars >= 20) { score -= Math.min(40, Math.max(15, Math.round(imgRatio * 60) + large * 12)); issues.push(`그림·도표 이미지 ${large}개(쪽 면적의 ${Math.max(1, Math.round(imgRatio * 100))}%) 포함 — 그림 속 글자·수치는 옮겨지지 않음`); }
+      else if (small && chars >= 20) { score -= Math.min(8, small * 2); issues.push(`작은 이미지(직인·서명·아이콘 등) ${small}개 포함 (본문 글자는 정상 추출)`); }
+      if (nShapes >= 12 && chars >= 20) { score -= 20; issues.push(`선·도형으로 그린 도표/다이어그램(도형 ${nShapes}개) 포함 — 모식도 구조는 옮겨지지 않음`); }
+      if (pageCont) issues.push(`이전 쪽에서 이어진 표 ${pageCont}개 — 첫 행이 머리글로 깨지지 않도록 이전 쪽 머리글을 다시 붙임`);
+      if (pageShaded) { score -= 5; issues.push(`표 안의 색칠된 칸 ${pageShaded}개(추진일정 막대 등)를 ■로 바꿈 (원본 대조 권장)`); }
+      if (pageMerged) { score -= Math.min(12, pageMerged * 4); issues.push(`병합 셀이 있는 표 ${pageMerged}개 포함 (합친 칸 정리 적용)`); }
+      if (pr.unknown) { score -= Math.min(25, pr.unknown * 5); issues.push(`되돌리지 못한 수식 기호(□) ${pr.unknown}개 (코드: ${pr.codes.slice(0, 5).join(", ")})`); }
+      else if (pr.fixed) { score -= 5; issues.push(`한컴 수식 기호 ${pr.fixed}개 자동 복원 (분수·행렬은 한 줄로 풀려 있을 수 있음)`); }
+      if (mathSplit) { score -= 10; issues.push("위아래로 쪼개진 분수·첨자 수식이 의심되는 곳이 있음 (원본 수식 확인 권장)"); }
+      if (gutter != null) { score -= 5; issues.push("2단 편집 감지 — 왼쪽 단 → 오른쪽 단 순서로 나눠 옮김 (단 경계 문맥 확인 권장)"); }
+      score = Math.max(0, Math.min(100, score));
+      const status = score >= 90 && !issues.length ? "완전" : (score >= 50 ? "검증 필요" : "불완전");
+      if (status !== "완전") incomplete.push(pno);
+      pages.push({ page: pno, section_title: `${pno}쪽`, score, status, chars, pics: nImgs, tables: pageTables, merged_tables: pageMerged, charts_shapes: nShapes >= 10 ? 1 : 0, two_column: gutter != null, issues });
+      const badge = status !== "완전" ? ` (전환율 ${score}% · ${status})` : ` (전환율 ${score}%)`;
+      parts.push({ marker: `${CO} page: ${pno} ${CC}\n${CO} ${pno}쪽${badge} ${CC}`, md: pageBody });
+    });
+
+    // 줄 끝 띄어쓰기 결정: 한컴 PDF이거나, 조사만 다음 줄로 넘어간 곳이 여럿이거나,
+    // 이어 붙인 낱말 길이가 보통 낱말 길이와 비슷하면(두 낱말 길이가 아니면) 글자 단위 줄바꿈 문서로 본다.
+    const avg = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0;
+    const tokLens = [];
+    for (const p of parts) for (const tok of p.md.split(/\s+|\u0001[0-9a-z]+\u0003/)) { const t = tok.replace(HANGUL_ONLY, ""); if (t && /^[가-힣]+$/.test(t)) tokLens.push(t.length); }
+    const nJ = J.length, nP = J.filter(j => j.particle).length;
+    let glue = hancom;
+    if (nP >= 2 && nP >= nJ * 0.04) glue = true;
+    else if (nJ >= 6) glue = avg(J.map(j => j.L)) / (avg(tokLens) || 3) < 1.7;
+    // 글자 단위 줄바꿈 문서라도 앞 줄이 조사·어미로 끝나고 다음 줄이 새 낱말로 보이면 띄운다.
+    const decide = j => {
+      if (!j || j.particle) return "";
+      if (!glue) return " ";
+      if (j.lt.length === 1 && STANDALONE.has(j.lt)) return " ";
+      if (j.lt.length >= 2 && j.ft.length >= 2 && ENDING.test(j.lt)) return " ";
+      if (j.lt.length >= 2 && DEP_NOUN.has(j.ft) && ADNOMINAL.test(j.lt)) return " ";
+      return "";
+    };
+    for (const p of parts) p.md = p.md.replace(MARK_RE, (m, k) => decide(J[parseInt(k, 36)]));
+
+    const totalChars = pages.reduce((a, p) => a + p.chars, 0);
+    let overall = pages.length ? Math.round(pages.reduce((a, p) => a + p.score, 0) / pages.length) : 0;
+    if (!totalChars) overall = 0;
+    const status = overall >= 90 && !incomplete.length && totalChars ? "완료" : (overall >= 50 && totalChars >= 30 ? "검증 필요" : "불완전 전환");
+    const warnings = [];
+    if (totalChars < Math.max(30, total * 40)) warnings.push(`전체 ${total}쪽에서 추출된 글자가 ${fmtNum(totalChars)}자로 매우 적습니다. 스캔한 PDF(통그림)일 가능성이 높으니 OCR 처리하거나 원본 HWPX·워드 파일을 넣어 주세요.`);
+    if (incomplete.length) warnings.push(`전체 ${total}쪽 중 전환이 완전하지 않아 확인이 필요한 쪽(${incomplete.length}개): ${incomplete.map(p => p + "쪽").join(", ")}`);
+    if (tot.images) warnings.push(`그림·이미지 총 ${tot.images}개 감지 (위치: ${pages.filter(p => p.pics).map(p => `${p.page}쪽(${p.pics}개)`).join(", ")}) — 그림 속 글자와 도식은 옮겨지지 않았습니다.`);
+    const shapePages = pages.filter(p => p.charts_shapes).map(p => p.page + "쪽");
+    if (shapePages.length) warnings.push(`선·도형으로 그린 도표/다이어그램 감지 (위치: ${shapePages.join(", ")}) — 모양으로 표현된 정보는 옮겨지지 않았습니다.`);
+    if (tot.merged) warnings.push(`병합 셀이 있는 표 ${tot.merged}개 감지 (위치: ${pages.filter(p => p.merged_tables).map(p => p.page + "쪽").join(", ")}) — 원본 표와 열 정렬을 대조해 주세요.`);
+    if (tot.twoCol) warnings.push(`2단 편집 ${tot.twoCol}개 쪽(${pages.filter(p => p.two_column).map(p => p.page + "쪽").join(", ")}) — 왼쪽 단 → 오른쪽 단 순서로 나눠 옮겼습니다.`);
+    if (tot.unknown) warnings.push(`되돌리지 못한 한컴 수식 기호 ${tot.unknown}개를 □로 표시했습니다 (코드: ${tot.codes.join(", ")}).`);
+    if (removedHF.length) warnings.push(`쪽마다 반복되는 머리말·꼬리말·쪽 번호를 본문에서 뺐습니다 (예: ${removedHF.slice(0, 3).map(s => `"${s.slice(0, 30)}"`).join(", ")}).`);
+    if (glue && nJ) warnings.push("글자 단위로 줄이 바뀐 문서라 줄 끝에서 잘린 한글 낱말을 이어 붙였습니다. 줄 끝 띄어쓰기는 추정이라 몇 군데는 붙거나 떨어져 있을 수 있습니다.");
+    return {
+      parts,
+      report: {
+        source_type: "pdf", overall_score: overall, status, total_chars: totalChars, estimated_pages: total, incomplete_pages: incomplete,
+        n_headings: tot.headings, n_tables: tot.tables, n_merged_tables: tot.merged, n_eq: tot.fixed, n_pic: tot.images, n_pic_extracted: 0,
+        n_ole_chart: shapePages.length, n_links: tot.links, page_diagnostics: pages, summary_warnings: warnings, hancom,
+      },
+    };
+  }
+
+  // 글꼴을 넣지 않은 한글·한자 PDF용 문자표(CMap). 웹앱 서버가 .bcmap을 못 실어서 base64 JSON으로 싣고 여기서 풀어 준다.
+  class JsonCMapReader {
+    constructor({ baseUrl }) { this.baseUrl = baseUrl || CMAP_URL; }
+    async fetch({ name }) {
+      const r = await fetch(this.baseUrl + encodeURIComponent(name) + ".json");
+      if (!r.ok) throw new Error("문자표를 찾지 못했습니다: " + name);
+      const j = await r.json();
+      return { cMapData: b64ToBytes(j.d), compressionType: 1 };
+    }
+  }
+
+  async function convert(buf, name, progress) {
+    await loadScript(LIB.pdf); await loadScript(LIB.pdfWorker);
+    const pdfjs = window.pdfjsLib;
+    pdfjs.GlobalWorkerOptions.workerSrc = LIB.pdfWorker;
+    let doc;
+    try { doc = await pdfjs.getDocument({ data: new Uint8Array(buf), cMapUrl: CMAP_URL, cMapPacked: true, CMapReaderFactory: JsonCMapReader, useWorkerFetch: false, isEvalSupported: false, disableFontFace: true, verbosity: 0 }).promise; }
+    catch (e) {
+      if (e && e.name === "PasswordException") throw new UserError("암호가 걸린 PDF입니다. 암호를 푼 뒤 다시 넣어 주세요.");
+      throw new UserError("PDF를 열지 못했습니다. 파일이 손상됐을 수 있습니다.");
+    }
+    let hancom = false;
+    try { const md = await doc.getMetadata(); const info = (md && md.info) || {}; hancom = /hancom|hwp|한컴|한글/i.test([info.Producer, info.Creator].join(" ")); } catch (e) { /* 정보 없음 */ }
+    const raw = [];
+    for (let p = 1; p <= doc.numPages; p++) {
+      progress(`${p} / ${doc.numPages}쪽 읽는 중`);
+      const page = await doc.getPage(p);
+      raw.push(await readPage(page, pdfjs));
+      page.cleanup();
+      await tick();
+    }
+    try { await doc.destroy(); } catch (e) { /* 무시 */ }
+    progress("쪽별 진단 중");
+    await tick();
+    return build(raw, hancom);
+  }
+  return { convert };
+})();
+
+// ======================================================================
+// 4. 워드(DOCX) → 마크다운 (mammoth + 수식 LaTeX 변환)
+// ======================================================================
+const OMML = (() => {
+  const NARY = { "∑": "\\sum", "∏": "\\prod", "∐": "\\coprod", "∫": "\\int", "∬": "\\iint", "∭": "\\iiint", "∮": "\\oint", "⋃": "\\bigcup", "⋂": "\\bigcap" };
+  const ACC = { "\u0302": "\\hat", "\u0303": "\\tilde", "\u0304": "\\bar", "\u0305": "\\overline", "\u20D7": "\\vec", "\u0307": "\\dot", "\u0308": "\\ddot", "\u0301": "\\acute", "\u0300": "\\grave", "\u0306": "\\breve", "\u030C": "\\check" };
+  const FUNCS = new Set(["sin", "cos", "tan", "sec", "csc", "cot", "log", "ln", "exp", "lim", "max", "min", "sinh", "cosh", "tanh", "arcsin", "arccos", "arctan", "det", "gcd"]);
+  const SYMS = { "≤": "\\le ", "≥": "\\ge ", "≠": "\\ne ", "×": "\\times ", "÷": "\\div ", "±": "\\pm ", "∓": "\\mp ", "∞": "\\infty ", "→": "\\to ", "←": "\\leftarrow ", "⇒": "\\Rightarrow ", "⇔": "\\Leftrightarrow ", "⋅": "\\cdot ", "∙": "\\cdot ", "∈": "\\in ", "∉": "\\notin ", "⊂": "\\subset ", "⊆": "\\subseteq ", "∪": "\\cup ", "∩": "\\cap ", "∅": "\\emptyset ", "∀": "\\forall ", "∃": "\\exists ", "∠": "\\angle ", "△": "\\triangle ", "⊥": "\\perp ", "∥": "\\parallel ", "≈": "\\approx ", "≡": "\\equiv ", "∝": "\\propto ", "∂": "\\partial ", "∇": "\\nabla ", "°": "^\\circ ", "%": "\\%", "#": "\\#", "&": "\\&", "{": "\\{", "}": "\\}" };
+  const mval = el => el ? (el.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/math", "val") || el.getAttribute("m:val") || el.getAttribute("val")) : null;
+  const prop = (e, pr, name) => mval(kid(kid(e, pr), name));
+  const sub = (e, name) => { const k = kid(e, name); return k ? conv(k) : ""; };
+  const delim = c => ({ "{": "\\{", "}": "\\}", "〈": "\\langle", "〉": "\\rangle", "‖": "\\|" }[c] ?? c);
+  function text(t) { const tr = t.trim(); if (FUNCS.has(tr)) return "\\" + tr + " "; let s = ""; for (const ch of t) s += SYMS[ch] ?? ch; return s; }
+  function conv(el) { let s = ""; for (const c of el.children) s += node(c); return s; }
+  function node(e) {
+    switch (e.localName) {
+      case "r": { let t = ""; for (const c of e.children) if (c.localName === "t") t += c.textContent; return text(t); }
+      case "f": { const typ = prop(e, "fPr", "type"); const n = sub(e, "num"), d = sub(e, "den"); return typ === "lin" ? `${n}/${d}` : typ === "noBar" ? `\\binom{${n}}{${d}}` : `\\frac{${n}}{${d}}`; }
+      case "sSup": return `{${sub(e, "e")}}^{${sub(e, "sup")}}`;
+      case "sSub": return `{${sub(e, "e")}}_{${sub(e, "sub")}}`;
+      case "sSubSup": return `{${sub(e, "e")}}_{${sub(e, "sub")}}^{${sub(e, "sup")}}`;
+      case "sPre": return `{}_{${sub(e, "sub")}}^{${sub(e, "sup")}}{${sub(e, "e")}}`;
+      case "rad": { const deg = sub(e, "deg").trim(); return deg ? `\\sqrt[${deg}]{${sub(e, "e")}}` : `\\sqrt{${sub(e, "e")}}`; }
+      case "nary": { const ch = prop(e, "naryPr", "chr") || "∫"; const lo = sub(e, "sub"), hi = sub(e, "sup"); return `${NARY[ch] || ch}${lo ? `_{${lo}}` : ""}${hi ? `^{${hi}}` : ""} ${sub(e, "e")}`; }
+      case "d": { let beg = prop(e, "dPr", "begChr"), end = prop(e, "dPr", "endChr"); const sep = prop(e, "dPr", "sepChr") || ","; if (beg == null) beg = "("; if (end == null) end = ")"; return `${delim(beg)}${kids(e, "e").map(conv).join(sep)}${delim(end)}`; }
+      case "func": return `${sub(e, "fName").trim()} ${sub(e, "e")}`;
+      case "acc": { const ch = prop(e, "accPr", "chr") || "\u0302"; return `${ACC[ch] || "\\hat"}{${sub(e, "e")}}`; }
+      case "bar": return prop(e, "barPr", "pos") === "bot" ? `\\underline{${sub(e, "e")}}` : `\\overline{${sub(e, "e")}}`;
+      case "limLow": return `${sub(e, "e")}_{${sub(e, "lim")}}`;
+      case "limUpp": return `${sub(e, "e")}^{${sub(e, "lim")}}`;
+      case "groupChr": return `\\underbrace{${sub(e, "e")}}`;
+      case "box": case "borderBox": case "phant": return sub(e, "e");
+      case "eqArr": return `\\begin{aligned}${kids(e, "e").map(conv).join(" \\\\ ")}\\end{aligned}`;
+      case "m": return `\\begin{matrix}${kids(e, "mr").map(mr => kids(mr, "e").map(conv).join(" & ")).join(" \\\\ ")}\\end{matrix}`;
+      case "oMathPara": return kids(e, "oMath").map(conv).join(" \\\\ ");
+      default: return /Pr$/.test(e.localName) ? "" : conv(e);
+    }
+  }
+  return { toLatex: el => node(el).replace(/\s{2,}/g, " ").trim() };
+})();
+
+const DOCX = (() => {
+  const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main", M_NS = "http://schemas.openxmlformats.org/officeDocument/2006/math", XML_NS = "http://www.w3.org/XML/1998/namespace";
+
+  function htmlToMd(html) {
+    const d = new DOMParser().parseFromString(`<!DOCTYPE html><body>${html}</body>`, "text/html");
+    const fnIds = new Map(); let fnCount = 0;
+    d.body.querySelectorAll('a[href^="#footnote-"], a[href^="#endnote-"]').forEach(a => { const id = a.getAttribute("href").slice(1); if (!/-ref-/.test(id) && !fnIds.has(id)) fnIds.set(id, ++fnCount); });
+    const fnLis = Array.from(d.body.querySelectorAll('li[id^="footnote-"], li[id^="endnote-"], li[id^="comment-"]'));
+    const fnTexts = [];
+    for (const li of fnLis) {
+      li.querySelectorAll('a[href*="-ref-"]').forEach(a => a.remove());
+      const k = fnIds.get(li.id);
+      if (k) fnTexts.push([k, inlineOf(li, false).replace(/\s+/g, " ").trim()]);
+      const ol = li.parentElement; li.remove();
+      if (ol && /^(OL|UL)$/.test(ol.tagName) && !ol.children.length) ol.remove();
+    }
+    let merged = 0;
+    function wrap(t, m) { const tr = t.trim(); if (!tr) return t; return t.match(/^\s*/)[0] + m + tr + m + t.match(/\s*$/)[0]; }
+    function imgMd(img) { const alt = (img.getAttribute("alt") || "그림").replace(/[\[\]\n]/g, " ").trim(); return `![${alt}](${img.getAttribute("src") || ""})`; }
+    function inlineOf(el, inTable) {
+      let s = "";
+      for (const n of el.childNodes) {
+        if (n.nodeType === 3) { s += mdInline(n.nodeValue.replace(/\s+/g, " "), inTable); continue; }
+        if (n.nodeType !== 1) continue;
+        const tag = n.tagName.toLowerCase();
+        if (tag === "strong" || tag === "b") s += wrap(inlineOf(n, inTable), "**");
+        else if (tag === "em" || tag === "i") s += wrap(inlineOf(n, inTable), "*");
+        else if (tag === "s" || tag === "del" || tag === "strike") s += wrap(inlineOf(n, inTable), "~~");
+        else if (tag === "br") s += inTable ? "<br>" : "  \n";
+        else if (tag === "img") s += imgMd(n);
+        else if (tag === "a") {
+          const href = n.getAttribute("href") || "";
+          if (/^#(footnote|endnote)-/.test(href) && !/-ref-/.test(href)) { const k = fnIds.get(href.slice(1)); s += k ? `[^${k}]` : ""; }
+          else if (/^(https?:|mailto:)/i.test(href)) { const t = inlineOf(n, inTable).trim(); s += t && t !== href ? `[${t}](${href})` : `<${href}>`; }
+          else s += inlineOf(n, inTable);
+        }
+        else if (tag === "p" || tag === "div" || /^h[1-6]$/.test(tag)) { const t = inlineOf(n, inTable).trim(); if (t) s += (s.trim() ? (inTable ? "<br>" : "\n") : "") + t; }
+        else if (tag === "ul" || tag === "ol") { let i = 0; for (const li of n.children) { i++; const t = inlineOf(li, inTable).trim(); if (t) s += (s.trim() ? (inTable ? "<br>" : "\n") : "") + (tag === "ol" ? `${i}. ` : "· ") + t; } }
+        else if (tag === "table") { const t = tableMd(n); s += (s.trim() ? "<br>" : "") + "[안쪽 표: " + (t ? t.replace(/\n/g, " ") : "") + "]"; }
+        else s += inlineOf(n, inTable);
+      }
+      return s;
+    }
+    function tableMd(tbl) {
+      const trs = Array.from(tbl.querySelectorAll("tr")).filter(tr => tr.closest("table") === tbl);
+      const occ = []; const anchors = []; let nC = 0, isMerged = false;
+      trs.forEach((tr, r) => {
+        occ[r] = occ[r] || []; let c = 0;
+        for (const td of tr.children) {
+          if (!/^(TD|TH)$/.test(td.tagName)) continue;
+          while (occ[r][c]) c++;
+          const cs = Math.max(1, parseInt(td.getAttribute("colspan") || "1", 10) || 1), rs = Math.max(1, parseInt(td.getAttribute("rowspan") || "1", 10) || 1);
+          if (cs > 1 || rs > 1) isMerged = true;
+          for (let dr = 0; dr < rs; dr++) for (let dc = 0; dc < cs; dc++) { occ[r + dr] = occ[r + dr] || []; occ[r + dr][c + dc] = true; }
+          anchors.push({ r, c, rs, cs, text: cellMd(inlineOf(td, true).replace(/^(<br>)+|(<br>)+$/g, "").trim()) });
+          c += cs; nC = Math.max(nC, c);
+        }
+      });
+      const nR = Math.max(trs.length, ...anchors.map(a => a.r + a.rs));
+      const fin = finishGrid(fillSpans(nR, nC, anchors));
+      if (!fin) return "";
+      if (fin.kind === "table" && isMerged) { merged++; return `${CO} 병합 셀 포함 표: 세로로 합친 칸은 값을 이어 쓰고, 가로로 합친 칸은 첫 칸에만 둠 ${CC}\n` + fin.md; }
+      return fin.md;
+    }
+    function listMd(list, depth) {
+      const ordered = list.tagName === "OL"; let i = 0; const lines = [];
+      for (const li of list.children) {
+        if (li.tagName !== "LI") continue; i++;
+        let text = ""; const nested = [];
+        for (const c of li.childNodes) {
+          if (c.nodeType === 1 && (c.tagName === "UL" || c.tagName === "OL")) nested.push(listMd(c, depth + 1));
+          else if (c.nodeType === 1 && c.tagName === "TABLE") { const t = tableMd(c); if (t) nested.push(t); }
+          else if (c.nodeType === 1 && c.tagName === "P") { const t = inlineOf(c, false).trim(); if (t) text += (text ? " " : "") + t; }
+          else text += c.nodeType === 3 ? mdInline(c.nodeValue.replace(/\s+/g, " ")) : (c.nodeType === 1 ? inlineOf(c, false) : "");
+        }
+        lines.push(`${"   ".repeat(depth)}${ordered ? i + "." : "-"} ${text.replace(/\s*\n\s*/g, " ").trim()}`);
+        for (const nl of nested) if (nl) lines.push(nl);
+      }
+      return lines.join("\n");
+    }
+    function blocks(parent) {
+      const res = [];
+      for (const n of parent.childNodes) {
+        if (n.nodeType === 3) { const t = n.nodeValue.trim(); if (t) res.push(mdInline(t)); continue; }
+        if (n.nodeType !== 1) continue;
+        const tag = n.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(tag)) { const t = inlineOf(n, false).replace(/\s*\n\s*/g, " ").trim(); if (t) res.push("#".repeat(+tag[1]) + " " + t); }
+        else if (tag === "p") { const t = inlineOf(n, false).trim(); if (t) res.push(t.split("\n").map(mdLineStart).join("\n")); }
+        else if (tag === "ul" || tag === "ol") { const t = listMd(n, 0); if (t) res.push(t); }
+        else if (tag === "table") { const t = tableMd(n); if (t) res.push(t); }
+        else if (tag === "img") res.push(imgMd(n));
+        else if (tag !== "br") res.push(...blocks(n));
+      }
+      return res;
+    }
+    let md = blocks(d.body).join("\n\n");
+    if (fnTexts.length) md += "\n\n" + fnTexts.sort((a, b) => a[0] - b[0]).map(([k, t]) => `[^${k}]: ${t}`).join("\n");
+    return { md, merged, footnotes: fnTexts.length };
+  }
+
+  async function convert(buf, name, prefix) {
+    await loadScript(LIB.mammoth);
+    let zip;
+    try { zip = await JSZip.loadAsync(buf); } catch (e) { throw new UserError("워드 파일을 열지 못했습니다. 파일이 손상됐거나 암호가 걸려 있을 수 있습니다."); }
+    const docFile = zip.file("word/document.xml");
+    if (!docFile) throw new UserError("워드 본문을 찾지 못했습니다. 워드에서 .docx로 다시 저장해 보세요.");
+    const docXml = await docFile.async("string");
+    const maths = [];
+    let input = buf;
+    if (/<m:oMath[\s>]/.test(docXml)) {
+      const d = parseXml(docXml, "워드 본문");
+      const place = (node, display) => {
+        maths.push({ latex: OMML.toLatex(node), display });
+        const r = d.createElementNS(W_NS, "w:r"), t = d.createElementNS(W_NS, "w:t");
+        t.setAttributeNS(XML_NS, "xml:space", "preserve"); t.textContent = `\uE100${maths.length - 1}\uE101`; r.appendChild(t);
+        const parent = node.parentNode;
+        if (parent && parent.localName !== "p" && parent.localName !== "hyperlink" && parent.localName !== "smartTag" && parent.localName !== "sdtContent") { const p = d.createElementNS(W_NS, "w:p"); p.appendChild(r); parent.replaceChild(p, node); }
+        else parent.replaceChild(r, node);
+      };
+      for (const mp of Array.from(d.getElementsByTagNameNS(M_NS, "oMathPara"))) place(mp, true);
+      for (const m of Array.from(d.getElementsByTagNameNS(M_NS, "oMath"))) place(m, false);
+      zip.file("word/document.xml", new XMLSerializer().serializeToString(d));
+      input = await zip.generateAsync({ type: "arraybuffer" });
+    }
+    const assets = []; let picN = 0;
+    let res;
+    try {
+      res = await window.mammoth.convertToHtml({ arrayBuffer: input }, {
+        styleMap: ["p[style-name='Title'] => h1:fresh", "p[style-name='Subtitle'] => h2:fresh", "p[style-name='제목'] => h1:fresh", "p[style-name='부제'] => h2:fresh"],
+        convertImage: window.mammoth.images.imgElement(async image => {
+          const b64 = await image.read("base64"); picN++;
+          const ct = image.contentType || "image/png";
+          const ext = (ct.split("/")[1] || "png").replace("jpeg", "jpg").replace(/^x-/, "").replace(/\+xml$/, "");
+          const nm = `${prefix}_pic_${pad3(picN)}.${ext}`;
+          assets.push({ name: nm, data: b64ToBytes(b64) });
+          return { src: "assets/" + nm, alt: (image.altText || "").trim() || "그림" };
+        }),
+      });
+    } catch (e) { throw new UserError("워드 내용을 읽지 못했습니다. 파일이 손상됐거나 암호가 걸려 있을 수 있습니다."); }
+    const conv = htmlToMd(res.value);
+    let md = conv.md.replace(/\uE100(\d+)\uE101/g, (m, i) => { const q = maths[+i]; return q && q.latex ? (q.display ? `$$${q.latex}$$` : `$${q.latex}$`) : ""; });
+    const pr = restorePua(md.trim()); md = pr.text;
+
+    // 진단 (원본 convert.py의 워드 진단 이식)
+    const media = Object.keys(zip.files).filter(n => n.startsWith("word/media/") && !n.endsWith("/")).length;
+    const nTables = (docXml.match(/<w:tbl[\s>]/g) || []).length;
+    const nChart = (docXml.match(/<c:chart[\s>]|<dgm:relIds[\s>]/g) || []).length;
+    const totalChars = md.replace(/\s/g, "").length;
+    let score = 100; const issues = [], warnings = [];
+    if (!totalChars) { score = 0; issues.push("추출된 본문 글자가 없습니다."); }
+    const nPic = Math.max(media, picN);
+    if (nPic) { score -= Math.min(35, nPic * 12); issues.push(`그림 ${nPic}개 포함 — 그림 속 글자·시각 요소는 글로 옮겨지지 않음`); warnings.push(picN ? `그림 ${picN}개를 assets 폴더로 꺼냈습니다. 그림 속 글자는 마크다운 본문에 없습니다.` : `워드 문서 안 그림 ${nPic}개의 내용은 마크다운 본문으로 옮겨지지 않았습니다.`); }
+    if (nChart) { score -= Math.min(30, nChart * 15); issues.push(`차트·SmartArt 도표 ${nChart}개 포함 — 시각 도표 구조는 옮겨지지 않음`); warnings.push(`워드 문서 안 차트·다이어그램 ${nChart}개는 옮겨지지 않았습니다.`); }
+    if (conv.merged) { score -= 10; issues.push(`병합 셀이 있는 표 ${conv.merged}개 — 원본 표와 열·행 정렬 대조 권장`); warnings.push("병합된 표 칸이 있습니다. 원본 표와 대조해 주세요."); }
+    if (pr.unknown) { score -= Math.min(20, pr.unknown * 5); warnings.push(`되돌리지 못한 수식 기호(□) ${pr.unknown}개가 있습니다 (코드: ${pr.codes.slice(0, 5).join(", ")}).`); }
+    if (maths.length) warnings.push(`워드 수식 ${maths.length}개를 LaTeX($…$)로 옮겼습니다. 복잡한 수식은 원본과 대조해 주세요.`);
+    score = Math.max(0, Math.min(100, score));
+    const pStatus = score >= 90 && !issues.length ? "완전" : (score >= 50 ? "검증 필요" : "불완전");
+    const status = score >= 90 && pStatus === "완전" && totalChars ? "완료" : (score >= 50 && totalChars ? "검증 필요" : "불완전 전환");
+    return {
+      body: md, assets,
+      report: {
+        source_type: "docx", overall_score: score, status, total_chars: totalChars, estimated_pages: 1, incomplete_pages: pStatus === "완전" ? [] : [1],
+        n_headings: (md.match(/^#{1,6}\s/gm) || []).length, n_tables: nTables, n_merged_tables: conv.merged, n_eq: maths.length + pr.fixed, n_pic: nPic, n_pic_extracted: picN,
+        n_ole_chart: nChart, n_footnotes: conv.footnotes, n_links: (md.match(/\]\(https?:\/\//g) || []).length,
+        page_diagnostics: [{ page: 1, section_title: "문서 전체", score, status: pStatus, chars: totalChars, pics: nPic, tables: nTables, merged_tables: conv.merged, charts_shapes: nChart, issues }],
+        summary_warnings: warnings,
+      },
+    };
+  }
+  return { convert };
+})();
+
+// ======================================================================
+// 5. PPT(PPTX) → 마크다운
+// ======================================================================
+const PPTX = (() => {
+  function resolve(dir, tgt) {
+    if (tgt.startsWith("/")) return tgt.slice(1);
+    const parts = (dir + tgt).split("/"); const out = [];
+    for (const p of parts) { if (p === "..") out.pop(); else if (p !== "." && p !== "") out.push(p); }
+    return out.join("/");
+  }
+  async function relsOf(zip, part) {
+    const dir = part.replace(/[^/]+$/, ""); const f = zip.file(dir + "_rels/" + part.slice(dir.length) + ".rels");
+    const m = new Map(); if (!f) return m;
+    const d = parseXml(await f.async("string"), "연결 정보");
+    for (const r of desc(d.documentElement, "Relationship")) {
+      const ext = r.getAttribute("TargetMode") === "External", tgt = r.getAttribute("Target") || "";
+      m.set(r.getAttribute("Id"), { type: r.getAttribute("Type") || "", target: ext ? tgt : resolve(dir, tgt), external: ext });
+    }
+    return m;
+  }
+  function paras(txBody) {
+    const out = []; if (!txBody) return out;
+    for (const p of kids(txBody, "p")) {
+      const pPr = kid(p, "pPr");
+      const lvl = parseInt((pPr && pPr.getAttribute("lvl")) || "0", 10) || 0;
+      let bullet = null; if (kid(pPr, "buNone")) bullet = false; else if (kid(pPr, "buChar") || kid(pPr, "buAutoNum")) bullet = true;
+      let s = "";
+      for (const c of p.children) {
+        if (c.localName === "r" || c.localName === "fld") { const t = kid(c, "t"); if (t) s += mdInline(t.textContent); }
+        else if (c.localName === "br") s += " ";
+      }
+      s = s.replace(/\s+/g, " ").trim();
+      if (s) out.push({ lvl, bullet, text: s });
+    }
+    return out;
+  }
+  const phOf = sp => { const nv = kid(sp, "nvSpPr") || kid(sp, "nvPicPr") || kid(sp, "nvGraphicFramePr"); return nv ? kid(kid(nv, "nvPr"), "ph") : null; };
+  function posOf(el) {
+    let xfrm = null;
+    if (el.localName === "graphicFrame") xfrm = kid(el, "xfrm");
+    else if (el.localName === "grpSp") xfrm = kid(kid(el, "grpSpPr"), "xfrm");
+    else xfrm = kid(kid(el, "spPr"), "xfrm");
+    const off = kid(xfrm, "off");
+    return off ? [parseInt(off.getAttribute("y") || "0", 10), parseInt(off.getAttribute("x") || "0", 10)] : [0, 0];
+  }
+  function shapeList(container) {
+    const list = [];
+    for (const c of container.children) {
+      if (c.localName === "AlternateContent") { const ch = kid(c, "Choice") || kid(c, "Fallback"); if (ch) for (const x of ch.children) list.push(x); }
+      else if (["sp", "grpSp", "graphicFrame", "pic", "cxnSp"].includes(c.localName)) list.push(c);
+    }
+    const isTitle = el => { const ph = el.localName === "sp" && phOf(el); return !!(ph && /^(title|ctrTitle)$/.test(ph.getAttribute("type") || "")); };
+    return list.map((el, i) => ({ el, i, t: isTitle(el), p: posOf(el) }))
+      .sort((a, b) => (b.t - a.t) || (Math.round(a.p[0] / 91440) - Math.round(b.p[0] / 91440)) || (a.p[1] - b.p[1]) || (a.i - b.i)).map(x => x.el);
+  }
+  function tableMd(tbl, S) {
+    const trs = kids(tbl, "tr"); const anchors = []; let nC = 0, merged = false;
+    trs.forEach((tr, r) => kids(tr, "tc").forEach((tc, c) => {
+      nC = Math.max(nC, c + 1);
+      if (tc.getAttribute("hMerge") === "1" || tc.getAttribute("vMerge") === "1") { merged = true; return; }
+      const cs = parseInt(tc.getAttribute("gridSpan") || "1", 10) || 1, rs = parseInt(tc.getAttribute("rowSpan") || "1", 10) || 1;
+      if (cs > 1 || rs > 1) merged = true;
+      anchors.push({ r, c, rs, cs, text: cellMd(paras(kid(tc, "txBody")).map(p => p.text).join("<br>")) });
+    }));
+    const fin = finishGrid(fillSpans(trs.length, nC, anchors));
+    if (!fin) return "";
+    if (fin.kind === "table") { S.tables++; if (merged) { S.merged++; return `${CO} 병합 셀 포함 표 ${CC}\n` + fin.md; } }
+    return fin.md;
+  }
+  async function walk(container, S, rels, zip, ctx) {
+    for (const el of shapeList(container)) {
+      const tag = el.localName;
+      if (tag === "grpSp") { await walk(el, S, rels, zip, ctx); continue; }
+      if (tag === "sp" || tag === "cxnSp") {
+        const ph = phOf(el); const type = ph ? (ph.getAttribute("type") || "body") : null;
+        if (type && /^(dt|ftr|sldNum|hdr)$/.test(type)) continue;
+        const ps = paras(kid(el, "txBody")); if (!ps.length) continue;
+        S.chars += ps.reduce((a, p) => a + p.text.replace(/\s/g, "").length, 0);
+        if (type === "title" || type === "ctrTitle") { const t = ps.map(p => p.text).join(" "); if (!S.title) S.title = t; else S.blocks.push("## " + t); continue; }
+        const asList = type === "body" || type === "obj";
+        let run = [];
+        const flushList = () => { if (run.length) { S.blocks.push(run.join("\n")); run = []; } };
+        for (const p of ps) {
+          const bullet = p.bullet === null ? asList : p.bullet;
+          if (bullet) run.push("  ".repeat(p.lvl) + "- " + p.text);
+          else { flushList(); S.blocks.push(mdLineStart(p.text)); }
+        }
+        flushList();
+        continue;
+      }
+      if (tag === "pic") {
+        S.pics++;
+        const nv = kid(kid(el, "nvPicPr"), "cNvPr"); const d = ((nv && (nv.getAttribute("descr") || nv.getAttribute("title"))) || "").replace(/[\[\]\n]/g, " ").trim();
+        const blip = descOne(el, "blip"); const rel = blip && rels.get(relId(blip, "embed"));
+        const label = d ? `[그림: ${d}]` : "[그림]";
+        if (rel && !rel.external && zip.file(rel.target)) {
+          const ext = (rel.target.match(/\.[^./]+$/) || [".png"])[0].toLowerCase();
+          const nm = `${ctx.prefix}_pic_${pad3(++ctx.picN)}${ext}`;
+          ctx.assets.push({ name: nm, data: await zip.file(rel.target).async("uint8array") });
+          S.blocks.push(`!${label}(assets/${nm})`);
+        } else S.blocks.push(label);
+        continue;
+      }
+      if (tag === "graphicFrame") {
+        const gd = descOne(el, "graphicData"); const uri = gd ? gd.getAttribute("uri") || "" : "";
+        if (/\/table$/.test(uri)) { const tbl = kid(gd, "tbl"); const t = tbl ? tableMd(tbl, S) : ""; if (t) { S.blocks.push(t); S.chars += t.replace(/[\s|-]/g, "").length; } }
+        else if (/\/chart$/.test(uri)) {
+          S.charts++; const ch = descOne(gd, "chart"); const rel = ch && rels.get(relId(ch, "id"));
+          const md = rel && zip.file(rel.target) ? chartXmlToMd(await zip.file(rel.target).async("string")) : null;
+          if (md) { S.chartData++; S.blocks.push(md); } else S.blocks.push("[차트]");
+        } else if (/\/diagram$/.test(uri)) {
+          S.smart++; const ids = descOne(gd, "relIds"); const rel = ids && rels.get(relId(ids, "dm"));
+          let items = [];
+          if (rel && zip.file(rel.target)) { const dd = parseXml(await zip.file(rel.target).async("string"), "SmartArt"); items = desc(dd.documentElement, "pt").map(pt => desc(pt, "t").map(t => t.textContent).join("").trim()).filter(Boolean); }
+          S.blocks.push(items.length ? "**[SmartArt]**\n" + items.map(t => "- " + mdInline(t)).join("\n") : "[SmartArt 도표]");
+          S.chars += items.join("").length;
+        } else S.blocks.push("[개체]");
+      }
+    }
+  }
+  async function convert(buf, name, prefix, opts) {
+    let zip;
+    try { zip = await JSZip.loadAsync(buf); } catch (e) { throw new UserError("PPT 파일을 열지 못했습니다. 파일이 손상됐거나 암호가 걸려 있을 수 있습니다."); }
+    let slides = [];
+    const presF = zip.file("ppt/presentation.xml");
+    if (presF) {
+      const pd = parseXml(await presF.async("string"), "프레젠테이션"); const prels = await relsOf(zip, "ppt/presentation.xml");
+      for (const s of desc(pd.documentElement, "sldId")) { const rel = prels.get(relId(s, "id")); if (rel && zip.file(rel.target)) slides.push(rel.target); }
+    }
+    if (!slides.length) slides = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => numOf(a) - numOf(b));
+    if (!slides.length) throw new UserError("슬라이드를 찾지 못했습니다.");
+    const ctx = { prefix, picN: 0, assets: [] };
+    const parts = [], pages = [], incomplete = [];
+    let nPic = 0, nChart = 0, nTables = 0, nMerged = 0, nHead = 0, nNotes = 0;
+    for (let i = 0; i < slides.length; i++) {
+      const path = slides[i];
+      const sd = parseXml(await zip.file(path).async("string"), `${i + 1}번 슬라이드`); const rels = await relsOf(zip, path);
+      const S = { title: null, blocks: [], pics: 0, charts: 0, chartData: 0, smart: 0, tables: 0, merged: 0, chars: 0 };
+      const tree = descOne(sd.documentElement, "spTree"); if (tree) await walk(tree, S, rels, zip, ctx);
+      let notes = "";
+      for (const rel of rels.values()) if (/\/notesSlide$/.test(rel.type) && zip.file(rel.target)) {
+        const nd = parseXml(await zip.file(rel.target).async("string"), "발표자 메모");
+        for (const sp of desc(nd.documentElement, "sp")) { const ph = phOf(sp); if (ph && ph.getAttribute("type") === "body") notes = paras(kid(sp, "txBody")).map(p => p.text).join(" "); }
+      }
+      const lines = [];
+      if (S.title) { lines.push("# " + S.title); nHead++; }
+      lines.push(...S.blocks);
+      if (notes) { lines.push("> 발표자 메모: " + notes); nNotes++; }
+      parts.push({ marker: `${CO} slide: ${i + 1} ${CC}`, md: lines.join("\n\n") });
+      nPic += S.pics; nChart += S.charts + S.smart; nTables += S.tables; nMerged += S.merged;
+      let score = 100; const issues = [];
+      const visual = S.pics + S.charts + S.smart;
+      if (S.chars < 10 && visual) { score = 20; issues.push(`글자가 거의 없고(${S.chars}자) 그림·도표 위주인 슬라이드입니다`); }
+      else {
+        if (S.pics) { score -= Math.min(35, S.pics * 15); issues.push(`그림 ${S.pics}개 포함 (그림 속 글자는 옮겨지지 않음)`); }
+        if (S.charts) { score -= S.chartData === S.charts ? 10 : 15; issues.push(S.chartData === S.charts ? `차트 ${S.charts}개의 숫자를 표로 옮김 (그래프 모양은 원본 확인)` : `차트 ${S.charts}개 포함 (원본 확인 권장)`); }
+        if (S.smart) { score -= 10; issues.push(`SmartArt 도표 ${S.smart}개 — 글자만 목록으로 옮김`); }
+      }
+      if (S.merged) { score -= 5; issues.push(`병합 셀이 있는 표 ${S.merged}개 포함`); }
+      score = Math.max(0, Math.min(100, score));
+      const st = score >= 90 && !issues.length ? "완전" : (score >= 50 ? "검증 필요" : "불완전");
+      if (st !== "완전") incomplete.push(i + 1);
+      pages.push({ page: i + 1, section_title: `슬라이드 ${i + 1}`, score, status: st, chars: S.chars, pics: S.pics, tables: S.tables, merged_tables: S.merged, charts_shapes: S.charts + S.smart, issues });
+    }
+    const totalChars = parts.reduce((a, p) => a + p.md.replace(/\s/g, "").length, 0);
+    let overall = Math.round(pages.reduce((a, p) => a + p.score, 0) / pages.length); if (!totalChars) overall = 0;
+    const status = overall >= 90 && !incomplete.length && totalChars ? "완료" : (overall >= 50 && totalChars ? "검증 필요" : "불완전 전환");
+    const warnings = [];
+    if (incomplete.length) warnings.push(`전체 ${pages.length}슬라이드 중 그림·도표 때문에 확인이 필요한 슬라이드: ${incomplete.map(p => `슬라이드 ${p}`).join(", ")}`);
+    if (ctx.picN) warnings.push(`그림 ${ctx.picN}개를 assets 폴더로 꺼냈습니다. 그림 속 글자는 본문에 없습니다.`);
+    if (nNotes) warnings.push(`발표자 메모가 있는 슬라이드 ${nNotes}개의 메모를 함께 옮겼습니다.`);
+    return {
+      parts, assets: ctx.assets,
+      report: {
+        source_type: "pptx", overall_score: overall, status, total_chars: totalChars, estimated_pages: pages.length, incomplete_pages: incomplete,
+        n_headings: nHead, n_tables: nTables, n_merged_tables: nMerged, n_eq: 0, n_pic: nPic, n_pic_extracted: ctx.picN, n_ole_chart: nChart, n_links: 0,
+        page_diagnostics: pages, summary_warnings: warnings,
+      },
+    };
+  }
+  return { convert, relsOf };
+})();
+
+// ======================================================================
+// 6. 엑셀(XLSX·XLS) → 마크다운
+// ======================================================================
+const SHEET = (() => {
+  async function chartsBySheet(buf) {
+    const out = new Map(); let zip;
+    try { zip = await JSZip.loadAsync(buf); } catch (e) { return { out, images: new Map() }; }
+    const images = new Map();
+    const wbF = zip.file("xl/workbook.xml"); if (!wbF) return { out, images };
+    const wd = parseXml(await wbF.async("string"), "통합 문서"); const wrels = await PPTX.relsOf(zip, "xl/workbook.xml");
+    for (const s of desc(wd.documentElement, "sheet")) {
+      const name = s.getAttribute("name"); const rel = wrels.get(relId(s, "id")); if (!rel || !zip.file(rel.target)) continue;
+      const srels = await PPTX.relsOf(zip, rel.target); const charts = []; let imgs = 0;
+      for (const r of srels.values()) {
+        if (!/\/drawing$/.test(r.type) || !zip.file(r.target)) continue;
+        const drels = await PPTX.relsOf(zip, r.target);
+        for (const dr of drels.values()) {
+          if (/\/chart$/.test(dr.type) && zip.file(dr.target)) { const md = chartXmlToMd(await zip.file(dr.target).async("string")); charts.push(md || "[차트]"); }
+          else if (/\/image$/.test(dr.type)) imgs++;
+        }
+      }
+      out.set(name, charts); images.set(name, imgs);
+    }
+    return { out, images };
+  }
+  async function convert(buf, name, ext) {
+    await loadScript(LIB.xlsx);
+    const X = window.XLSX;
+    let wb;
+    try { wb = X.read(new Uint8Array(buf), { type: "array", cellText: true, cellDates: false }); }
+    catch (e) { throw new UserError(/password|encrypt/i.test(String(e && e.message)) ? "암호가 걸린 엑셀 파일입니다. 암호를 푼 뒤 다시 넣어 주세요." : "엑셀 파일을 열지 못했습니다. 파일이 손상됐을 수 있습니다."); }
+    const extra = ext === "xlsx" ? await chartsBySheet(buf.slice(0)) : { out: new Map(), images: new Map() };
+    const blocks = [], pages = [], incomplete = []; let nMerged = 0, nCharts = 0, nImgs = 0, totalTables = 0;
+    wb.SheetNames.forEach((sn, si) => {
+      const ws = wb.Sheets[sn];
+      const hidden = wb.Workbook && wb.Workbook.Sheets && wb.Workbook.Sheets[si] && wb.Workbook.Sheets[si].Hidden;
+      const head = `## ${mdInline(sn)}${hidden ? " (숨김 시트)" : ""}`;
+      const keys = Object.keys(ws).filter(k => k[0] !== "!");
+      const charts = extra.out.get(sn) || [], imgs = extra.images.get(sn) || 0;
+      nCharts += charts.length; nImgs += imgs;
+      let body = "", chars = 0, merges = (ws["!merges"] || []).length, rowsCut = false;
+      if (!keys.length) body = "(빈 시트)";
+      else {
+        let r0 = Infinity, r1 = -1, c0 = Infinity, c1 = -1;
+        for (const k of keys) { const a = X.utils.decode_cell(k); if (a.r < r0) r0 = a.r; if (a.r > r1) r1 = a.r; if (a.c < c0) c0 = a.c; if (a.c > c1) c1 = a.c; }
+        if (r1 - r0 + 1 > 20000) { r1 = r0 + 19999; rowsCut = true; }
+        const nR = r1 - r0 + 1, nC = c1 - c0 + 1;
+        const anchors = []; const covered = new Set();
+        for (const m of ws["!merges"] || []) {
+          const r = m.s.r - r0, c = m.s.c - c0; if (r < 0 || c < 0 || r >= nR || c >= nC) continue;
+          anchors.push({ r, c, rs: Math.min(m.e.r - m.s.r + 1, nR - r), cs: Math.min(m.e.c - m.s.c + 1, nC - c), text: null });
+          for (let rr = m.s.r; rr <= m.e.r; rr++) for (let cc = m.s.c; cc <= m.e.c; cc++) covered.add(rr + ":" + cc);
+        }
+        const val = (r, c) => { const cell = ws[X.utils.encode_cell({ r, c })]; if (!cell) return ""; let v = cell.w != null ? cell.w : (cell.v != null ? String(cell.v) : ""); if (cell.t === "e") v = cell.w || "#오류"; return cellMd(mdInline(String(v).trim(), true)); };
+        for (const a of anchors) a.text = val(a.r + r0, a.c + c0);
+        for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) if (!covered.has(r + ":" + c)) { const t = val(r, c); if (t) anchors.push({ r: r - r0, c: c - c0, rs: 1, cs: 1, text: t }); }
+        const fin = finishGrid(fillSpans(nR, nC, anchors));
+        if (!fin) body = "(빈 시트)";
+        else { body = fin.kind === "table" ? fin.md : fin.md; if (fin.kind === "table") totalTables++; chars = fin.rows.flat().join("").replace(/\s/g, "").length; }
+        if (merges) { nMerged++; body = `${CO} 병합 셀 있음: 세로로 합친 칸은 값을 이어 쓰고, 가로로 합친 칸은 첫 칸에만 둠 ${CC}\n` + body; }
+        if (rowsCut) body += `\n\n> [행이 너무 많아 앞의 20,000행만 옮겼습니다]`;
+      }
+      const chartMd = charts.length ? "\n\n" + charts.join("\n\n") : "";
+      blocks.push(head + "\n\n" + body + chartMd);
+      let score = 100; const issues = [];
+      if (merges) { score -= 15; issues.push(`병합된 셀 ${merges}곳 — 열·행 위치 확인 필요`); }
+      if (charts.length) { score -= 10; issues.push(`차트 ${charts.length}개의 숫자를 표로 옮김 (그래프 모양은 원본 확인)`); }
+      if (imgs) { score -= 20; issues.push(`그림 ${imgs}개 — 그림 속 내용은 옮겨지지 않음`); }
+      if (rowsCut) { score -= 10; issues.push("행이 너무 많아 앞의 20,000행만 옮김"); }
+      score = Math.max(0, score);
+      const st = score >= 90 && !issues.length ? "완전" : "검증 필요";
+      if (st !== "완전") incomplete.push(si + 1);
+      pages.push({ page: si + 1, section_title: `시트 ${si + 1}: ${sn}`, score, status: st, chars, pics: imgs, tables: totalTables ? 1 : 0, merged_tables: merges ? 1 : 0, charts_shapes: charts.length, issues });
+    });
+    const md = blocks.join("\n\n");
+    const pr = restorePua(md);
+    const totalChars = pr.text.replace(/\s/g, "").length;
+    let overall = pages.length ? Math.round(pages.reduce((a, p) => a + p.score, 0) / pages.length) : 0; if (!totalChars) overall = 0;
+    const status = overall >= 90 && !incomplete.length && totalChars ? "완료" : (overall >= 50 && totalChars ? "검증 필요" : "불완전 전환");
+    const warnings = [];
+    if (incomplete.length) warnings.push(`병합 셀·차트·그림이 있는 시트: ${incomplete.map(p => `시트 ${p}`).join(", ")}`);
+    if (ext === "xls") warnings.push("옛 엑셀 형식(.xls)이라 차트·그림 여부는 확인하지 못했습니다.");
+    return {
+      body: pr.text, assets: [],
+      report: {
+        source_type: ext, overall_score: overall, status, total_chars: totalChars, estimated_pages: pages.length, incomplete_pages: incomplete,
+        n_headings: pages.length, n_tables: totalTables, n_merged_tables: nMerged, n_eq: 0, n_pic: nImgs, n_pic_extracted: 0, n_ole_chart: nCharts, n_links: 0,
+        page_diagnostics: pages, summary_warnings: warnings,
+      },
+    };
+  }
+  return { convert };
+})();
+
+// ======================================================================
+// 7. 진단 머리말 · 총괄 리포트 · manifest.csv (원본 convert.py 이식)
+// ======================================================================
+function buildHeader(rep, srcName) {
+  const inc = rep.incomplete_pages.length ? rep.incomplete_pages.map(p => p + "쪽").join(", ") : "없음(전 쪽 양호)";
+  const code = { "완료": "complete", "검증 필요": "review_needed", "불완전 전환": "incomplete" }[rep.status] || "review_needed";
+  const y = ["---", `source_file: "${srcName.replace(/"/g, "'")}"`, `source_type: ${rep.source_type}`, `conversion_rate: ${rep.overall_score}%`, `conversion_status: ${code} (${rep.status})`, `total_pages: ${rep.estimated_pages}`, `incomplete_pages: "${inc}"`, `extracted_chars: ${rep.total_chars}`,
+    `stats: tables=${rep.n_tables || 0} (merged=${rep.n_merged_tables || 0}), pictures=${rep.n_pic || 0}, equations=${rep.n_eq || 0}`];
+  if (rep.summary_warnings.length) { y.push("warnings:"); for (const w of rep.summary_warnings) y.push(`  - "${w.replace(/"/g, "'")}"`); }
+  y.push("---");
+  const c = [`${CO} 원본: ${srcName} (${rep.source_type.toUpperCase()}) | 예상 전환율: ${rep.overall_score}% (${rep.status}) | 전체 ${rep.estimated_pages}쪽 중 확인 필요 쪽: ${inc} ${CC}`];
+  if (rep.incomplete_pages.length || rep.summary_warnings.length) {
+    c.push(`${CO} [전환 품질 및 부족한 부분 상세 안내]`);
+    for (const w of rep.summary_warnings) c.push(`  * ${w}`);
+    for (const p of rep.page_diagnostics) if (p.issues.length) { let lbl = `${p.page}쪽`; if (p.section_title && p.section_title !== lbl) lbl += ` (${p.section_title})`; c.push(`  - ${lbl} [전환율 ${p.score}% · ${p.status}]: ${p.issues.join(" / ")}`); }
+    c.push(CC);
+  }
+  return y.join("\n") + "\n\n" + c.join("\n");
+}
+function csvCell(v) { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
+function buildBatch(items) {
+  const done = items.filter(i => i.status === "done");
+  const now = new Date(); const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const csv = [["원본_파일명", "형식", "결과_파일명", "전환_상태", "예상_전환율(%)", "전체_쪽수", "불완전_쪽번호", "추출_글자수", "제목수", "표수", "병합표수", "그림수", "이미지추출수", "도표_모식도수", "수식수", "각주수", "주요_부족한_부분_요약"]];
+  for (const it of done) { const r = it.result.report; csv.push([it.name, r.source_type, it.outStem + ".md", r.status, r.overall_score, r.estimated_pages, r.incomplete_pages.map(p => p + "쪽").join(", ") || "없음", r.total_chars, r.n_headings || 0, r.n_tables || 0, r.n_merged_tables || 0, r.n_pic || 0, r.n_pic_extracted || 0, r.n_ole_chart || 0, r.n_eq || 0, r.n_footnotes || 0, r.summary_warnings.join(" / ") || "정상"]); }
+  const avg = done.length ? Math.round(done.reduce((a, i) => a + i.result.report.overall_score, 0) / done.length) : 0;
+  const cnt = s => done.filter(i => i.result.report.status === s).length;
+  const md = ["# MD 문서 변환 품질 및 부족한 부분 진단 리포트", "", `- **진단 일시**: ${stamp}`, `- **변환 방식**: 웹 브라우저 안에서 변환 (문서 MD 변환기)`, `- **전체 변환 문서**: ${done.length}개 (평균 전환율 **${avg}%**)`,
+    `- **상태별 집계**: 완전 전환 **${cnt("완료")}개** · 부분 전환(검증 필요) **${cnt("검증 필요")}개** · 불완전 전환(스캔/누락 의심) **${cnt("불완전 전환")}개**`];
+  const skipped = items.filter(i => i.status === "skipped" || i.status === "failed");
+  if (skipped.length) md.push(`- **변환하지 못한 파일**: ${skipped.map(i => `\`${i.name}\` (${i.message})`).join(", ")}`);
+  md.push("", "## 1. 문서별 전환율 및 부족한 부분 총괄표", "", "| 번호 | 원본 파일 | 결과 파일 | 예상 전환율 | 상태 | 전체 쪽수 | 불완전 전환 쪽 | 구조 요약 (표/그림/도표/수식) | 핵심 부족 사항 |", "|---|---|---|---|---|---|---|---|---|");
+  done.forEach((it, i) => { const r = it.result.report; md.push(`| ${i + 1} | \`${it.name}\` | \`${it.outStem}.md\` | **${r.overall_score}%** | ${r.status} | ${r.estimated_pages}쪽 | ${r.incomplete_pages.map(p => p + "쪽").join(", ") || "전 쪽 양호"} | 표 ${r.n_tables || 0}(병합 ${r.n_merged_tables || 0}) · 그림 ${r.n_pic || 0} · 도표 ${r.n_ole_chart || 0} · 수식 ${r.n_eq || 0} | ${cellMd(r.summary_warnings[0] || "누락 없이 정상 전환됨")} |`); });
+  md.push("", "## 2. 문서별·쪽별 불완전 전환 상세 내역", "");
+  done.forEach((it, i) => {
+    const r = it.result.report;
+    md.push(`### ${i + 1}) \`${it.name}\` → \`${it.outStem}.md\``, `- **예상 전환율**: **${r.overall_score}%** (${r.status}) / **추출 글자 수**: ${fmtNum(r.total_chars)}자 / **전체 쪽수**: ${r.estimated_pages}쪽`);
+    if (!r.summary_warnings.length && !r.incomplete_pages.length) md.push("- **진단 결과**: 그림·도표·병합 셀로 인한 손실 없이 모든 글과 구조가 옮겨졌습니다.");
+    else {
+      if (r.summary_warnings.length) { md.push("- **문서 전체 주의사항**:"); for (const w of r.summary_warnings) md.push(`  - ${w}`); }
+      md.push("", "| 쪽(구간) | 쪽 전환율 | 상태 | 글자 수 | 그림 수 | 표(병합) | 도표/모식도 | 해당 쪽에서 전환이 부족한 사유 |", "|---|---|---|---|---|---|---|---|");
+      for (const p of r.page_diagnostics) { let lbl = `${p.page}쪽`; if (p.section_title && p.section_title !== lbl) lbl += ` (${cellMd(p.section_title)})`; md.push(`| ${lbl} | **${p.score}%** | ${p.status} | ${fmtNum(p.chars)}자 | ${p.pics}개 | ${p.tables}개(${p.merged_tables}) | ${p.charts_shapes}개 | ${p.issues.length ? p.issues.map(cellMd).join("<br>") : "완전 전환 (특이사항 없음)"} |`); }
+    }
+    md.push("");
+  });
+  return { md: md.join("\n") + "\n", csv: "\uFEFF" + csv.map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n" };
+}
+
+// ======================================================================
+// 8. 화면
+// ======================================================================
+const $ = id => document.getElementById(id);
+const els = { drop: $("drop"), input: $("file-input"), files: $("files"), count: $("list-count"), zip: $("zip-btn"), clear: $("clear-btn"), summary: $("summary"), title: $("v-title"), copy: $("copy-btn"), save: $("save-btn"), panel: $("panel"), status: $("status-line"), optHeader: $("opt-header"), optMarkers: $("opt-markers") };
+const state = { items: [], sel: null, tab: "md", dl: undefined, seq: 0, urls: [] };
+const OK_EXT = new Set(["hwpx", "pdf", "docx", "pptx", "xlsx", "xls"]);
+const say = msg => { els.status.textContent = msg || ""; };
+
+function statusKind(rep) { return rep.status === "완료" ? "good" : rep.status === "검증 필요" ? "warn" : "bad"; }
+function pageKind(p) { return p.status === "완전" ? "good" : p.status === "검증 필요" ? "warn" : "bad"; }
+function finalMd(it) {
+  const r = it.result; if (!r) return "";
+  const body = r.parts ? r.parts.map(p => (els.optMarkers.checked ? p.marker + "\n\n" : "") + p.md).join("\n\n") : r.body;
+  return (els.optHeader.checked ? buildHeader(r.report, it.name) + "\n\n" : "") + body.trim() + "\n";
+}
+
+function makeItem(name, size) {
+  const ext = extOf(name); const stem = stemOf(name);
+  let out = stem;
+  const taken = new Set(state.items.map(i => i.outStem));
+  if (taken.has(out)) out = `${stem}_${ext}`;
+  let k = 2; while (taken.has(out)) out = `${stem}(${k++})`;
+  return { id: ++state.seq, name, ext, size, outStem: out, prefix: assetSafe(out), status: "queued", message: "", result: null };
+}
+
+function renderList() {
+  els.files.innerHTML = "";
+  if (!state.items.length) { const li = document.createElement("li"); li.className = "empty-list"; li.textContent = "아직 넣은 파일이 없습니다."; els.files.appendChild(li); }
+  for (const it of state.items) {
+    const li = document.createElement("li");
+    const b = document.createElement("button"); b.type = "button"; b.className = "file" + (it.id === state.sel ? " sel" : "");
+    b.setAttribute("aria-current", it.id === state.sel ? "true" : "false");
+    let st;
+    if (it.status === "queued") st = `<span class="pill idle">대기</span>`;
+    else if (it.status === "working") st = `<span class="pill idle"><span class="spin" aria-hidden="true"></span>변환 중</span>`;
+    else if (it.status === "done") st = `<span class="pill ${statusKind(it.result.report)}">${it.result.report.overall_score}%</span>`;
+    else if (it.status === "skipped") st = `<span class="pill idle">건너뜀</span>`;
+    else st = `<span class="pill bad">실패</span>`;
+    b.innerHTML = `<span class="fmt">${esc((it.ext || "?").toUpperCase())}</span><span class="fname">${esc(it.name)}${it.sample ? '<em class="chip">예시</em>' : ""}</span>${st}`;
+    b.addEventListener("click", () => select(it.id));
+    li.appendChild(b); els.files.appendChild(li);
+  }
+  const done = state.items.filter(i => i.status === "done").length;
+  els.count.textContent = state.items.length ? `${done} / ${state.items.length}개 완료` : "";
+  renderSummary(); renderActions();
+}
+function renderSummary() {
+  const done = state.items.filter(i => i.status === "done" && !i.sample);
+  const all = done.length ? done : state.items.filter(i => i.status === "done");
+  const avg = all.length ? Math.round(all.reduce((a, i) => a + i.result.report.overall_score, 0) / all.length) + "%" : "–";
+  const review = all.filter(i => i.result.report.status !== "완료").length;
+  const bad = state.items.filter(i => i.status === "failed" || i.status === "skipped").length;
+  els.summary.innerHTML = `<div><span class="k">변환한 문서</span><span class="v">${all.length}개</span></div><div><span class="k">평균 전환율</span><span class="v">${avg}</span></div><div><span class="k">원본 대조 필요</span><span class="v">${review}개</span></div><div><span class="k">실패·건너뜀</span><span class="v">${bad}개</span></div>`;
+}
+function renderActions() {
+  const it = current();
+  const canSave = state.dl === "local" || (state.dl && typeof state.dl.save === "function");
+  els.save.hidden = !canSave;
+  els.zip.hidden = !canSave;
+  const ready = it && it.status === "done";
+  els.copy.disabled = !ready; els.save.disabled = !ready;
+  els.zip.disabled = !state.items.some(i => i.status === "done");
+}
+const current = () => state.items.find(i => i.id === state.sel) || null;
+
+function select(id) { state.sel = id; renderList(); renderViewer(); }
+function setTab(tab) {
+  state.tab = tab;
+  for (const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.tab === tab ? "true" : "false");
+  renderViewer();
+}
+
+function highlight(md) {
+  const lines = md.split("\n"); let front = lines[0] === "---", inC = false; const out = [];
+  lines.forEach((l, i) => {
+    const h = esc(l);
+    if (front) { out.push(`<span class="hl-meta">${h}</span>`); if (i > 0 && l === "---") front = false; return; }
+    if (inC || l.trimStart().startsWith(CO)) { out.push(`<span class="hl-c">${h}</span>`); inC = !l.includes(CC); return; }
+    if (/^#{1,6}\s/.test(l)) out.push(`<span class="hl-h">${h}</span>`);
+    else if (/^\|/.test(l)) out.push(`<span class="hl-t">${h}</span>`);
+    else if (/^>/.test(l)) out.push(`<span class="hl-q">${h}</span>`);
+    else out.push(h);
+  });
+  return out.join("\n");
+}
+
+function renderTitle(it) {
+  if (!it) { els.title.innerHTML = `<div><h2 class="v-name">결과가 여기에 나옵니다</h2><div class="v-meta"><span>왼쪽에 파일을 넣어 주세요</span></div></div>`; return; }
+  if (it.status !== "done") {
+    const label = { queued: "변환을 기다리는 중", working: "변환하는 중", skipped: "건너뜀", failed: "변환 실패" }[it.status];
+    els.title.innerHTML = `<div><h2 class="v-name">${esc(it.name)}</h2><div class="v-meta"><span>${esc(label)}</span></div></div>`; return;
+  }
+  const r = it.result.report; const k = statusKind(r);
+  const meta = [`${r.source_type.toUpperCase()}`, `${r.estimated_pages}${r.source_type === "pptx" ? "슬라이드" : (r.source_type === "xlsx" || r.source_type === "xls") ? "시트" : "쪽"}`, `글자 ${fmtNum(r.total_chars)}자`];
+  if (r.n_headings) meta.push(`제목 ${r.n_headings}`); if (r.n_tables) meta.push(`표 ${r.n_tables}`); if (r.n_pic) meta.push(`그림 ${r.n_pic}`); if (r.n_eq) meta.push(`수식 ${r.n_eq}`); if (r.n_footnotes) meta.push(`각주 ${r.n_footnotes}`);
+  els.title.innerHTML = `<div class="score"><b>${r.overall_score}%</b><span class="pill ${k}">${esc(r.status)}</span></div><div><h2 class="v-name">${esc(it.name)}${it.sample ? '<em class="chip">예시</em>' : ""}</h2><div class="v-meta">${meta.map(m => `<span>${esc(m)}</span>`).join("")}</div></div>`;
+}
+
+async function renderViewer() {
+  const it = current();
+  renderTitle(it); renderActions();
+  const panel = els.panel;
+  if (!it) { panel.innerHTML = `<div class="message"><h3>변환할 파일을 넣어 주세요</h3><p>왼쪽 상자에 HWPX·PDF·DOCX·PPTX·XLSX 파일을 끌어다 놓으면 바로 변환합니다.</p></div>`; return; }
+  if (it.status === "queued" || it.status === "working") { panel.innerHTML = `<div class="message"><h3>${it.status === "working" ? "변환하는 중입니다" : "차례를 기다리는 중입니다"}</h3><p>${esc(it.message || "잠시만 기다려 주세요. 쪽수가 많은 PDF는 시간이 조금 걸립니다.")}</p></div>`; return; }
+  if (it.status === "skipped" || it.status === "failed") { panel.innerHTML = `<div class="message"><h3>${it.status === "skipped" ? "이 파일은 건너뛰었습니다" : "변환하지 못했습니다"}</h3><p>${esc(it.message)}</p></div>`; return; }
+  const md = finalMd(it);
+  if (state.tab === "md") { panel.innerHTML = `<pre class="md" tabindex="0" aria-label="마크다운 결과">${highlight(md)}</pre>`; return; }
+  if (state.tab === "diag") { panel.innerHTML = diagHtml(it.result.report); return; }
+  panel.innerHTML = `<div class="message"><p>미리보기를 준비하는 중입니다.</p></div>`;
+  try { await loadScript(LIB.marked); await loadScript(LIB.purify); }
+  catch (e) { if (current() === it && state.tab === "preview") panel.innerHTML = `<div class="message"><h3>미리보기를 열지 못했습니다</h3><p>${esc(e.message)}</p></div>`; return; }
+  if (current() !== it || state.tab !== "preview") return;
+  const src = md.replace(/^---\n[\s\S]*?\n---\n/, "");
+  const html = window.DOMPurify.sanitize(window.marked.parse(src, { gfm: true, breaks: false }));
+  const box = document.createElement("div"); box.className = "prose"; box.innerHTML = html;
+  for (const t of box.querySelectorAll("table")) { const w = document.createElement("div"); w.className = "tbl"; t.parentNode.insertBefore(w, t); w.appendChild(t); }
+  for (const a of box.querySelectorAll("a[href]")) { a.target = "_blank"; a.rel = "noopener noreferrer"; }
+  const urls = assetUrls(it);
+  for (const img of box.querySelectorAll("img")) { const s = img.getAttribute("src") || ""; if (urls.has(s)) img.src = urls.get(s); else if (s.startsWith("assets/")) { const sp = document.createElement("span"); sp.textContent = `[${img.alt || "그림"}]`; img.replaceWith(sp); } }
+  panel.innerHTML = ""; panel.appendChild(box);
+}
+function assetUrls(it) {
+  if (!it._urls) {
+    it._urls = new Map();
+    for (const a of it.result.assets || []) {
+      const ext = extOf(a.name); if (!MIME[ext]) continue;
+      const u = URL.createObjectURL(new Blob([a.data], { type: MIME[ext] })); it._urls.set("assets/" + a.name, u); state.urls.push(u);
+    }
+  }
+  return it._urls;
+}
+function diagHtml(r) {
+  const unit = r.source_type === "pptx" ? "슬라이드" : (r.source_type === "xlsx" || r.source_type === "xls") ? "시트" : "쪽";
+  let h = `<div class="diag">`;
+  h += `<section><h3>문서 전체 주의사항</h3>`;
+  h += r.summary_warnings.length ? `<ul>${r.summary_warnings.map(w => `<li>${esc(w)}</li>`).join("")}</ul>` : `<p class="ok">그림·도표·병합 셀로 인한 손실 없이 글과 구조가 모두 옮겨졌습니다.</p>`;
+  h += `</section><section><h3>${unit}별 전환율</h3><div class="tbl-wrap"><table class="pages"><thead><tr><th>${unit}</th><th>전환율</th><th>상태</th><th>글자</th><th>그림</th><th>표(병합)</th><th>부족한 부분</th></tr></thead><tbody>`;
+  for (const p of r.page_diagnostics) {
+    const k = pageKind(p);
+    const lbl = p.section_title && p.section_title !== `${p.page}쪽` ? `${p.page} · ${esc(p.section_title)}` : `${p.page}`;
+    h += `<tr><td class="num">${lbl}</td><td class="num"><span class="bar ${k}"><i style="width:${p.score}%"></i></span>${p.score}%</td><td><span class="pill ${k}">${esc(p.status)}</span></td><td class="num">${fmtNum(p.chars)}</td><td class="num">${p.pics}</td><td class="num">${p.tables}(${p.merged_tables})</td><td>${p.issues.length ? p.issues.map(esc).join("<br>") : "특이사항 없음"}</td></tr>`;
+  }
+  h += `</tbody></table></div><p class="legend" style="margin-top:8px">전환율은 그림·도표·병합 셀·스캔 쪽 등을 보고 추정한 값입니다. 90% 이상이고 특이사항이 없으면 ‘완전’, 50% 이상이면 ‘검증 필요’입니다.</p></section></div>`;
+  return h;
+}
+
+// ---------- 변환 실행 ----------
+async function convertItem(it) {
+  it.status = "working"; it.message = ""; renderList(); if (it.id === state.sel) renderViewer();
+  const progress = msg => { it.message = msg; if (it.id === state.sel && state.tab) { const p = els.panel.querySelector(".message p"); if (p) p.textContent = msg; } say(`${it.name}: ${msg}`); };
+  try {
+    if (it.ext === "hwp") { it.status = "skipped"; it.message = "옛 한글 파일(.hwp)입니다. 한글에서 [파일] → [다른 이름으로 저장하기] → 파일 형식을 HWPX로 저장한 뒤 그 파일을 넣어 주세요."; return; }
+    if (!OK_EXT.has(it.ext)) { it.status = "skipped"; it.message = "한글(hwpx), PDF, 워드(docx), PPT(pptx), 엑셀(xlsx, xls)만 바꿀 수 있습니다."; return; }
+    progress("파일을 읽는 중");
+    const buf = it.buf || await it.file.arrayBuffer();
+    let res;
+    if (it.ext === "hwpx") res = await HWPX.convert(buf, it.name, it.prefix);
+    else if (it.ext === "pdf") res = await PDFC.convert(buf, it.name, progress);
+    else if (it.ext === "docx") res = await DOCX.convert(buf, it.name, it.prefix);
+    else if (it.ext === "pptx") res = await PPTX.convert(buf, it.name, it.prefix, {});
+    else res = await SHEET.convert(buf, it.name, it.ext);
+    res.assets = res.assets || [];
+    it.result = res; it.status = "done"; it.message = "";
+    it.file = null; it.buf = null;
+    say(`${it.name}: 변환을 마쳤습니다 (예상 전환율 ${res.report.overall_score}%).`);
+  } catch (e) {
+    it.status = "failed";
+    it.message = e instanceof UserError ? e.message : "예상하지 못한 문제로 변환하지 못했습니다. 파일이 열려 있거나 암호가 걸려 있지 않은지 확인해 주세요." + (e && e.message ? ` (${e.message.slice(0, 140)})` : "");
+    if (!(e instanceof UserError)) console.error(e);
+    say(`${it.name}: ${it.message}`);
+  } finally {
+    renderList(); if (it.id === state.sel) renderViewer();
+  }
+}
+let running = false;
+async function runQueue() {
+  if (running) return; running = true;
+  try { let it; while ((it = state.items.find(i => i.status === "queued"))) { await convertItem(it); await tick(); } }
+  finally { running = false; }
+}
+function addFiles(list) {
+  const arr = Array.from(list || []).filter(f => f && f.name && !f.name.startsWith("~$"));
+  if (!arr.length) return;
+  const hadSample = state.items.some(i => i.sample);
+  state.items = state.items.filter(i => !i.sample);
+  let first = null;
+  for (const f of arr) { const it = makeItem(f.name, f.size); it.file = f; state.items.push(it); if (!first) first = it; }
+  if (hadSample || !current()) state.sel = first.id;
+  state.tab = state.tab || "md";
+  renderList(); renderViewer(); runQueue();
+}
+
+// ---------- 저장 · 복사 ----------
+async function saveFile(filename, data) {
+  if (state.dl === "local") {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: "text/markdown;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    say(`${filename} 파일을 저장했습니다.`); return;
+  }
+  if (!state.dl) { say("이 화면에서는 파일로 저장할 수 없습니다. ‘마크다운 복사’를 써 주세요."); return; }
+  try { await state.dl.save({ filename, data }); say(`${filename} 파일을 저장했습니다.`); }
+  catch (e) {
+    const code = e && e.code;
+    if (code === "declined") say("저장을 취소했습니다.");
+    else if (code === "rate_limited") say("저장 창이 이미 열려 있습니다. 잠시 뒤 다시 눌러 주세요.");
+    else if (code === "too_large") say("파일이 너무 커서 저장하지 못했습니다. 문서를 나눠서 변환해 주세요.");
+    else say("이 화면에서는 파일로 저장할 수 없습니다. ‘마크다운 복사’를 써 주세요.");
+  }
+}
+els.copy.addEventListener("click", async () => {
+  const it = current(); if (!it || it.status !== "done") return;
+  try { await navigator.clipboard.writeText(finalMd(it)); say("마크다운을 클립보드에 복사했습니다. AI 채팅 창에 붙여 넣으면 됩니다."); }
+  catch (e) {
+    setTab("md");
+    const pre = els.panel.querySelector("pre"); if (pre) { const range = document.createRange(); range.selectNodeContents(pre); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }
+    say("자동 복사가 막혀 있어 글 전체를 선택해 두었습니다. Ctrl+C(맥은 ⌘+C)를 눌러 복사하세요.");
+  }
+});
+els.save.addEventListener("click", () => {
+  const it = current(); if (!it || it.status !== "done") return;
+  if (it.result.assets.length) say("이 문서의 그림 파일까지 받으려면 ‘전체 ZIP 저장’을 쓰세요.");
+  saveFile(it.outStem + ".md", finalMd(it));
+});
+els.zip.addEventListener("click", async () => {
+  const done = state.items.filter(i => i.status === "done"); if (!done.length) return;
+  say("ZIP 파일을 만드는 중입니다.");
+  const zip = new JSZip();
+  for (const it of done) { zip.file(it.outStem + ".md", finalMd(it)); for (const a of it.result.assets) zip.file("assets/" + a.name, a.data); }
+  const b = buildBatch(state.items);
+  zip.file("변환_진단_리포트.md", b.md); zip.file("manifest.csv", b.csv);
+  const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+  const d = new Date(); const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  saveFile(done.length === 1 ? `${done[0].outStem}_md.zip` : `md변환_결과_${stamp}.zip`, blob);
+});
+els.clear.addEventListener("click", () => {
+  for (const u of state.urls) URL.revokeObjectURL(u); state.urls = [];
+  state.items = state.items.filter(i => i.status === "working"); state.sel = state.items[0] ? state.items[0].id : null;
+  renderList(); renderViewer(); say("목록을 비웠습니다.");
+});
+for (const b of document.querySelectorAll(".tabs button")) b.addEventListener("click", () => setTab(b.dataset.tab));
+document.querySelector(".tabs").addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  const tabs = ["md", "preview", "diag"]; let i = tabs.indexOf(state.tab); i = (i + (e.key === "ArrowRight" ? 1 : 2)) % 3;
+  setTab(tabs[i]); document.querySelector(`.tabs button[data-tab="${tabs[i]}"]`).focus();
+});
+els.optHeader.addEventListener("change", renderViewer);
+els.optMarkers.addEventListener("change", renderViewer);
+els.input.addEventListener("change", () => { addFiles(els.input.files); els.input.value = ""; });
+["dragenter", "dragover"].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); els.drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); if (ev === "drop" || !e.relatedTarget) els.drop.classList.remove("over"); }));
+window.addEventListener("drop", e => { if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files); });
+
+async function initDownloads() {
+  if (window.claude && typeof window.claude.use === "function") { try { state.dl = await window.claude.use("downloads"); } catch (e) { state.dl = null; } }
+  else state.dl = "local";
+  renderActions();
+}
+
+// ---------- 처음 화면: 예시 파일을 실제로 변환해 둔다 ----------
+function boot() {
+  const it = makeItem(SAMPLE_NAME, 0); it.sample = true;
+  try { it.buf = b64ToBytes(SAMPLE_B64).buffer; } catch (e) { it.buf = null; }
+  if (it.buf) { state.items.push(it); state.sel = it.id; }
+  renderList(); renderViewer(); runQueue(); initDownloads();
+  say("예시 파일을 변환해 두었습니다. 내 파일을 넣으면 예시는 사라집니다.");
+}
+window.__mdconv = { HWPX, PDFC, DOCX, PPTX, SHEET, EQ, finalMd, buildBatch, state, addFiles };
+boot();
+})();
+</script>
+</body>
+</html>

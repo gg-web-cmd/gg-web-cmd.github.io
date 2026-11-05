@@ -14,6 +14,7 @@
 | 명단 합치기 | `roster/` | `명단합치기` | 결과 엑셀/CSV 를 내려받기 |
 | 개인정보 지우개 | `privacy/` | `개인정보지우개` | 원본은 안 고치고 가린 **사본**을 ZIP 으로 (그래서 되돌리기·격리 없음) |
 | PPT 리스타일러 | `ppt/` | `ppt` | 디자인 목록은 빌드 때 `designs.json` 으로 굳힘 |
+| 문서 → MD 변환기 | `md/` | `md변환기` (파이썬) | 자바스크립트로 다시 씀(pdf.js 3.11.174·mammoth·SheetJS). PDF 선 표·2단·줄 잇기, 워드 수식→LaTeX, PPT 메모·차트 숫자 추가. 한글 PDF 문자표는 `md/cmaps/*.json`(base64) |
 | 상장 만들기 | `award/` | `award` (파이썬) | 캔버스로 다시 씀. 맑은 고딕 없으면 Noto Sans KR |
 | QR · 짧은 주소 | `qr/` | `url-qr` (파이썬) | da.gd·is.gd·v.gd 만 (브라우저에서 부를 수 있는 곳) |
 
