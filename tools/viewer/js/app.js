@@ -5,7 +5,7 @@ import { $, el, extOf, formatSize, downloadBlob, nextFrame } from './util.js';
 import { classify, KIND_LABEL } from './format.js';
 
 /* 구글 앱스 스크립트 판(드라이브에서 열기·메일에 바로 첨부) 주소. 배포 후 채운다. */
-const GAS_URL = '';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGR2F1Typ5hlRGCQS3eNz-5ZAy3nlanWXtSNi_6HimKZElXKCXmQfN53H9OQOWqWpfBA/exec';
 
 const RENDER = {
   pdf: ['pdf', 'render'], hwp: ['hwp', 'render'], hwp3: ['hwp', 'render'], hwpx: ['hwp', 'render'],

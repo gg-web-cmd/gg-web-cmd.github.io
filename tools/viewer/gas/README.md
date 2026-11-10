@@ -3,6 +3,9 @@
 GitHub Pages 의 [문서 뷰어](https://gg-web-cmd.github.io/tools/viewer/)를 그대로 품고,
 구글 계정이 있어야 되는 두 가지를 더한 웹 앱입니다.
 
+- **앱 주소: https://script.google.com/macros/s/AKfycbxGR2F1Typ5hlRGCQS3eNz-5ZAy3nlanWXtSNi_6HimKZElXKCXmQfN53H9OQOWqWpfBA/exec**
+- 배포: 2026-11-10, 1판 (배포한 학교 구글 계정 소유, clasp 로 올림)
+
 | 웹판 (GitHub Pages) | 구글 앱판 (이 폴더) |
 | --- | --- |
 | 메일: 파일을 내려받고 Gmail·메일 프로그램 창만 열어 줌 (직접 첨부) | **내 Gmail 로 바로 첨부해 보냄** (25MB 까지) |
@@ -44,6 +47,9 @@ clasp deploy --description "문서 뷰어"
 (https://script.google.com/home/usersettings 에서 "Google Apps Script API" 를 켜 두어야 합니다.)
 
 ## 고칠 때
+
+- 이미 배포한 앱을 고칠 때(주소 그대로): 코드 수정 → `clasp push -f` → `clasp update-deployment AKfycbxGR2F1Typ5hlRGCQS3eNz-5ZAy3nlanWXtSNi_6HimKZElXKCXmQfN53H9OQOWqWpfBA`
+  (편집기에서는 배포 → 배포 관리 → ✏️ → 새 버전)
 
 - 뷰어 주소를 바꾸려면 `Code.gs` 의 `VIEWER_URL` 한 줄
 - 뷰어(GitHub Pages)는 `?host=gas` 로 열리면 구글 앱 모드가 됩니다(드라이브 단추, 메일 바로 보내기). 연결 코드는 `../js/app.js` 의 `setupBridge`
