@@ -3,7 +3,9 @@
 바이브 코딩으로 만든 교실 웹앱과 연수 안내서 모음(사이트 홈).
 
 - 홈: https://gg-web-cmd.github.io/
-- 교실 도구함: https://gg-web-cmd.github.io/tools/ — PDF 쪽 편집 · PDF→사진 · 개인정보 지우개 · PPT 리스타일러 · 문서→MD 변환기 · 증명사진 · 명단 합치기 · 상장 · QR · 파일이름 일괄 바꾸기
+- 문서 뷰어: https://gg-web-cmd.github.io/tools/viewer/ — 한글(HWP·HWPX)·PDF·워드·엑셀·PPT·ODT·그림·마크다운·ZIP 등을 설치 없이 원본 모양대로 보기 (찾기·인쇄·메일, 앱 설치 시 파일 연결)
+  (자세한 것은 [tools/viewer/README.md](tools/viewer/README.md), 구글 앱스 스크립트판은 [tools/viewer/gas/](tools/viewer/gas/README.md))
+- 교실 도구함: https://gg-web-cmd.github.io/tools/ — 문서 뷰어 · PDF 쪽 편집 · PDF→사진 · 개인정보 지우개 · PPT 리스타일러 · 문서→MD 변환기 · 증명사진 · 명단 합치기 · 상장 · QR · 파일이름 일괄 바꾸기
   (윈도우 설치판 도구의 웹판. 자세한 것은 [tools/README.md](tools/README.md))
 - 발명특허교실: https://gg-web-cmd.github.io/invention/ — 학생 발명 아이디어부터 명세서·특허 출원까지 8단계 안내
   (자세한 것은 [invention/README.md](invention/README.md))

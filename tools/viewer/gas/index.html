@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #f3f4f6; }
+  iframe { display: block; width: 100%; height: 100vh; border: 0; }
+  .fail { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 24px;
+          font: 15px/1.6 "Malgun Gothic", sans-serif; color: #333; text-align: center; background: #f3f4f6; }
+  .fail a { color: #2f6fed; }
+</style>
+</head>
+<body>
+<iframe id="viewer" title="문서 뷰어" allow="fullscreen; clipboard-write; web-share"
+        src="<?= viewerUrl ?>?host=gas"></iframe>
+<div class="fail" id="fail">뷰어를 불러오지 못했습니다. 인터넷 연결을 확인하거나
+  <a href="<?= viewerUrl ?>" target="_blank" rel="noopener">뷰어를 새 창으로 여세요</a>.</div>
+<script>
+(function () {
+  'use strict';
+  var VIEWER_ORIGIN = new URL(<?!= viewerUrlJs ?>).origin;
+  var USER = <?!= emailJs ?>;
+  var frame = document.getElementById('viewer');
+  var loaded = false;
+  frame.addEventListener('load', function () { loaded = true; });
+  setTimeout(function () { if (!loaded) document.getElementById('fail').style.display = 'flex'; }, 25000);
+
+  function post(msg, transfer) {
+    frame.contentWindow.postMessage(Object.assign({ src: 'gas-shell' }, msg), VIEWER_ORIGIN, transfer || []);
+  }
+
+  function toBase64(buf) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(String(r.result).replace(/^data:[^,]*,/, '')); };
+      r.onerror = function () { reject(r.error); };
+      r.readAsDataURL(new Blob([buf]));
+    });
+  }
+
+  function fromBase64(b64) {
+    var bin = atob(b64), n = bin.length, out = new Uint8Array(n);
+    for (var i = 0; i < n; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  }
+
+  function run(fn, args) {
+    return new Promise(function (resolve, reject) {
+      var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e); });
+      r[fn].apply(r, args);
+    });
+  }
+
+  function errText(e) { return (e && (e.message || e.toString())) || '알 수 없는 오류'; }
+
+  window.addEventListener('message', function (e) {
+    // 뷰어(GitHub Pages)에서 온 것만 받는다
+    if (e.source !== frame.contentWindow || e.origin !== VIEWER_ORIGIN) return;
+    var m = e.data;
+    if (!m || m.src !== 'doc-viewer') return;
+    var re = m.id;
+    if (m.type === 'hello') {
+      post({ type: 'hello', user: USER, features: ['mail', 'drive'] });
+      return;
+    }
+    if (m.type === 'mail') {
+      var f = m.file || {};
+      toBase64(f.bytes).then(function (b64) {
+        return run('sendMail', [{ to: m.to, subject: m.subject, body: m.body, name: f.name, mime: f.mime, base64: b64 }]);
+      }).then(function (r) {
+        post({ re: re, ok: true, remaining: r && r.remaining });
+      }, function (err) {
+        post({ re: re, ok: false, error: errText(err) });
+      });
+      return;
+    }
+    if (m.type === 'drive:list') {
+      run('listDriveFiles', [m.query || '', m.pageToken || null]).then(function (r) {
+        post({ re: re, ok: true, files: r.files, next: r.next });
+      }, function (err) { post({ re: re, ok: false, error: errText(err) }); });
+      return;
+    }
+    if (m.type === 'drive:get') {
+      run('getDriveFile', [m.fileId]).then(function (r) {
+        var buf = fromBase64(r.base64);
+        post({ re: re, ok: true, name: r.name, mime: r.mime, bytes: buf }, [buf]);
+      }, function (err) { post({ re: re, ok: false, error: errText(err) }); });
+    }
+  });
+}());
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>교실 도구함</title>
-<meta name="description" content="PDF 편집·사진 변환·문서 → MD 변환·증명사진·명단 합치기·상장·QR 을 설치 없이 브라우저에서. 파일은 어디로도 올라가지 않습니다.">
+<meta name="description" content="문서 뷰어(한글·PDF·오피스)·PDF 편집·사진 변환·문서 → MD 변환·증명사진·명단 합치기·상장·QR 을 설치 없이 브라우저에서. 파일은 어디로도 올라가지 않습니다.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧰</text></svg>">
 <script src="common/theme.js"></script>
 <style>
@@ -122,6 +122,9 @@ main iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0
       desc: 'PDF 여러 개를 합치고, 나누고, 쪽을 돌리거나 빼고 순서를 바꿉니다. 사진도 PDF 쪽으로 넣습니다.' },
     { group: 'PDF', id: 'pdf-jpg', icon: '🖼️', name: 'PDF → 사진', short: '쪽 순서대로 JPG',
       desc: 'PDF 를 쪽 순서 그대로 JPG 로 바꿉니다. 1쪽은 001, 2쪽은 002. ZIP 으로 받거나 폴더에 바로 저장.' },
+    { group: '문서', id: 'viewer', icon: '📂', name: '문서 뷰어', short: '한글·PDF·오피스·그림 모두',
+      allow: 'fullscreen; clipboard-write *; web-share *',
+      desc: '한글(HWP·HWPX)·PDF·워드·엑셀·PPT·ODT·그림·마크다운·ZIP 등 거의 모든 문서를 원본 모양대로 봅니다. 찾기·확대·인쇄·메일 보내기.' },
     { group: '문서', id: 'privacy', icon: '🛡️', name: '개인정보 지우개', short: '주민번호·전화 찾아 가리기',
       desc: '한글(hwpx)·워드·엑셀·CSV 문서 속 주민번호·전화번호·계좌번호를 검산으로 찾아내고, 가린 사본을 ZIP 으로 받습니다.' },
     { group: '문서', id: 'ppt', icon: '🎨', name: 'PPT 리스타일러', short: '디자인 입혀 새 PPTX',
