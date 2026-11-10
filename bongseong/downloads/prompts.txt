@@ -1,15 +1,18 @@
 ﻿봉성초 교직원 AI 연수(2026. 11. 11.) — 나만의 앱 만들기(vibe coding) 프롬프트 모음
 실습 페이지: https://gg-web-cmd.github.io/bongseong/
-Claude Code 입력창에 복사해서 붙여 넣으세요. [ ] 부분은 내 정보로 바꿉니다.
-작업 폴더: C:\vibe (Claude Code에서 이 폴더를 선택한 상태로 진행)
+Google Antigravity 입력창에 복사해서 붙여 넣으세요. [ ] 부분은 내 정보로 바꿉니다.
+작업 폴더: C:\vibe (Antigravity 입력창 위 📁 프로젝트 선택 → [New Project]로 이 폴더를 연 상태로 진행)
+모델: Gemini 3.8 Flash · 권한 모드: Default · 앱이 바뀔 때마다 [+ New Conversation]
+무료 사용 한도가 있으니 한 번에 한 가지씩 짧게 요청하세요. 남은 양: 왼쪽 아래 Settings › Models
 
 ■ 프롬프트 0
-C:\vibe 안에 award, photo, timer, quiz 폴더 4개를 만들어 줘. 그리고 C:\vibe에 CLAUDE.md 파일을 만들어서 아래 규칙을 적어 줘.
+C:\vibe 안에 award, photo, timer, quiz 폴더 4개를 만들어 줘. 그리고 C:\vibe에 GEMINI.md 파일을 만들어서 아래 규칙을 적어 줘.
 1. 파이썬은 Thonny에 들어 있는 python.exe를 찾아서 쓰고, 필요한 라이브러리도 그 파이썬에 설치할 것
 2. 한글은 맑은 고딕(malgun.ttf)으로 써서 깨지지 않게 할 것
 3. 결과물은 각 앱 폴더 안의 output 폴더에만 저장할 것
 4. 엑셀·사진 같은 원본 파일은 절대 수정하지 말 것
 5. 만든 뒤에는 직접 실행해서 오류가 없는지 확인할 것
+6. 설명은 짧게 하고, 바뀐 파일과 실행 방법만 요약할 것
 
 ■ 프롬프트 1
 award 폴더에 상장 실습용 자료를 만들어 줘. 가상 학생 30명(이름, 학년, 반, 상 이름)이 들어 있는 students.xlsx 파일과, A4 세로 크기의 상장 배경 이미지 template.png(금색 테두리, 가운데는 비워 두기)를 만들어 줘.

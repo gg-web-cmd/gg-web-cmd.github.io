@@ -137,6 +137,32 @@ ul.dots{padding-left:20px} ul.dots li{margin:4px 0}
 .p2s .pill{background:var(--teal)}
 .prompt .hint{font-size:13px;color:var(--gray)}
 .prompt .sp{flex:1}
+.prompt .tip{font-size:13px;font-weight:700;color:var(--coral-d)}
+.p2s .prompt .tip{color:var(--teal)}
+.agfig .agui{border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(28,35,64,.06);overflow:hidden;font-size:13.5px;color:#30384F}
+.agui .hl{outline:2.5px solid var(--red);outline-offset:2px;border-radius:8px}
+.ag-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#F1F3F6;border-bottom:1px solid var(--line);font-size:12px;color:var(--gray)}
+.ag-bar i{width:9px;height:9px;border-radius:50%;background:#D5D9E0}
+.ag-bar span{margin-left:6px;font-weight:700}
+.ag-body{display:grid;grid-template-columns:190px 1fr;min-height:210px}
+.ag-nav{background:#F8F9FB;border-right:1px solid var(--line);padding:12px 10px;display:flex;flex-direction:column;gap:6px}
+.ag-btn{background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-weight:700;color:var(--navy)}
+.ag-li{padding:4px 10px;color:#4B5368}
+.ag-h{margin-top:6px;padding:0 10px;font-size:11.5px;font-weight:800;letter-spacing:.05em;color:var(--gray-2);text-transform:uppercase}
+.ag-set{margin-top:auto;padding:4px 10px;color:var(--gray)}
+.ag-main{display:grid;place-items:center;color:var(--gray-2);font-size:13px}
+.ag-input{padding:16px}
+.ag-proj{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ag-proj span{background:#F1F3F6;border-radius:8px;padding:4px 10px;font-weight:700;color:var(--navy)}
+.ag-proj small{color:var(--gray)}
+.ag-box{border:1px solid #CBD2DC;border-radius:12px;padding:12px 14px}
+.ag-ph{color:var(--gray-2);padding:2px 2px 14px}
+.ag-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ag-row .sp{flex:1}
+.ag-chip{background:#F1F3F6;border-radius:8px;padding:4px 10px;font-weight:700;color:#3A4257;white-space:nowrap}
+.ag-send{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:13px}
+.agui em.n{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:11.5px;font-weight:800;margin-left:6px;vertical-align:middle}
+@media (max-width:720px){.ag-body{grid-template-columns:168px 1fr}.agfig .agui{font-size:12.5px}.ag-btn,.ag-li{white-space:nowrap}.ag-btn{padding:7px 8px}}
 .done{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--gray);cursor:pointer;user-select:none}
 .done input{width:17px;height:17px;accent-color:var(--green)}
 .copy{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:10px;padding:6px 14px;cursor:pointer}
@@ -306,7 +332,7 @@ footer .in{max-width:1240px;margin:0 auto}
     <div>
       <div class="kicker">2026. 11. 11.(수) 14:30~16:30 · 봉성초등학교 AI교실(2층)</div>
       <h1>나만의 앱 만들기<br><span>(vibe coding)</span></h1>
-      <p class="lead"><b style="color:var(--gold)">생성형 AI를 활용한 바이브 코딩 및 수업 적용 사례</b><br>Claude Code로 윈도우 앱 3개를 만들고, 웹앱 하나를 GitHub에 공개합니다.<br><span style="font-size:15px">2026학년도 2학기 교직원 디지털 역량 강화 AI 연수 · 강사 김양호(금계중학교)</span></p>
+      <p class="lead"><b style="color:var(--gold)">생성형 AI를 활용한 바이브 코딩 및 수업 적용 사례</b><br>Google Antigravity(무료)로 윈도우 앱 3개를 만들고, 웹앱 하나를 GitHub에 공개합니다.<br><span style="font-size:15px">2026학년도 2학기 교직원 디지털 역량 강화 AI 연수 · 강사 김양호(금계중학교)</span></p>
       <div class="chips"><span class="chip">윈도우 앱 ×3</span><span class="chip">설치 파일</span><span class="chip">웹앱</span><span class="chip">GitHub 공개</span></div>
       <div class="btns">
         <a class="btn primary" href="#prep">실습 시작하기 ↗</a>
@@ -332,10 +358,11 @@ footer .in{max-width:1240px;margin:0 auto}
     <a href="#prep">시작 전 점검</a>
     <a href="#concept">바이브 코딩 · 3원칙</a>
     <a href="#rescue">막히면 이 4문장</a>
-    <a href="#setup">Claude Code 준비</a>
+    <a href="#setup">Antigravity 준비</a>
+    <a href="#limit">무료 한도 · 토큰 아끼기</a>
     <div class="grp">1차시 · 윈도우 앱</div>
     <a href="#compare">웹앱 vs 윈도우 앱</a>
-    <a href="#rules">공통 규칙 CLAUDE.md</a>
+    <a href="#rules">공통 규칙 GEMINI.md</a>
     <a href="#app1">앱① 상장 생성기</a>
     <a href="#app2">앱② 사진 정리</a>
     <a href="#app3">앱③ 알림 타이머</a>
@@ -362,7 +389,7 @@ footer .in{max-width:1240px;margin:0 auto}
       <p>1차시엔 <b>윈도우 앱</b>, 쉬는 시간 뒤 2차시엔 <b>배포·웹앱과 수업 적용 사례</b>. 코드를 직접 쓰지 않고 '말로' 만듭니다.</p>
       <div class="agenda">
         <div class="ses s1">1차시<small>14:30~15:20</small></div>
-        <div class="it"><span class="m">15분</span><b>도입 · 준비</b><span>Claude Code 열기 · 규칙 만들기</span></div>
+        <div class="it"><span class="m">15분</span><b>도입 · 준비</b><span>Antigravity 열기 · 규칙 만들기</span></div>
         <div class="it"><span class="m">20분</span><b>앱① 상장 생성기</b><span>엑셀 명단 → 상장 30장</span></div>
         <div class="it"><span class="m">10분</span><b>앱② 사진 정리</b><span>이름 바꾸고 크기 줄이기</span></div>
         <div class="it"><span class="m">5분</span><b>앱③ 알림 타이머</b><span>트레이 상주 알림 (도전)</span></div>
@@ -380,7 +407,7 @@ footer .in{max-width:1240px;margin:0 auto}
         <div class="card app"><div class="shot"><img src="img/timer_alert.webp" alt="쉬는 시간 알림창" loading="lazy"></div><div class="body"><span class="badge">윈도우 앱</span><h4>쉬는 시간 알림 타이머</h4><p class="sub">트레이에 숨어 있다가 정해진 시각에 알림</p></div></div>
         <div class="card app"><div class="shot"><img src="img/quiz_answer.webp" alt="골든벨 퀴즈 화면" loading="lazy"></div><div class="body"><span class="badge teal">웹앱 · GitHub 공개</span><h4>골든벨 퀴즈</h4><p class="sub">링크·QR 하나로 학생 누구나 접속</p></div></div>
       </div>
-      <p class="sub">강사가 실제로 Claude Code로 만든 결과입니다. 같은 프롬프트라도 여러분 화면은 조금씩 다르게 나와도 정상이에요.</p>
+      <p class="sub">강사가 실제로 말로만 만든 결과입니다. 같은 프롬프트라도 여러분 화면은 조금씩 다르게 나와도 정상이에요.</p>
     </section>
 
     <!-- 시작 전 점검 -->
@@ -388,32 +415,32 @@ footer .in{max-width:1240px;margin:0 auto}
       <h2><span class="no">0</span> 시작 전 1분 점검 <span class="time">14:32–14:33</span></h2>
       <p>사전 설치 안내문의 6가지가 모두 되어 있는지 확인합니다. 하나라도 안 되어 있으면 손을 들어 주세요.</p>
       <div class="checks">
-        <label class="chk"><input type="checkbox" data-check="pre-claude"><span><b>Claude Desktop</b><small>로그인까지 완료 (Pro 이상) · AI와 대화하며 앱 만들기</small></span></label>
+        <label class="chk"><input type="checkbox" data-check="pre-ag"><span><b>Google Antigravity</b><small>개인 Google 계정 로그인까지 완료 (무료) · AI 에이전트와 대화하며 앱 만들기</small></span></label>
         <label class="chk"><input type="checkbox" data-check="pre-github"><span><b>GitHub 계정</b><small>Google 계정으로 가입 · 웹앱 저장·공개</small></span></label>
         <label class="chk"><input type="checkbox" data-check="pre-node"><span><b>Node.js</b><small>LTS 버전 · 웹 프로젝트 실행 환경</small></span></label>
         <label class="chk"><input type="checkbox" data-check="pre-git"><span><b>Git</b><small>기본값으로 설치 · 변경 기록 · GitHub 올리기</small></span></label>
         <label class="chk"><input type="checkbox" data-check="pre-thonny"><span><b>Thonny</b><small>Python이 함께 설치됨 · 윈도우 앱 실행(▶)</small></span></label>
         <label class="chk"><input type="checkbox" data-check="pre-inno"><span><b>Inno Setup</b><small>설치 마법사 기본값 · 설치 파일(setup.exe) 만들기</small></span></label>
       </div>
-      <div class="note"><b class="t">Code 탭을 쓰려면</b>Claude는 유료 요금제(Pro 이상) 계정으로 로그인되어 있어야 합니다.</div>
+      <div class="note"><b class="t">Antigravity는 무료로 씁니다</b>개인 Google 계정(Gmail)으로 로그인하세요. 학교(교육청) 계정은 로그인이 막혀 있을 수 있어요. 무료 버전은 사용 한도가 있어서 오늘은 <a href="#limit">토큰 아끼는 방법</a>대로 진행합니다.</div>
       <h3>아직 설치 전이라면 — 공식 내려받기</h3>
       <div class="dl">
-        <a href="https://claude.ai/download" target="_blank" rel="noopener">Claude Desktop<small>claude.ai/download · Windows</small></a>
+        <a href="https://antigravity.google/download" target="_blank" rel="noopener">Google Antigravity<small>antigravity.google/download · Windows x64</small></a>
         <a href="https://github.com/signup" target="_blank" rel="noopener">GitHub 가입<small>github.com · Google 계정으로</small></a>
         <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js<small>nodejs.org · LTS 버전</small></a>
         <a href="https://git-scm.com/download/win" target="_blank" rel="noopener">Git<small>git-scm.com · 기본값으로 설치</small></a>
         <a href="https://thonny.org/" target="_blank" rel="noopener">Thonny<small>thonny.org · Python 포함</small></a>
         <a href="https://jrsoftware.org/isdl.php" target="_blank" rel="noopener">Inno Setup<small>jrsoftware.org · 설치 마법사 기본값</small></a>
       </div>
-      <div class="note warn"><b class="t">공용 PC(AI교실)를 쓰신다면</b>오른쪽 위 [초기화]를 누르면 이 페이지에 입력한 내 정보와 체크가 지워집니다. 연수가 끝나면 Claude와 GitHub에서 로그아웃해 주세요.</div>
+      <div class="note warn"><b class="t">공용 PC(AI교실)를 쓰신다면</b>오른쪽 위 [초기화]를 누르면 이 페이지에 입력한 내 정보와 체크가 지워집니다. 연수가 끝나면 Antigravity와 GitHub에서 로그아웃해 주세요.</div>
     </section>
 
     <!-- 개념 -->
     <section id="concept">
-      <h2>바이브 코딩 = 내가 말하고, AI가 만들고, 내가 확인한다 <span class="time">14:33–14:36</span></h2>
+      <h2>바이브 코딩 = 내가 말하고, AI가 만들고, 내가 확인한다 <span class="time">14:33–14:35</span></h2>
       <div class="grid g2">
         <div class="card" style="background:var(--coral-l);border-color:var(--coral-b)"><span class="k">사람 = 기획자 · 검증자</span><ul class="dots"><li>무엇을 만들지 정하고 말로 설명한다</li><li>실행해 보고 맞는지 눈으로 확인한다</li><li>고칠 점을 다시 말한다</li></ul></div>
-        <div class="card" style="background:var(--blue-l);border-color:#D6DEEC"><span class="k" style="color:var(--navy)">AI(Claude Code) = 구현자</span><ul class="dots"><li>요청을 코드로 바꾸고 파일을 만든다</li><li>필요한 라이브러리를 설치하고 실행한다</li><li>오류를 찾아 고친다</li></ul></div>
+        <div class="card" style="background:var(--blue-l);border-color:#D6DEEC"><span class="k" style="color:var(--navy)">AI(Antigravity 에이전트) = 구현자</span><ul class="dots"><li>요청을 코드로 바꾸고 파일을 만든다</li><li>필요한 라이브러리를 설치하고 실행한다</li><li>오류를 찾아 고친다</li></ul></div>
       </div>
       <p><b>① 말하기</b> → <b>② 만들기</b> → <b>③ 확인하기</b> → <b>④ 고치기</b> — 이 4단계 루프가 오늘 연수 내내 반복됩니다.</p>
       <h3>좋은 프롬프트 3원칙</h3>
@@ -429,7 +456,7 @@ footer .in{max-width:1240px;margin:0 auto}
     </section>
 
     <section id="rescue">
-      <h2>막히면 이 4문장이면 됩니다 <span class="time">14:36–14:37</span></h2>
+      <h2>막히면 이 4문장이면 됩니다 <span class="time">14:35–14:36</span></h2>
       <p class="sub">휴대폰으로 찍어 두거나, 오른쪽 [복사]를 눌러 바로 붙여 넣으세요.</p>
       <div class="rescue">
         <div class="r"><span class="tag">오류</span><span class="q" data-copytext="아래 오류의 원인을 찾아서 고쳐 줘. 다른 기능은 바꾸지 마.">"아래 오류의 원인을 찾아서 고쳐 줘. 다른 기능은 바꾸지 마."<small>오류 메시지를 붙여 넣고 →</small></span><button class="copy" data-from="prev">복사</button></div>
@@ -440,50 +467,80 @@ footer .in{max-width:1240px;margin:0 auto}
       <div class="note coral"><b class="t">기억하기</b>AI의 답을 '믿는' 것이 아니라, 실행 결과를 '확인'하는 것이 교사의 역할입니다.</div>
     </section>
 
-    <!-- Claude Code 준비 -->
+    <!-- Antigravity 준비 -->
     <section id="setup">
-      <h2>Claude Code 준비 <span class="time">14:37–14:42</span></h2>
-      <h3>① Claude 앱에서 [Code] 탭을 엽니다</h3>
+      <h2>Antigravity 준비 <span class="time">14:36–14:43</span></h2>
+      <h3>① Antigravity를 열고 새 대화를 시작합니다</h3>
       <div class="pair">
-        <figure><img src="img/claude_nav.webp" alt="Claude 앱 왼쪽 위 Code 탭과 새로 생성 버튼" loading="lazy"><figcaption>빨간 네모: Code 탭(&lt;/&gt;) · [새로 생성]</figcaption></figure>
-        <ol class="steps"><li><b>왼쪽 위 &lt;/&gt; 버튼 클릭 → Code 탭</b><span>말풍선 모양은 일반 채팅, &lt;/&gt; 모양이 Claude Code</span></li><li><b>[새로 생성] 클릭 (<kbd>Ctrl</kbd>+<kbd>N</kbd>)</b><span>새 대화(세션)가 열립니다</span></li><li><b>앱이 바뀔 때마다 새로 생성</b><span>상장 → 사진 → 타이머 → 퀴즈, 대화를 나눠 쓰면 헷갈리지 않아요</span></li></ol>
+        <figure class="agfig">
+          <div class="agui" role="img" aria-label="Antigravity 왼쪽 메뉴 예시: New Conversation, Conversation History, Projects 목록, Settings">
+            <div class="ag-bar"><i></i><i></i><i></i><span>Antigravity</span></div>
+            <div class="ag-body">
+              <div class="ag-nav">
+                <div class="ag-btn hl">＋ New Conversation</div>
+                <div class="ag-li">Conversation History</div>
+                <div class="ag-h">Projects</div>
+                <div class="ag-li hl">📁 vibe</div>
+                <div class="ag-set">⚙ Settings</div>
+              </div>
+              <div class="ag-main">새 대화 화면</div>
+            </div>
+          </div>
+          <figcaption>빨간 네모: [+ New Conversation] · Projects 목록 <span class="re">(이해를 돕기 위해 단순하게 그린 예시)</span></figcaption>
+        </figure>
+        <ol class="steps"><li><b>Antigravity 실행 → Google 로그인</b><span>브라우저에 로그인 창이 뜨면 허용합니다</span></li><li><b>왼쪽 위 [+ New Conversation] 클릭</b><span>새 대화(세션)가 열립니다</span></li><li><b>앱이 바뀔 때마다 새 대화</b><span>상장 → 사진 → 타이머 → 퀴즈, 나눠 쓰면 헷갈리지 않고 토큰도 아껴요</span></li></ol>
       </div>
-      <div class="note"><b class="t">Code 탭이 안 보이면?</b>Claude 앱을 최신 버전으로 업데이트하고, 유료 요금제(Pro 이상) 계정으로 로그인했는지 확인하세요.</div>
+      <div class="note"><b class="t">로그인이 안 되면?</b>학교(교육청) 계정은 막혀 있을 수 있어요. 개인 Gmail 계정으로 로그인하세요.</div>
 
       <h3>② 작업 폴더 <code>C:\vibe</code> 를 만들고 연결합니다</h3>
-      <ol class="steps o"><li><b>파일 탐색기 → C 드라이브 → 새 폴더 'vibe'</b><span>최종 경로: C:\vibe</span></li><li><b>Claude Code [새로 생성] 화면에서 폴더 선택</b><span>입력창 근처의 폴더(📁) 버튼 → C:\vibe 선택</span></li><li><b>위쪽에 폴더 이름이 보이면 성공</b><span>아래 그림처럼 상단에 작업 폴더가 표시됩니다</span></li><li><b>'이 폴더를 신뢰할까요?' 창이 뜨면 → 신뢰</b><span>Claude가 이 폴더 안에서 파일을 만들고 고칩니다</span></li></ol>
-      <figure><img src="img/claude_top.webp" alt="상단에 표시된 현재 작업 폴더" loading="lazy" style="max-width:520px"><figcaption>▲ 현재 작업 폴더 표시 (예: teacher lesson → 여러분은 vibe)</figcaption></figure>
-      <div class="card" style="font-family:Consolas,monospace;font-size:14.5px;line-height:1.8"><b>C:\vibe\</b><br>&nbsp;├ CLAUDE.md &nbsp;← 공통 규칙<br>&nbsp;├ award &nbsp;&nbsp;&nbsp;&nbsp;← 앱① 상장<br>&nbsp;├ photo &nbsp;&nbsp;&nbsp;&nbsp;← 앱② 사진<br>&nbsp;├ timer &nbsp;&nbsp;&nbsp;&nbsp;← 앱③ 타이머<br>&nbsp;└ quiz &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 웹앱 퀴즈</div>
+      <ol class="steps o"><li><b>파일 탐색기 → C 드라이브 → 새 폴더 'vibe'</b><span>최종 경로: C:\vibe</span></li><li><b>입력창 위 📁 프로젝트 선택 → [New Project]</b><span>C:\vibe 폴더를 골라 프로젝트로 만듭니다</span></li><li><b>입력창 위에 vibe 가 보이면 성공</b><span>왼쪽 Projects 목록에도 vibe 가 생깁니다</span></li><li><b>폴더 접근을 묻는 창이 뜨면 → 허용</b><span>에이전트가 이 폴더 안에서 파일을 만들고 고칩니다</span></li></ol>
+      <div class="card" style="font-family:Consolas,monospace;font-size:14.5px;line-height:1.8"><b>C:\vibe\</b><br>&nbsp;├ GEMINI.md &nbsp;← 공통 규칙<br>&nbsp;├ award &nbsp;&nbsp;&nbsp;&nbsp;← 앱① 상장<br>&nbsp;├ photo &nbsp;&nbsp;&nbsp;&nbsp;← 앱② 사진<br>&nbsp;├ timer &nbsp;&nbsp;&nbsp;&nbsp;← 앱③ 타이머<br>&nbsp;└ quiz &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← 웹앱 퀴즈</div>
 
       <h3>③ 입력창 한 줄에 필요한 버튼이 다 있습니다</h3>
-      <figure><img src="img/claude_input.webp" alt="Claude Code 입력창" loading="lazy"></figure>
-      <div class="pair">
-        <figure><img src="img/claude_left.webp" alt="입력창 왼쪽 아래: 첨부와 권한 모드" loading="lazy"><figcaption>왼쪽 아래 확대: + 첨부 · 권한 모드</figcaption></figure>
-        <figure><img src="img/claude_right.webp" alt="입력창 오른쪽 아래: 모델 선택" loading="lazy"><figcaption>오른쪽 아래 확대: 모델 선택</figcaption></figure>
-      </div>
+      <figure class="agfig">
+        <div class="agui ag-input" role="img" aria-label="Antigravity 입력창 예시: 위에 프로젝트 선택, 아래에 + 첨부, 모델 선택, 권한 모드, 보내기">
+          <div class="ag-proj"><span>📁 vibe ▾</span><small>← 입력창 위 프로젝트 선택</small></div>
+          <div class="ag-box">
+            <div class="ag-ph">Ask anything, @ to mention, / for actions<em class="n">1</em></div>
+            <div class="ag-row"><span class="ag-chip">＋<em class="n">2</em></span><span class="ag-chip">Gemini 3.8 Flash ▾<em class="n">3</em></span><span class="sp"></span><span class="ag-chip">🛡 Default ▾<em class="n">4</em></span><span class="ag-send">➤</span></div>
+          </div>
+        </div>
+        <figcaption>번호는 아래 카드와 같습니다 <span class="re">(이해를 돕기 위해 단순하게 그린 예시 · 실제 배치는 버전에 따라 조금 다를 수 있음)</span></figcaption>
+      </figure>
       <div class="grid g4">
         <div class="card"><span class="k">1 입력창</span><p>문장을 쓰고 <kbd>Enter</kbd> · 줄바꿈은 <kbd>Shift</kbd>+<kbd>Enter</kbd></p></div>
-        <div class="card"><span class="k">2 + 첨부</span><p>파일·이미지 첨부 · 스크린샷은 <kbd>Ctrl</kbd>+<kbd>V</kbd></p></div>
-        <div class="card"><span class="k">3 권한 모드</span><p>수정·실행 전에 물어볼지 정하기</p></div>
-        <div class="card"><span class="k">4 모델 선택</span><p>기본값 그대로 두면 됩니다</p></div>
+        <div class="card"><span class="k">2 + 첨부</span><p>사진·폴더 첨부(Media·Folder) · 스크린샷은 <kbd>Ctrl</kbd>+<kbd>V</kbd></p></div>
+        <div class="card"><span class="k">3 모델 선택</span><p>Gemini 3.8 Flash 그대로 (무료 한도가 가장 넉넉)</p></div>
+        <div class="card"><span class="k">4 권한 모드</span><p>명령 실행 전에 물어볼지 정하기</p></div>
       </div>
 
       <h3>④ 권한 모드: 얼마나 알아서 하게 할까?</h3>
-      <p>입력창 왼쪽 아래 <b style="color:var(--red)">현재 모드 이름</b>(예: 자동)을 누르면 아래 모드 중 하나를 고를 수 있습니다. <span class="sub">※ 메뉴 이름은 앱 버전에 따라 조금 다를 수 있어요.</span></p>
+      <p>입력창 오른쪽 아래 <b style="color:var(--red)">방패 아이콘(현재 모드 이름)</b>을 누르면 아래 모드 중 하나를 고를 수 있습니다. <span class="sub">※ 메뉴 이름은 앱 버전에 따라 조금 다를 수 있어요.</span></p>
       <div class="modes">
-        <div class="row"><b>권한 요청</b><small>Ask</small><span>파일을 고치거나 명령을 실행할 때마다 물어봄</span><span class="w">처음 배울 때</span></div>
-        <div class="row rec"><b>편집 자동 수락</b><small>Accept edits</small><span>파일 수정은 바로, 설치·실행 명령은 물어봄</span><span class="w">오늘 추천 ★</span></div>
-        <div class="row"><b>플랜 모드</b><small>Plan</small><span>코드는 안 만들고 계획만 먼저 보여 줌</span><span class="w">큰 앱 시작 전</span></div>
-        <div class="row"><b>자동</b><small>Auto</small><span>안전 점검을 하며 알아서 진행 (요금제에 따라 표시)</span><span class="w">익숙해진 뒤</span></div>
+        <div class="row"><b>꼼꼼히 확인</b><small>Request Review</small><span>명령을 실행할 때마다 승인을 물어봄</span><span class="w">처음 배울 때</span></div>
+        <div class="row rec"><b>기본</b><small>Default</small><span>삭제·설치 같은 민감한 작업 전에만 물어봄</span><span class="w">오늘 추천 ★</span></div>
+        <div class="row"><b>계획 먼저</b><small>/ → plan</small><span>입력창에 / → plan: 코드 전에 계획 문서부터</span><span class="w">큰 앱 시작 전</span></div>
+        <div class="row"><b>알아서</b><small>Turbo</small><span>제한 없이 모두 실행 — 지금 Turbo면 Default로 바꾸기</span><span class="w">익숙해진 뒤</span></div>
       </div>
       <div class="note"><b class="t">승인 창이 뜨면</b>무엇을 하려는지 한 줄 읽고 [허용]. 같은 종류를 계속 허용하려면 '항상 허용'. 모르는 삭제·외부 전송이면 거부하고 강사에게!</div>
+
+      <h3 id="limit">⑤ 무료 버전은 사용 한도가 있어요 — 토큰 아끼는 6가지</h3>
+      <div class="grid g3">
+        <div class="card"><span class="k">1</span><h4>모델은 Gemini 3.8 Flash로</h4><p>무료 한도가 가장 넉넉해요. 다른 모델은 한도가 따로·더 적어요</p></div>
+        <div class="card"><span class="k">2</span><h4>한 번에 한 가지씩, 짧게</h4><p>오늘 프롬프트를 그대로 복사하면 충분해요</p></div>
+        <div class="card"><span class="k">3</span><h4>앱마다 새 대화</h4><p>긴 대화는 매번 앞 내용을 다시 읽어 토큰을 더 써요</p></div>
+        <div class="card"><span class="k">4</span><h4>'설명은 짧게' 규칙</h4><p>GEMINI.md 6번 규칙이 답변 길이를 줄여요</p></div>
+        <div class="card"><span class="k">5</span><h4>오류는 빨간 부분만</h4><p>터미널 전체 말고 오류 메시지만 복사해 붙여 넣기</p></div>
+        <div class="card"><span class="k">6</span><h4>계획(plan)은 큰 앱에만</h4><p>작은 수정에는 계획 문서 없이 바로 요청</p></div>
+      </div>
+      <div class="note warn"><b class="t">남은 양 확인: 왼쪽 아래 Settings › Models</b>Five Hour Limit(5시간 한도)와 Weekly Limit Remaining(주간 남은 양)이 보입니다. 5시간 한도는 시간이 지나면 다시 채워져요. 한도에 닿으면 손을 들어 주세요 — 강사 완성본으로 이어서 참여할 수 있어요.</div>
     </section>
 
     <!-- PART 1 -->
     <div class="part"><span class="tag">PART 1 · 1차시</span><div><h2>윈도우 앱 3개, 말로 만들기</h2><p>앱① 상장·수료증 일괄 생성기 · 앱② 사진 일괄 정리 도구 · 앱③ 쉬는 시간 알림 타이머</p></div></div>
 
     <section id="compare">
-      <h2>웹앱 vs 윈도우 앱, 무엇이 다를까? <span class="time">14:42–14:44</span></h2>
+      <h2>웹앱 vs 윈도우 앱, 무엇이 다를까? <span class="time">14:43–14:44</span></h2>
       <p class="sub">색이 칠해진 칸이 더 유리한 쪽입니다.</p>
       <table class="tbl">
         <thead><tr><th></th><th>웹앱 <small>(예: 골든벨 퀴즈 · 2차시)</small></th><th>윈도우 앱 <small>(예: 상장 · 사진 · 타이머 · 1차시)</small></th></tr></thead>
@@ -501,17 +558,18 @@ footer .in{max-width:1240px;margin:0 auto}
     </section>
 
     <section id="rules">
-      <h2>먼저 규칙부터: CLAUDE.md <span class="time">14:44–14:47</span></h2>
-      <p>CLAUDE.md는 '프로젝트 규칙 메모장'입니다. 한 번 적어 두면 새 대화를 열어도 Claude가 매번 읽고 지킵니다. <b>C:\vibe 폴더를 연결한 상태</b>에서 입력하세요.</p>
-      <div class="prompt" data-id="p0"><div class="ph"><span class="pill">프롬프트 0</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p0">했어요</label><button class="copy">복사</button></div>
-<pre>C:\vibe 안에 award, photo, timer, quiz 폴더 4개를 만들어 줘. 그리고 C:\vibe에 CLAUDE.md 파일을 만들어서 아래 규칙을 적어 줘.
+      <h2>먼저 규칙부터: GEMINI.md <span class="time">14:44–14:47</span></h2>
+      <p>GEMINI.md는 '프로젝트 규칙 메모장'입니다. 한 번 적어 두면 새 대화를 열어도 에이전트가 매번 읽고 지킵니다. <b>C:\vibe 프로젝트를 연 상태</b>에서 입력하세요.</p>
+      <div class="prompt" data-id="p0"><div class="ph"><span class="pill">프롬프트 0</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 규칙 6번이 답변을 짧게 해 줘요</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p0">했어요</label><button class="copy">복사</button></div>
+<pre>C:\vibe 안에 award, photo, timer, quiz 폴더 4개를 만들어 줘. 그리고 C:\vibe에 GEMINI.md 파일을 만들어서 아래 규칙을 적어 줘.
 1. 파이썬은 Thonny에 들어 있는 python.exe를 찾아서 쓰고, 필요한 라이브러리도 그 파이썬에 설치할 것
 2. 한글은 맑은 고딕(malgun.ttf)으로 써서 깨지지 않게 할 것
 3. 결과물은 각 앱 폴더 안의 output 폴더에만 저장할 것
 4. 엑셀·사진 같은 원본 파일은 절대 수정하지 말 것
-5. 만든 뒤에는 직접 실행해서 오류가 없는지 확인할 것</pre>
-        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;C:\vibe에 CLAUDE.md와 폴더 4개가 생깁니다. 이후 모든 대화에서 Claude가 이 규칙을 먼저 읽고 따릅니다.</p></div>
-      <div class="note warn"><b class="t">1번 규칙이 특히 중요해요</b>연수 PC에는 Thonny에 들어 있는 파이썬만 있습니다. 이 규칙이 없으면 파이썬을 못 찾거나 Microsoft Store가 열릴 수 있어요(강사 리허설에서 확인한 함정).</div>
+5. 만든 뒤에는 직접 실행해서 오류가 없는지 확인할 것
+6. 설명은 짧게 하고, 바뀐 파일과 실행 방법만 요약할 것</pre>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;C:\vibe에 GEMINI.md와 폴더 4개가 생깁니다. 이후 모든 대화에서 에이전트가 이 규칙을 먼저 읽고 따릅니다.</p></div>
+      <div class="note warn"><b class="t">1번 규칙이 특히 중요해요</b>연수 PC에는 Thonny에 들어 있는 파이썬만 있습니다. 이 규칙이 없으면 파이썬을 못 찾거나 Microsoft Store가 열릴 수 있어요(강사 리허설에서 확인한 함정). <b>6번 규칙</b>은 무료 사용 한도를 아끼는 장치입니다 — 답변이 짧을수록 토큰을 덜 써요.</div>
     </section>
 
     <!-- 앱① -->
@@ -525,46 +583,46 @@ footer .in{max-width:1240px;margin:0 auto}
 
       <h3>프롬프트 1/4 · 연습용 자료부터 AI에게 <span class="time">14:48–14:51</span></h3>
       <p class="sub">실제 학생 명단은 쓰지 않습니다. 실습은 항상 가상 데이터로!</p>
-      <div class="prompt" data-id="p1"><div class="ph"><span class="pill">프롬프트 1</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p1">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p1"><div class="ph"><span class="pill">프롬프트 1</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 다시 만들지 말고 고칠 곳만 말하기</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p1">했어요</label><button class="copy">복사</button></div>
 <pre>award 폴더에 상장 실습용 자료를 만들어 줘. 가상 학생 30명(이름, 학년, 반, 상 이름)이 들어 있는 students.xlsx 파일과, A4 세로 크기의 상장 배경 이미지 template.png(금색 테두리, 가운데는 비워 두기)를 만들어 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;award 폴더에 students.xlsx(가상 명단)와 template.png(상장 배경)가 생깁니다. 탐색기에서 열어 확인!</p></div>
 
       <h3>프롬프트 2/4 · 앱의 뼈대: 엑셀 명단을 표로 <span class="time">14:51–14:55</span></h3>
-      <div class="prompt" data-id="p2"><div class="ph"><span class="pill">프롬프트 2</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p2">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p2"><div class="ph"><span class="pill">프롬프트 2</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 열 이름까지 적으면 한 번에 맞아요</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p2">했어요</label><button class="copy">복사</button></div>
 <pre>award 폴더에 파이썬 tkinter로 '상장 만들기' 데스크톱 앱(app.py)을 만들어 줘. '엑셀 명단 선택' 버튼을 누르면 파일 선택 창이 열리고, 고른 엑셀의 명단(이름, 학년, 반, 상 이름)이 창 아래쪽에 표로 보이게 해 줘. 글자는 크게 해 줘.</pre>
-        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;app.py가 생기고, Claude가 직접 실행해 확인합니다. 창이 뜨면 students.xlsx를 골라 명단 30명이 보이는지 확인!</p></div>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;app.py가 생기고, 에이전트가 직접 실행해 확인합니다. 창이 뜨면 students.xlsx를 골라 명단 30명이 보이는지 확인!</p></div>
 
       <h3>프롬프트 3/4 · 핵심 기능: 먼저 1명만 미리보기 <span class="time">14:55–14:58</span></h3>
-      <div class="prompt" data-id="p3"><div class="ph"><span class="pill">프롬프트 3</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p3">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p3"><div class="ph"><span class="pill">프롬프트 3</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 1명만 먼저 → 30장 재생성 낭비 방지</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p3">했어요</label><button class="copy">복사</button></div>
 <pre>template.png 위에 학생 이름과 '위 학생은 2026학년도 교내 정보 경진대회에서 우수한 성적을 거두었기에 이 상장을 수여함' 문구를 얹어 상장을 만드는 기능을 추가해 줘. 먼저 '미리보기' 버튼을 누르면 표에서 고른 학생 1명의 상장만 창으로 보여 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;표에서 학생을 고르고 [미리보기]를 누르면 상장 1장이 창에 뜹니다. 한글·위치를 확인하세요.</p></div>
 
       <h3>프롬프트 4/4 · 확인했으면 30명 전원을 한 번에 <span class="time">14:58–15:00</span></h3>
-      <div class="prompt" data-id="p4"><div class="ph"><span class="pill">프롬프트 4</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p4">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p4"><div class="ph"><span class="pill">프롬프트 4</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 확인이 끝난 뒤에만 전체 생성</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p4">했어요</label><button class="copy">복사</button></div>
 <pre>미리보기 확인했어. '전체 일괄 생성' 버튼을 추가해서 명단 30명 전원의 상장을 PNG와 PDF로 award\output 폴더에 만들어 줘. 파일 이름은 '상장_이름.png'처럼 해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;award\output 폴더에 상장 30장(PNG)과 PDF가 생깁니다. 원본 엑셀·배경은 그대로!</p></div>
 
       <h3>Thonny에서 app.py를 열고 ▶ 실행 <span class="time">15:00–15:02</span></h3>
       <figure><img src="img/thonny_run.webp" alt="Thonny 초록 실행 버튼" loading="lazy"><figcaption>빨간 네모: 초록 ▶ 실행 버튼 (<kbd>F5</kbd>)</figcaption></figure>
-      <ol class="steps"><li><b>Thonny 실행</b><span>시작 메뉴에서 Thonny 검색</span></li><li><b>파일 &gt; 열기</b><span>C:\vibe\award\app.py 선택</span></li><li><b>초록 ▶ 버튼 (F5)</b><span>잠시 뒤 '상장 만들기' 창이 뜹니다</span></li><li><b>또는 Claude에게</b><span>"app.py 실행해 줘"라고 말하기</span></li></ol>
+      <ol class="steps"><li><b>Thonny 실행</b><span>시작 메뉴에서 Thonny 검색</span></li><li><b>파일 &gt; 열기</b><span>C:\vibe\award\app.py 선택</span></li><li><b>초록 ▶ 버튼 (F5)</b><span>잠시 뒤 '상장 만들기' 창이 뜹니다</span></li><li><b>또는 에이전트에게</b><span>"app.py 실행해 줘"라고 말하기</span></li></ol>
 
       <h3>output 폴더에 상장이 만들어졌나요? <span class="time">15:02–15:03</span></h3>
       <div class="pair">
-        <figure><img src="img/explorer_award.webp" alt="award 폴더 구조" loading="lazy"><figcaption>award 폴더 — CLAUDE.md 규칙대로 결과는 output 안에만</figcaption></figure>
+        <figure><img src="img/explorer_award.webp" alt="award 폴더 구조" loading="lazy"><figcaption>award 폴더(강사 예시) — 규칙대로 결과는 output 안에만</figcaption></figure>
         <div class="card"><span class="k">✔ 확인</span><ul class="dots"><li>output에 30장</li><li>PDF 1개</li><li>원본 엑셀·배경 그대로</li></ul></div>
       </div>
 
       <h3>마음에 안 들면 스크린샷을 붙여 넣고 말하세요 <span class="time">15:03–15:04</span></h3>
-      <div class="prompt" data-id="shot"><div class="ph"><span class="pill">스크린샷 수정</span><span class="hint">캡처 붙여넣기 → 문장 입력</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="shot">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="shot"><div class="ph"><span class="pill">스크린샷 수정</span><span class="hint">캡처 붙여넣기 → 문장 입력</span><span class="tip">💡 고칠 부분만 잘라 캡처하면 더 가벼워요</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="shot">했어요</label><button class="copy">복사</button></div>
 <pre>(Win + Shift + S로 상장 부분을 캡처 → 입력창에 Ctrl + V)
 이 상장에서 이름이 너무 작고 왼쪽으로 치우쳐 있어. 이름 글자를 1.5배 키우고 가로 가운데에 오게 해 줘. 다른 부분은 그대로 둬.</pre>
-        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;Claude가 그림을 보고 위치·크기를 고칩니다. 다시 [미리보기]로 확인 → 괜찮으면 [전체 일괄 생성].</p></div>
+        <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;에이전트가 그림을 보고 위치·크기를 고칩니다. 다시 [미리보기]로 확인 → 괜찮으면 [전체 일괄 생성].</p></div>
 
       <h3>오류가 나면? 읽지 말고 복사해서 붙여 넣기 <span class="time">15:04–15:05</span></h3>
-      <div class="prompt" data-id="err"><div class="ph"><span class="pill">오류 붙여넣기</span><span class="hint">오류 메시지 전체와 함께</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="err">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="err"><div class="ph"><span class="pill">오류 붙여넣기</span><span class="hint">오류 메시지 전체와 함께</span><span class="tip">💡 터미널 전체 말고 빨간 오류 부분만</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="err">했어요</label><button class="copy">복사</button></div>
 <pre>app.py를 실행했더니 아래 오류가 났어. 원인을 찾아서 고쳐 줘. 다른 기능은 바꾸지 마.
 (오류 메시지 전체를 복사해서 붙여 넣기)</pre></div>
-      <div class="note warn"><b class="t">Thonny에서만 'ModuleNotFoundError'가 나면</b>Thonny는 자기 전용 파이썬을 씁니다. 둘 중 하나로 해결!<br>① Claude에게: "Thonny 파이썬에 openpyxl, pillow를 설치해 줘"<br>② Thonny <b>도구 &gt; 패키지 관리</b> → 이름 입력 → PyPI로 찾기 → 설치</div>
+      <div class="note warn"><b class="t">Thonny에서만 'ModuleNotFoundError'가 나면</b>Thonny는 자기 전용 파이썬을 씁니다. 둘 중 하나로 해결!<br>① 에이전트에게: "Thonny 파이썬에 openpyxl, pillow를 설치해 줘"<br>② Thonny <b>도구 &gt; 패키지 관리</b> → 이름 입력 → PyPI로 찾기 → 설치</div>
       <div class="pair">
         <figure><img src="img/thonny_menu.webp" alt="Thonny 도구 메뉴의 패키지 관리" loading="lazy"><figcaption>Thonny: 도구 &gt; 패키지 관리...</figcaption></figure>
         <figure><img src="img/thonny_pkg.webp" alt="Thonny 패키지 관리 창" loading="lazy"><figcaption>이름 입력 → PyPI로 찾기</figcaption></figure>
@@ -574,16 +632,16 @@ footer .in{max-width:1240px;margin:0 auto}
     <!-- 앱② -->
     <section id="app2">
       <h2><span class="no">②</span> 사진 일괄 정리 도구 <span class="time">15:05–15:14</span></h2>
-      <p>행사 사진을 '날짜_행사명_번호'로 이름 바꾸고 크기를 줄입니다. <b>[새로 생성]</b>으로 새 대화를 열고 시작하세요(폴더는 C:\vibe 그대로).</p>
+      <p>행사 사진을 '날짜_행사명_번호'로 이름 바꾸고 크기를 줄입니다. <b>[+ New Conversation]</b>으로 새 대화를 열고 시작하세요(프로젝트는 vibe 그대로).</p>
       <div class="note teal"><b class="t">개인정보 원칙</b>학생 사진은 웹에 올리지 않고 내 컴퓨터 안에서만 처리 — 그래서 윈도우 앱!</div>
 
       <h3>프롬프트 5 · 연습용 사진도 AI가 만들어 줍니다 <span class="time">15:06–15:08</span></h3>
-      <div class="prompt" data-id="p5"><div class="ph"><span class="pill">프롬프트 5</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p5">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p5"><div class="ph"><span class="pill">프롬프트 5</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 사진은 30장이면 충분</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p5">했어요</label><button class="copy">복사</button></div>
 <pre>photo 폴더 안의 sample_photos 폴더에 연습용 가상 사진 30장을 만들어 줘. 사람 얼굴 없이 풍경·도형 그림으로, 크기는 제각각(가로 1600~2600픽셀)으로 해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;photo\sample_photos 폴더에 IMG_xxxx.jpg 같은 이름의 사진 30장이 생깁니다.</p></div>
 
       <h3>프롬프트 6 · 사진 정리 도구 만들기 <span class="time">15:08–15:12</span></h3>
-      <div class="prompt" data-id="p6"><div class="ph"><span class="pill">프롬프트 6</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p6">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p6"><div class="ph"><span class="pill">프롬프트 6</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 새 대화에서 시작하면 앞 대화를 다시 안 읽어요</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p6">했어요</label><button class="copy">복사</button></div>
 <pre>photo 폴더에 tkinter로 '사진 일괄 정리 도구'를 만들어 줘. 날짜와 행사명을 입력하고 폴더를 고르면, 그 안의 사진을 '날짜_행사명_번호.jpg'(예: 20260710_체육대회_001.jpg)로 이름을 바꾸고 가로 1280픽셀로 줄여서 output 폴더에 저장해 줘. 원본 사진은 절대 건드리지 마.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;창에 날짜·행사명을 넣고 sample_photos 폴더를 고르면 output에 새 이름의 사진 30장이 생깁니다.</p></div>
       <figure><img src="img/photo_app.webp" alt="사진 일괄 정리 도구 실행 결과" loading="lazy"><figcaption>① 날짜·행사명 입력 &nbsp;② 폴더 선택 후 정리 시작 — 원본은 그대로, 결과는 output에</figcaption></figure>
@@ -598,7 +656,7 @@ footer .in{max-width:1240px;margin:0 auto}
     <section id="app3">
       <h2><span class="no">③</span> 쉬는 시간 알림 타이머 · 도전 <span class="time">15:14–15:18</span></h2>
       <p>트레이에 숨어 있다가 딱 맞춰 알려 주는 앱. <b>새 대화</b>에서 시작하고, 시간 여유가 있는 분만 도전합니다.</p>
-      <div class="prompt" data-id="p8"><div class="ph"><span class="pill">프롬프트 8</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p8">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p8"><div class="ph"><span class="pill">프롬프트 8</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 도전 과제 — Settings › Models에서 남은 양 먼저 확인</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p8">했어요</label><button class="copy">복사</button></div>
 <pre>timer 폴더에 '쉬는 시간 알림' 앱을 만들어 줘. 평소에는 창 없이 작업 표시줄 트레이 아이콘으로 숨어 있다가, 정해 둔 시각(예: 매시 50분)이 되면 '쉬는 시간입니다!' 알림창을 맨 앞에 띄우고 알림음을 울려 줘. 트레이 아이콘을 우클릭하면 시각 설정, 지금 알림 테스트, 종료를 할 수 있게 해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;실행해도 창이 안 뜨는 게 정상! 작업 표시줄 오른쪽 ^ 안의 트레이 아이콘을 우클릭해 보세요.</p></div>
       <h3>테스트: 다음 정각까지 기다리지 말고 1~2분 뒤로</h3>
@@ -615,7 +673,7 @@ footer .in{max-width:1240px;margin:0 auto}
     <section id="check1">
       <h2>1차시 완주 체크 <span class="time">15:18–15:20</span></h2>
       <div class="checks">
-        <label class="chk"><input type="checkbox" data-check="c1-1"><span><b>C:\vibe 폴더를 연결하고 CLAUDE.md 규칙을 만들었다</b></span></label>
+        <label class="chk"><input type="checkbox" data-check="c1-1"><span><b>C:\vibe 프로젝트를 열고 GEMINI.md 규칙을 만들었다</b></span></label>
         <label class="chk"><input type="checkbox" data-check="c1-2"><span><b>앱① 상장 30장이 output 폴더에 생겼다</b></span></label>
         <label class="chk"><input type="checkbox" data-check="c1-3"><span><b>Thonny ▶로 내가 직접 앱을 실행해 봤다</b></span></label>
         <label class="chk"><input type="checkbox" data-check="c1-4"><span><b>스크린샷이나 오류를 붙여 넣어 한 번 이상 고쳐 봤다</b></span></label>
@@ -625,7 +683,7 @@ footer .in{max-width:1240px;margin:0 auto}
       <p class="saved">체크 상태는 이 브라우저에만 저장됩니다.</p>
     </section>
 
-    <div class="break"><div><b>쉬는 시간 15:20 ~ 15:30</b><br><span style="font-weight:500;color:var(--ink)">Claude 앱과 C:\vibe 폴더는 그대로 두고, 브라우저에서 github.com에 미리 로그인해 두세요.</span></div></div>
+    <div class="break"><div><b>쉬는 시간 15:20 ~ 15:30</b><br><span style="font-weight:500;color:var(--ink)">Antigravity와 C:\vibe 프로젝트는 그대로 두고, 브라우저에서 github.com에 미리 로그인해 두세요. Settings › Models에서 남은 한도도 한 번 확인!</span></div></div>
 
     <!-- PART 2 -->
     <div class="part p2"><span class="tag">PART 2 · 2차시</span><div><h2>만든 앱을 나눠 주기</h2><p>배포① 윈도우 앱 → 설치 파일 · 웹앱 골든벨 퀴즈 · 배포② GitHub에 올리고 주소로 공개</p></div></div>
@@ -640,12 +698,12 @@ footer .in{max-width:1240px;margin:0 auto}
       <div class="note"><b class="t">빌드는 몇 분 걸립니다</b>프롬프트를 먼저 보내 두고 기다리는 동안 설명을 듣습니다. 빌드 중 PermissionError가 나면 실행 중인 앱 창을 닫고 "다시 빌드해 줘".</div>
 
       <h3>프롬프트 9 · exe 파일 만들기 (PyInstaller) <span class="time">15:32–15:36</span></h3>
-      <div class="prompt" data-id="p9"><div class="ph"><span class="pill">프롬프트 9</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p9">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p9"><div class="ph"><span class="pill">프롬프트 9</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 빌드 중에는 같은 요청을 반복하지 않기</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p9">했어요</label><button class="copy">복사</button></div>
 <pre>award의 상장 만들기 앱을 PyInstaller로 exe 파일 하나로 만들어 줘. 콘솔 창은 뜨지 않게 하고, template.png도 exe 안에 넣어 줘. 결과물은 exe 옆 output 폴더에 저장되게 하고, 빌드한 exe를 직접 실행해서 확인해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;award 안의 dist(또는 output) 폴더에 상장만들기.exe가 생깁니다. 더블클릭으로 실행!</p></div>
 
       <h3>프롬프트 10 · 설치 파일 만들기 (Inno Setup) <span class="time">15:36–15:40</span></h3>
-      <div class="prompt" data-id="p10"><div class="ph"><span class="pill">프롬프트 10</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p10">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p10"><div class="ph"><span class="pill">프롬프트 10</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 경로를 알려 주면 찾느라 헤매지 않아요</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p10">했어요</label><button class="copy">복사</button></div>
 <pre>이 exe로 Inno Setup 설치 파일(setup.exe)도 만들어 줘. 한국어 설치 화면, 관리자 권한 없이 설치, 바탕화면·시작 메뉴 바로가기, 제어판에서 제거 가능하게 해 줘. Inno Setup(ISCC.exe)은 %LOCALAPPDATA%\Programs\Inno Setup 6 또는 C:\Program Files (x86)\Inno Setup 6에 있어. 확인 없이 끝까지 진행해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;'상장만들기_설치.exe' 같은 설치 파일이 생깁니다. USB·메신저로 동료에게 전달할 수 있어요.</p></div>
 
@@ -685,8 +743,8 @@ footer .in{max-width:1240px;margin:0 auto}
       </div>
 
       <h3>프롬프트 11 · 골든벨 퀴즈 웹앱 만들기 <span class="time">15:43–15:47</span></h3>
-      <p class="sub">[새로 생성]으로 새 대화 → 아래 문장 입력</p>
-      <div class="prompt" data-id="p11"><div class="ph"><span class="pill">프롬프트 11</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p11">했어요</label><button class="copy">복사</button></div>
+      <p class="sub">[+ New Conversation]으로 새 대화 → 아래 문장 입력</p>
+      <div class="prompt" data-id="p11"><div class="ph"><span class="pill">프롬프트 11</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 '브라우저 확인은 생략해 줘'를 붙이면 한도를 아껴요</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p11">했어요</label><button class="copy">복사</button></div>
 <pre>quiz 폴더에 골든벨 퀴즈 웹앱을 index.html 파일 하나로 만들어 줘(CSS·JS도 그 안에). 초등학교 5학년 수학 '약수와 배수' 단원 4지선다 5문제를 한 문제씩 크게 보여 주고, 답을 고르면 정답은 초록색·오답은 빨간색으로 바로 알려 줘. 마지막에는 총점과 격려 문구를 보여 줘. 교실 TV에 띄울 거라 글자를 크게 해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;quiz\index.html이 생깁니다. 탐색기에서 더블클릭하면 브라우저로 열려요.</p></div>
 
@@ -714,14 +772,14 @@ footer .in{max-width:1240px;margin:0 auto}
 
       <h3>2/5 · 저장소 주소를 복사합니다 <span class="time">15:53–15:54</span></h3>
       <figure><img src="img/gh_quick.webp" alt="GitHub Quick setup의 HTTPS 주소" loading="lazy"><figcaption>HTTPS 주소 옆 복사 버튼 <span class="re">(화면 예시)</span></figcaption></figure>
-      <p>복사한 주소 형식: <code>https://github.com/<span class="ph-id">내아이디</span>/quiz.git</code> — 이 주소를 다음 프롬프트에 넣습니다(위 '내 정보'에 아이디를 넣었다면 자동으로 들어가 있어요). 화면 아래 명령어는 몰라도 됩니다 — Claude가 대신 해요!</p>
+      <p>복사한 주소 형식: <code>https://github.com/<span class="ph-id">내아이디</span>/quiz.git</code> — 이 주소를 다음 프롬프트에 넣습니다(위 '내 정보'에 아이디를 넣었다면 자동으로 들어가 있어요). 화면 아래 명령어는 몰라도 됩니다 — 에이전트가 대신 해요!</p>
 
-      <h3>3/5 · Claude Code에게 올려 달라고 말하기 <span class="time">15:54–15:58</span></h3>
-      <div class="prompt" data-id="p13"><div class="ph"><span class="pill">프롬프트 13</span><span class="hint">[ ] 칸은 '내 정보'에서 자동 완성</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p13">했어요</label><button class="copy">복사</button></div>
+      <h3>3/5 · 에이전트에게 올려 달라고 말하기 <span class="time">15:54–15:58</span></h3>
+      <div class="prompt" data-id="p13"><div class="ph"><span class="pill">프롬프트 13</span><span class="hint">[ ] 칸은 '내 정보'에서 자동 완성</span><span class="tip">💡 로그인 후 재시도는 한 번만</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p13">했어요</label><button class="copy">복사</button></div>
 <pre>quiz 폴더를 git 저장소로 만들고 첫 커밋을 해 줘. 그다음 https://github.com/[내 아이디]/quiz.git 에 main 브랜치로 올려(push) 줘. git 사용자 정보가 없으면 이름은 [내 이름], 이메일은 [GitHub 가입 이메일]로 설정해 줘.</pre>
         <p class="res"><b>▶ 이렇게 됩니다</b> &nbsp;처음 한 번은 GitHub 로그인 창이 뜹니다(아래). 끝나면 GitHub 저장소에 index.html이 보여요.</p></div>
       <h3>처음 올릴 때 한 번, GitHub 로그인 창이 뜹니다 <span class="time">15:58–16:01</span></h3>
-      <ol class="steps t"><li><b>'Connect to GitHub' 창 → [Sign in with your browser]</b><span>작업 표시줄에 숨어 있을 수 있어요</span></li><li><b>브라우저에서 로그인 → [Authorize git-ecosystem]</b><span>Git Credential Manager 사용 허락</span></li><li><b>'Authentication Succeeded' → 브라우저 창 닫기</b><span>Claude가 push를 이어서 끝냅니다</span></li></ol>
+      <ol class="steps t"><li><b>'Connect to GitHub' 창 → [Sign in with your browser]</b><span>작업 표시줄에 숨어 있을 수 있어요</span></li><li><b>브라우저에서 로그인 → [Authorize git-ecosystem]</b><span>Git Credential Manager 사용 허락</span></li><li><b>'Authentication Succeeded' → 브라우저 창 닫기</b><span>에이전트가 push를 이어서 끝냅니다</span></li></ol>
       <div class="note warn"><b class="t">로그인 창이 안 뜨고 실패했다면</b>"GitHub 인증을 다시 해서 push해 줘"라고 말하거나, 브라우저에서 github.com에 먼저 로그인한 뒤 다시 요청하세요.</div>
 
       <h3>4/5 · Pages 켜기: Settings → Pages → main → Save <span class="time">16:01–16:04</span></h3>
@@ -733,7 +791,7 @@ footer .in{max-width:1240px;margin:0 auto}
       <h3>5/5 · 주소가 생기면 휴대폰으로 접속! <span class="time">16:04–16:08</span></h3>
       <figure><img src="img/gh_live.webp" alt="Your site is live 표시" loading="lazy"><figcaption>'Your site is live at …'이 뜨면 성공 <span class="re">(화면 예시)</span></figcaption></figure>
       <p>내 주소: <code>https://<span class="ph-id">내아이디</span>.github.io/quiz/</code> · 404가 나오면 1~2분 더 기다린 뒤 새로고침.</p>
-      <div class="prompt" data-id="p14"><div class="ph"><span class="pill">프롬프트 14</span><span class="hint">그대로 입력 → Enter</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p14">했어요</label><button class="copy">복사</button></div>
+      <div class="prompt" data-id="p14"><div class="ph"><span class="pill">프롬프트 14</span><span class="hint">그대로 입력 → Enter</span><span class="tip">💡 작은 작업은 짧게</span><span class="sp"></span><label class="done"><input type="checkbox" data-check="p14">했어요</label><button class="copy">복사</button></div>
 <pre>내 퀴즈 주소로 접속하는 QR코드 이미지를 quiz 폴더에 qr.png로 만들어 줘.
 주소: https://[내 아이디].github.io/quiz/</pre></div>
 
@@ -776,7 +834,7 @@ footer .in{max-width:1240px;margin:0 auto}
       <p class="sub">전체 목록: <a href="https://gg-web-cmd.github.io/" target="_blank" rel="noopener">gg-web-cmd.github.io</a></p>
 
       <h3>② 초등 교실에서 바로 만들어 볼 앱 <span class="time">16:17–16:22</span></h3>
-      <p>내 반에서 가장 자주 반복하는 일을 하나 골라, 아래 첫 문장으로 시작해 보세요. [복사] 후 Claude Code에 붙여 넣으면 됩니다.</p>
+      <p>내 반에서 가장 자주 반복하는 일을 하나 골라, 아래 첫 문장으로 시작해 보세요. [복사] 후 Antigravity 입력창에 붙여 넣으면 됩니다.</p>
       <div class="grid g2 ideas">
         <div class="card"><span class="k">1 · 학급 운영</span><h4>학급 운영 도구</h4><p class="q" data-copytext="자리 뽑기·모둠 편성·발표자 뽑기를 탭 3개로 묶은 웹앱을 index.html 하나로 만들어 줘. 교실 TV에 띄울 거라 글자를 크게 해 줘.">"자리 뽑기·모둠 편성·발표자 뽑기를 탭 3개로 묶은 웹앱을 index.html 하나로 만들어 줘. 교실 TV에 띄울 거라 글자를 크게 해 줘."</p><button class="copy idea-copy">복사</button></div>
         <div class="card"><span class="k">2 · 국어</span><h4>받아쓰기 연습장</h4><p class="q" data-copytext="문장을 소리로 읽어 주고, 학생이 입력하면 틀린 글자를 빨간색으로 보여 주는 받아쓰기 웹앱을 index.html 하나로 만들어 줘.">"문장을 소리로 읽어 주고, 학생이 입력하면 틀린 글자를 빨간색으로 보여 주는 받아쓰기 웹앱을 index.html 하나로 만들어 줘."</p><button class="copy idea-copy">복사</button></div>
@@ -801,7 +859,7 @@ footer .in{max-width:1240px;margin:0 auto}
           <tr><td>설치 파일 만들 때 되묻거나 멈춤</td><td>"Inno Setup 경로는 ○○야. 확인 없이 진행해"</td></tr>
           <tr><td>push 실패 (인증·403)</td><td>"GitHub 인증을 다시 해서 push해 줘"</td></tr>
           <tr><td>Pages 주소가 404</td><td>1~2분 뒤 새로고침 · Pages에서 main 저장 확인</td></tr>
-          <tr><td>응답이 느림 / 사용 한도</td><td>요청을 작게 쪼개기 · 한 번에 한 가지씩</td></tr>
+          <tr><td>사용 한도 소진 (5시간·주간)</td><td>Settings › Models에서 남은 양 확인 · 작게 쪼개기</td></tr>
         </tbody>
       </table>
       <h3 id="safety">AI로 학교 앱을 만들 때 안전 수칙 <span class="time">16:25–16:27</span></h3>
@@ -831,7 +889,7 @@ footer .in{max-width:1240px;margin:0 auto}
 
 <footer><div class="in">
   2026학년도 2학기 봉성초등학교 교직원 디지털 역량 강화 AI 연수(2026. 11. 11.) 실습 페이지 · 강사 김양호(금계중학교) — 연수 PPT와 같은 순서·같은 프롬프트로 구성했습니다.<br>
-  체크 상태와 '내 정보'는 이 브라우저에만 저장됩니다. GitHub 화면 그림 일부는 이해를 돕기 위해 재구성한 예시입니다.
+  체크 상태와 '내 정보'는 이 브라우저에만 저장됩니다. GitHub 화면 그림 일부와 Antigravity 화면 그림은 이해를 돕기 위해 재구성한 예시입니다.
 </div></footer>
 
 <div class="lb" id="lb" role="dialog" aria-label="이미지 크게 보기"><img alt=""></div>
@@ -854,7 +912,7 @@ footer .in{max-width:1240px;margin:0 auto}
   async function copyText(text, msg) {
     try { await navigator.clipboard.writeText(text); }
     catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); }
-    toast(msg || "복사했어요 — Claude Code 입력창에 붙여 넣으세요");
+    toast(msg || "복사했어요 — Antigravity 입력창에 붙여 넣으세요");
   }
 
   // 프롬프트 자리표시자

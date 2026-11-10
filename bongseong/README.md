@@ -4,6 +4,7 @@
 
 - 페이지: https://gg-web-cmd.github.io/bongseong/
 - 주제: 생성형 AI를 활용한 바이브 코딩 및 수업 적용 사례
+- 실습 도구: Google Antigravity(무료) — 공통 규칙 GEMINI.md, 모델 Gemini 3.8 Flash, 무료 한도를 아끼는 토큰 절약 팁 포함
 - 연수 PPT와 같은 순서·같은 프롬프트(0~15), 시각 표시, 프롬프트 복사, 진행 체크, 내 정보 자동 채우기·QR, 공용 PC 초기화
 - 골든벨 퀴즈 완성 예시(초등 5학년 수학 '약수와 배수'): `demo/quiz/`
 - 프롬프트 모음: `downloads/prompts.txt`
